@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "tel-language": {
+      "source": "BautistaPessagno/token-efficient-language",
+      "sourceType": "github",
+      "computedHash": "c6feb749a49a427b38e54ae97742273e682dea05691b5f8bfa4783458f5cdfb0"
+    }
+  }
+}
