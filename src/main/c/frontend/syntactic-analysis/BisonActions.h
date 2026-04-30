@@ -10,17 +10,16 @@
 #include <stdlib.h>
 
 /** Initialize module's internal state. */
-ModuleDestructor initializeBisonActionsModule();
+ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
 
 /**
  * Bison semantic actions.
  */
 
-Constant * IntegerConstantSemanticAction(const int value);
-Expression * ArithmeticExpressionSemanticAction(Expression * leftExpression, Expression * rightExpression, ExpressionType type);
-Expression * FactorExpressionSemanticAction(Factor * factor);
-Factor * ConstantFactorSemanticAction(Constant * constant);
-Factor * ExpressionFactorSemanticAction(Expression * expression);
-Program * ExpressionProgramSemanticAction(Expression * expression);
+Type * IntTypeSemanticAction();
+VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type);
+VariableDeclarationList * SingletonDeclarationListSemanticAction(VariableDeclaration * declaration);
+VariableDeclarationList * AppendDeclarationListSemanticAction(VariableDeclarationList * declarationList, VariableDeclaration * declaration);
+Program * ProgramSemanticAction(VariableDeclarationList * declarations);
 
 #endif
