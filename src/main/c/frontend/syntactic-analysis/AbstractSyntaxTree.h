@@ -26,7 +26,13 @@ typedef struct Program Program;
  */
 
 enum TypeKind {
-	TYPE_INT_KIND
+	TYPE_INT_KIND,
+	TYPE_CHAR_KIND,
+	TYPE_FLOAT_KIND,
+	TYPE_DOUBLE_KIND,
+	TYPE_VOID_KIND,
+	TYPE_UINT_KIND,
+	TYPE_ULI_KIND
 };
 
 struct Type {

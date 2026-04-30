@@ -16,7 +16,7 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
  * Bison semantic actions.
  */
 
-Type * IntTypeSemanticAction();
+Type * TypeSemanticAction(TypeKind kind);
 VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type);
 VariableDeclarationList * SingletonDeclarationListSemanticAction(VariableDeclaration * declaration);
 VariableDeclarationList * AppendDeclarationListSemanticAction(VariableDeclarationList * declarationList, VariableDeclaration * declaration);

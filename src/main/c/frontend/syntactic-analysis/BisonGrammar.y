@@ -56,6 +56,12 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> COLON
 %token <token> SEMICOLON
 %token <token> TYPE_INT
+%token <token> TYPE_CHAR
+%token <token> TYPE_FLOAT
+%token <token> TYPE_DOUBLE
+%token <token> TYPE_VOID
+%token <token> TYPE_UINT
+%token <token> TYPE_ULI
 
 %token <token> IGNORED
 %token <token> UNKNOWN
@@ -84,7 +90,13 @@ declaration:
 	;
 
 type:
-	 TYPE_INT												{ $$ = IntTypeSemanticAction(); }
+	 TYPE_INT												{ $$ = TypeSemanticAction(TYPE_INT_KIND); }
+	| TYPE_CHAR												{ $$ = TypeSemanticAction(TYPE_CHAR_KIND); }
+	| TYPE_FLOAT											{ $$ = TypeSemanticAction(TYPE_FLOAT_KIND); }
+	| TYPE_DOUBLE											{ $$ = TypeSemanticAction(TYPE_DOUBLE_KIND); }
+	| TYPE_VOID												{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
+	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
+	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
 	;
 
 %%
