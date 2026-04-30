@@ -36,50 +36,42 @@ static void _logSyntacticAnalyzerAction(const char * functionName) {
 
 /* PUBLIC FUNCTIONS */
 
-Constant * IntegerConstantSemanticAction(const int value) {
+Type * IntTypeSemanticAction() {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	Constant * constant = calloc(1, sizeof(Constant));
-	constant->value = value;
-	return constant;
+	Type * type = calloc(1, sizeof(Type));
+	type->kind = TYPE_INT_KIND;
+	return type;
 }
 
-Expression * ArithmeticExpressionSemanticAction(Expression * leftExpression, Expression * rightExpression, ExpressionType type) {
+VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	Expression * expression = calloc(1, sizeof(Expression));
-	expression->leftExpression = leftExpression;
-	expression->rightExpression = rightExpression;
-	expression->type = type;
-	return expression;
+	VariableDeclaration * declaration = calloc(1, sizeof(VariableDeclaration));
+	declaration->name = name;
+	declaration->type = type;
+	return declaration;
 }
 
-Expression * FactorExpressionSemanticAction(Factor * factor) {
+VariableDeclarationList * SingletonDeclarationListSemanticAction(VariableDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	Expression * expression = calloc(1, sizeof(Expression));
-	expression->factor = factor;
-	expression->type = FACTOR;
-	return expression;
+	VariableDeclarationList * declarationList = calloc(1, sizeof(VariableDeclarationList));
+	declarationList->declaration = declaration;
+	return declarationList;
 }
 
-Factor * ConstantFactorSemanticAction(Constant * constant) {
+VariableDeclarationList * AppendDeclarationListSemanticAction(VariableDeclarationList * declarationList, VariableDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	Factor * factor = calloc(1, sizeof(Factor));
-	factor->constant = constant;
-	factor->type = CONSTANT;
-	return factor;
+	VariableDeclarationList * tail = declarationList;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = SingletonDeclarationListSemanticAction(declaration);
+	return declarationList;
 }
 
-Factor * ExpressionFactorSemanticAction(Expression * expression) {
-	_logSyntacticAnalyzerAction(__FUNCTION__);
-	Factor * factor = calloc(1, sizeof(Factor));
-	factor->expression = expression;
-	factor->type = EXPRESSION;
-	return factor;
-}
-
-Program * ExpressionProgramSemanticAction(Expression * expression) {
+Program * ProgramSemanticAction(VariableDeclarationList * declarations) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Program * program = calloc(1, sizeof(Program));
-	program->expression = expression;
+	program->declarations = declarations;
 	_compilerState->abstractSyntaxtTree = program;
 	return program;
 }

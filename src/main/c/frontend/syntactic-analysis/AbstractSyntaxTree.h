@@ -14,65 +14,46 @@ ModuleDestructor initializeAbstractSyntaxTreeModule();
  * person, but without the madness).
  */
 
-typedef enum ExpressionType ExpressionType;
-typedef enum FactorType FactorType;
+typedef enum TypeKind TypeKind;
 
-typedef struct Constant Constant;
-typedef struct Expression Expression;
-typedef struct Factor Factor;
+typedef struct Type Type;
+typedef struct VariableDeclaration VariableDeclaration;
+typedef struct VariableDeclarationList VariableDeclarationList;
 typedef struct Program Program;
 
 /**
  * Node types for the Abstract Syntax Tree (AST).
  */
 
-enum ExpressionType {
-	ADDITION,
-	DIVISION,
-	FACTOR,
-	MULTIPLICATION,
-	SUBTRACTION
+enum TypeKind {
+	TYPE_INT_KIND
 };
 
-enum FactorType {
-	CONSTANT,
-	EXPRESSION
+struct Type {
+	TypeKind kind;
 };
 
-struct Constant {
-	int value;
+struct VariableDeclaration {
+	char * name;
+	Type * type;
 };
 
-struct Factor {
-	union {
-		Constant * constant;
-		Expression * expression;
-	};
-	FactorType type;
-};
-
-struct Expression {
-	union {
-		Factor * factor;
-		struct {
-			Expression * leftExpression;
-			Expression * rightExpression;
-		};
-	};
-	ExpressionType type;
+struct VariableDeclarationList {
+	VariableDeclaration * declaration;
+	VariableDeclarationList * next;
 };
 
 struct Program {
-	Expression * expression;
+	VariableDeclarationList * declarations;
 };
 
 /**
  * Node recursive super-duper-trambolik-destructors.
  */
 
-void destroyConstant(Constant * constant);
-void destroyExpression(Expression * expression);
-void destroyFactor(Factor * factor);
+void destroyType(Type * type);
+void destroyVariableDeclaration(VariableDeclaration * variableDeclaration);
+void destroyVariableDeclarationList(VariableDeclarationList * variableDeclarationList);
 void destroyProgram(Program * program);
 
 #endif

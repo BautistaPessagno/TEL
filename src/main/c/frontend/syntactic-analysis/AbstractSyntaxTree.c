@@ -20,51 +20,42 @@ ModuleDestructor initializeAbstractSyntaxTreeModule() {
 
 /* PUBLIC FUNCTIONS */
 
-void destroyConstant(Constant * constant) {
+void destroyType(Type * type) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
-	if (constant != NULL) {
-		free(constant);
+	if (type != NULL) {
+		free(type);
 	}
 }
 
-void destroyExpression(Expression * expression) {
+void destroyVariableDeclaration(VariableDeclaration * variableDeclaration) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
-	if (expression != NULL) {
-		switch (expression->type) {
-			case ADDITION:
-			case DIVISION:
-			case MULTIPLICATION:
-			case SUBTRACTION:
-				destroyExpression(expression->leftExpression);
-				destroyExpression(expression->rightExpression);
-				break;
-			case FACTOR:
-				destroyFactor(expression->factor);
-				break;
+	if (variableDeclaration != NULL) {
+		if (variableDeclaration->name != NULL) {
+			free(variableDeclaration->name);
+			variableDeclaration->name = NULL;
 		}
-		free(expression);
+		destroyType(variableDeclaration->type);
+		variableDeclaration->type = NULL;
+		free(variableDeclaration);
 	}
 }
 
-void destroyFactor(Factor * factor) {
+void destroyVariableDeclarationList(VariableDeclarationList * variableDeclarationList) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
-	if (factor != NULL) {
-		switch (factor->type) {
-			case CONSTANT:
-				destroyConstant(factor->constant);
-				break;
-			case EXPRESSION:
-				destroyExpression(factor->expression);
-				break;
-		}
-		free(factor);
+	if (variableDeclarationList != NULL) {
+		destroyVariableDeclaration(variableDeclarationList->declaration);
+		variableDeclarationList->declaration = NULL;
+		destroyVariableDeclarationList(variableDeclarationList->next);
+		variableDeclarationList->next = NULL;
+		free(variableDeclarationList);
 	}
 }
 
 void destroyProgram(Program * program) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (program != NULL) {
-		destroyExpression(program->expression);
+		destroyVariableDeclarationList(program->declarations);
+		program->declarations = NULL;
 		free(program);
 	}
 }
