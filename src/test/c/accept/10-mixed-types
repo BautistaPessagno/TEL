@@ -1,0 +1,7 @@
+a:int;
+b:char;
+c:float;
+d:double;
+e:v;
+f:uint;
+g:uli;

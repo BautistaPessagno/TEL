@@ -36,10 +36,10 @@ static void _logSyntacticAnalyzerAction(const char * functionName) {
 
 /* PUBLIC FUNCTIONS */
 
-Type * IntTypeSemanticAction() {
+Type * TypeSemanticAction(TypeKind kind) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Type * type = calloc(1, sizeof(Type));
-	type->kind = TYPE_INT_KIND;
+	type->kind = kind;
 	return type;
 }
 
