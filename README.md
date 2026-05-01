@@ -6,11 +6,18 @@
 
 A base compiler example, developed with Flex and Bison.
 
-* [Requirements](#requirements)
-* [Configuration](#configuration)
-* [Commands](#commands)
-* [CI/CD](#cicd)
-* [Recommended Extensions](#recommended-extensions)
+- [Flex-Bison-Compiler](#flex-bison-compiler)
+  - [Requirements](#requirements)
+  - [Configuration](#configuration)
+  - [Commands](#commands)
+    - [Start](#start)
+    - [Build](#build)
+    - [Run](#run)
+    - [Test](#test)
+    - [Stop](#stop)
+    - [Docker](#docker)
+  - [CI/CD](#cicd)
+  - [Recommended Extensions](#recommended-extensions)
 
 ## Requirements
 

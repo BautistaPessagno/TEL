@@ -34,7 +34,14 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 	Type * type;
 	VariableDeclaration * declaration;
-	VariableDeclarationList * declarationList;
+	Parameter * parameter;
+	ParameterList * parameterList;
+	FunctionDeclaration * functionDeclaration;
+	FunctionCall * functionCall;
+	Expression * expression;
+	ExpressionList * expressionList;
+	TopLevelItem * topLevelItem;
+	TopLevelItemList * topLevelItemList;
 	Program * program;
 }
 
@@ -49,12 +56,26 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { free($$); } <string>
 %destructor { destroyType($$); } <type>
 %destructor { destroyVariableDeclaration($$); } <declaration>
-%destructor { destroyVariableDeclarationList($$); } <declarationList>
+%destructor { destroyParameter($$); } <parameter>
+%destructor { destroyParameterList($$); } <parameterList>
+%destructor { destroyFunctionDeclaration($$); } <functionDeclaration>
+%destructor { destroyFunctionCall($$); } <functionCall>
+%destructor { destroyExpression($$); } <expression>
+%destructor { destroyExpressionList($$); } <expressionList>
+%destructor { destroyTopLevelItem($$); } <topLevelItem>
+%destructor { destroyTopLevelItemList($$); } <topLevelItemList>
 
 /** Terminals. */
 %token <string> IDENTIFIER
+%token <string> INTEGER_LITERAL
+%token <string> STRING_LITERAL
 %token <token> COLON
 %token <token> SEMICOLON
+%token <token> OPEN_PARENTHESIS
+%token <token> CLOSE_PARENTHESIS
+%token <token> ARROW
+%token <token> FUNCTION
+%token <token> MAIN
 %token <token> TYPE_INT
 %token <token> TYPE_CHAR
 %token <token> TYPE_FLOAT
@@ -68,8 +89,18 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 /** Non-terminals. */
 %type <type> type
+%type <type> optionalReturnType
 %type <declaration> declaration
-%type <declarationList> declarationList
+%type <parameter> parameter
+%type <parameterList> parameterList
+%type <parameterList> optionalParameterList
+%type <functionDeclaration> functionDeclaration
+%type <functionCall> functionCall
+%type <expression> expression
+%type <expressionList> argumentList
+%type <expressionList> optionalArgumentList
+%type <topLevelItem> topLevelItem
+%type <topLevelItemList> topLevelItemList
 %type <program> program
 
 %%
@@ -77,16 +108,66 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 // IMPORTANT: To use λ in the following grammar, use the %empty symbol.
 
 program:
-	 declarationList										{ $$ = ProgramSemanticAction($1); }
+	 topLevelItemList										{ $$ = ProgramSemanticAction($1); }
 	;
 
-declarationList:
-	 declaration											{ $$ = SingletonDeclarationListSemanticAction($1); }
-	| declarationList declaration							{ $$ = AppendDeclarationListSemanticAction($1, $2); }
+topLevelItemList:
+	 topLevelItem											{ $$ = SingletonTopLevelItemListSemanticAction($1); }
+	| topLevelItemList topLevelItem							{ $$ = AppendTopLevelItemListSemanticAction($1, $2); }
+	;
+
+topLevelItem:
+	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
+	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
+	| functionCall SEMICOLON								{ $$ = FunctionCallTopLevelItemSemanticAction($1); }
 	;
 
 declaration:
 	 IDENTIFIER COLON type SEMICOLON						{ $$ = VariableDeclarationSemanticAction($1, $3); }
+	;
+
+functionDeclaration:
+	 FUNCTION IDENTIFIER optionalParameterList optionalReturnType SEMICOLON	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4); }
+	;
+
+optionalParameterList:
+	 %empty													{ $$ = NULL; }
+	| parameterList											{ $$ = $1; }
+	;
+
+parameterList:
+	 parameter												{ $$ = SingletonParameterListSemanticAction($1); }
+	| parameterList parameter								{ $$ = AppendParameterListSemanticAction($1, $2); }
+	;
+
+parameter:
+	 IDENTIFIER COLON type									{ $$ = ParameterSemanticAction($1, $3); }
+	;
+
+optionalReturnType:
+	 %empty													{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
+	| ARROW type											{ $$ = $2; }
+	;
+
+functionCall:
+	 IDENTIFIER OPEN_PARENTHESIS optionalArgumentList CLOSE_PARENTHESIS	{ $$ = FunctionCallSemanticAction($1, $3); }
+	;
+
+optionalArgumentList:
+	 %empty													{ $$ = NULL; }
+	| argumentList											{ $$ = $1; }
+	;
+
+argumentList:
+	 expression												{ $$ = SingletonExpressionListSemanticAction($1); }
+	| argumentList expression								{ $$ = AppendExpressionListSemanticAction($1, $2); }
+	;
+
+expression:
+	 IDENTIFIER												{ $$ = IdentifierExpressionSemanticAction($1); }
+	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
+	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
+	| functionCall											{ $$ = FunctionCallExpressionSemanticAction($1); }
 	;
 
 type:

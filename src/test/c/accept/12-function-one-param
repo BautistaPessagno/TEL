@@ -1,0 +1,1 @@
+fn log message:char -> v;

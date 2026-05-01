@@ -1,0 +1,5 @@
+x:int;
+fn add a:int b:int -> int;
+fn ping;
+add(x 2);
+ping();
