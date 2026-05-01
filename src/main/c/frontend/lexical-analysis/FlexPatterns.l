@@ -50,7 +50,7 @@ string				\"([^\\\n\"]|\\.)*\"
 "char"								{ return KeywordLexemeAction(TYPE_CHAR); }
 "float"							    { return KeywordLexemeAction(TYPE_FLOAT); }
 "double"							{ return KeywordLexemeAction(TYPE_DOUBLE); }
-"v"									{ return KeywordLexemeAction(TYPE_VOID); }
+"void"								{ return KeywordLexemeAction(TYPE_VOID); }
 "uint"								{ return KeywordLexemeAction(TYPE_UINT); }
 "uli"								{ return KeywordLexemeAction(TYPE_ULI); }
 {integer}							{ return StringLexemeAction(INTEGER_LITERAL); }

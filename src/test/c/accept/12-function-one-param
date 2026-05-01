@@ -1,1 +1,1 @@
-fn log message:char -> v;
+fn log message:char -> void;

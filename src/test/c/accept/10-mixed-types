@@ -2,6 +2,6 @@ a:int;
 b:char;
 c:float;
 d:double;
-e:v;
+e:void;
 f:uint;
 g:uli;
