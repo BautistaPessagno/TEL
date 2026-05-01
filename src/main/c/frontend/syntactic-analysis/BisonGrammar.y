@@ -120,6 +120,7 @@ topLevelItem:
 	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
 	| functionCall SEMICOLON								{ $$ = FunctionCallTopLevelItemSemanticAction($1); }
+	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
 	;
 
 declaration:

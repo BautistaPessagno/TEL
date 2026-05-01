@@ -1,7 +1,0 @@
-a:int;
-b:char;
-c:float;
-d:double;
-e:void;
-f:uint;
-g:uli;

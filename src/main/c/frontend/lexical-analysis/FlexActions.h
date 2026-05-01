@@ -19,6 +19,7 @@ CompilationStatus IdentifierLexemeAction();
 CompilationStatus StringLexemeAction(TokenLabel label);
 CompilationStatus KeywordLexemeAction(TokenLabel label);
 CompilationStatus PunctuationLexemeAction(TokenLabel label);
+CompilationStatus TerminatorLexemeAction();
 CompilationStatus EOFLexemeAction();
 CompilationStatus IgnoredLexemeAction();
 CompilationStatus UnknownLexemeAction();

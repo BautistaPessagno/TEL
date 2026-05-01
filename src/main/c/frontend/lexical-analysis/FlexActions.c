@@ -81,10 +81,22 @@ CompilationStatus PunctuationLexemeAction(TokenLabel label) {
 	return status;
 }
 
-CompilationStatus EOFLexemeAction() {
-	Token * token = createToken(_lexicalAnalyzer, 0);
+CompilationStatus TerminatorLexemeAction() {
+	Token * token = createToken(_lexicalAnalyzer, SEMICOLON);
 	_logTokenAction(__FUNCTION__, token);
 	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
+	destroyToken(token);
+	return status;
+}
+
+CompilationStatus EOFLexemeAction() {
+	CompilationStatus status = TerminatorLexemeAction();
+	if (status != IN_PROGRESS) {
+		return status;
+	}
+	Token * token = createToken(_lexicalAnalyzer, 0);
+	_logTokenAction(__FUNCTION__, token);
+	status = pushToken(_lexicalAnalyzer, token);
 	destroyToken(token);
 	return status;
 }

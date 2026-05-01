@@ -166,6 +166,13 @@ TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCal
 	return item;
 }
 
+TopLevelItem * EmptyStatementTopLevelItemSemanticAction() {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
+	item->kind = TOP_LEVEL_EMPTY_STATEMENT;
+	return item;
+}
+
 TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	TopLevelItemList * itemList = calloc(1, sizeof(TopLevelItemList));

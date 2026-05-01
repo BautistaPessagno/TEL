@@ -1,0 +1,7 @@
+first:int;;;
+
+second:float
+
+fn ping;;
+
+ping()

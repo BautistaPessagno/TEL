@@ -32,6 +32,7 @@ ExpressionList * AppendExpressionListSemanticAction(ExpressionList * expressionL
 TopLevelItem * VariableDeclarationTopLevelItemSemanticAction(VariableDeclaration * declaration);
 TopLevelItem * FunctionDeclarationTopLevelItemSemanticAction(FunctionDeclaration * declaration);
 TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCall);
+TopLevelItem * EmptyStatementTopLevelItemSemanticAction();
 TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item);
 TopLevelItemList * AppendTopLevelItemListSemanticAction(TopLevelItemList * itemList, TopLevelItem * item);
 Program * ProgramSemanticAction(TopLevelItemList * items);

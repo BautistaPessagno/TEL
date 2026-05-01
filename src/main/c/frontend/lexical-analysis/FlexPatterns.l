@@ -20,6 +20,7 @@ extern CompilationStatus IgnoredLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
 extern CompilationStatus PunctuationLexemeAction(TokenLabel label);
 extern CompilationStatus StringLexemeAction(TokenLabel label);
+extern CompilationStatus TerminatorLexemeAction();
 extern CompilationStatus UnknownLexemeAction();
 
 %}
@@ -30,9 +31,11 @@ extern CompilationStatus UnknownLexemeAction();
  * @see https://westes.github.io/flex/manual/Matching.html
  * @see https://westes.github.io/flex/manual/Patterns.html
  */
-whitespace			[ \t\r\n]+
+/* whitespace			[ \t\r\n]+ */
 integer				[0-9]+
 string				\"([^\\\n\"]|\\.)*\"
+whitespace			[ \t\r]+
+terminator			[;\n]+
 
 %%
 
@@ -58,7 +61,7 @@ string				\"([^\\\n\"]|\\.)*\"
 [_A-Za-z][_A-Za-z0-9]*				{ return IdentifierLexemeAction(); }
 "->"								{ return PunctuationLexemeAction(ARROW); }
 ":"									{ return PunctuationLexemeAction(COLON); }
-";"									{ return PunctuationLexemeAction(SEMICOLON); }
+{terminator}						{ return TerminatorLexemeAction(); }
 "("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }
 ")"									{ return PunctuationLexemeAction(CLOSE_PARENTHESIS); }
 
