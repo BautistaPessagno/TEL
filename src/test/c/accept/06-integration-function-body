@@ -1,0 +1,4 @@
+fn setup
+    value:int
+    log("ready")
+setup()

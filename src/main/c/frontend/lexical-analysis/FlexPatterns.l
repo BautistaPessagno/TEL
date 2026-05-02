@@ -17,9 +17,15 @@
 extern CompilationStatus EOFLexemeAction();
 extern CompilationStatus IdentifierLexemeAction();
 extern CompilationStatus IgnoredLexemeAction();
+extern CompilationStatus IndentationLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
+extern CompilationStatus LineBreakLexemeAction();
 extern CompilationStatus PunctuationLexemeAction(TokenLabel label);
+extern CompilationStatus StringLexemeAction(TokenLabel label);
+extern CompilationStatus TerminatorLexemeAction();
 extern CompilationStatus UnknownLexemeAction();
+
+#define YY_USER_INIT BEGIN(BOL)
 
 %}
 
@@ -29,7 +35,15 @@ extern CompilationStatus UnknownLexemeAction();
  * @see https://westes.github.io/flex/manual/Matching.html
  * @see https://westes.github.io/flex/manual/Patterns.html
  */
-whitespace			[ \t\r\n]+
+/* whitespace			[ \t\r\n]+ */
+integer				[0-9]+
+string				\"([^\\\n\"]|\\.)*\"
+whitespace			[ \t\r]+
+terminator			[;]+
+linebreak			\n
+identifier          [_A-Za-z][_A-Za-z0-9]*
+
+%x BOL
 
 %%
 
@@ -41,16 +55,28 @@ whitespace			[ \t\r\n]+
 
 %}
 
+<BOL>[ \t]*{linebreak}				{ return LineBreakLexemeAction(); }
+<BOL>[ \t]*[^ \t\n]					{ CompilationStatus status = IndentationLexemeAction(); yyless(0); BEGIN(INITIAL); return status; }
+<BOL><<EOF>>						{ return EOFLexemeAction(); }
+
+"fn"								{ return KeywordLexemeAction(FUNCTION); }
+"main"								{ return KeywordLexemeAction(MAIN); }
 "int"								{ return KeywordLexemeAction(TYPE_INT); }
 "char"								{ return KeywordLexemeAction(TYPE_CHAR); }
-"float"							{ return KeywordLexemeAction(TYPE_FLOAT); }
+"float"							    { return KeywordLexemeAction(TYPE_FLOAT); }
 "double"							{ return KeywordLexemeAction(TYPE_DOUBLE); }
-"v"									{ return KeywordLexemeAction(TYPE_VOID); }
+"void"								{ return KeywordLexemeAction(TYPE_VOID); }
 "uint"								{ return KeywordLexemeAction(TYPE_UINT); }
 "uli"								{ return KeywordLexemeAction(TYPE_ULI); }
-[_A-Za-z][_A-Za-z0-9]*				{ return IdentifierLexemeAction(); }
+{integer}							{ return StringLexemeAction(INTEGER_LITERAL); }
+{string}							{ return StringLexemeAction(STRING_LITERAL); }
+{identifier}				        { return IdentifierLexemeAction(); }
+"->"								{ return PunctuationLexemeAction(ARROW); }
 ":"									{ return PunctuationLexemeAction(COLON); }
-";"									{ return PunctuationLexemeAction(SEMICOLON); }
+{terminator}						{ return TerminatorLexemeAction(); }
+{linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
+"("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }
+")"									{ return PunctuationLexemeAction(CLOSE_PARENTHESIS); }
 
 {whitespace}						{ return IgnoredLexemeAction(); }
 .									{ return UnknownLexemeAction(); }

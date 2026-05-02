@@ -1,0 +1,6 @@
+value:int;
+message:char
+fn add left:int right:int -> int;
+fn log text:char -> void
+add(value 2);
+log("done")

@@ -1,0 +1,3 @@
+fn ping;
+fn log message:char -> void
+fn add left:int right:int -> int;

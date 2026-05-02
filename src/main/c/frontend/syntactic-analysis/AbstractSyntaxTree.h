@@ -15,10 +15,19 @@ ModuleDestructor initializeAbstractSyntaxTreeModule();
  */
 
 typedef enum TypeKind TypeKind;
+typedef enum TopLevelItemKind TopLevelItemKind;
+typedef enum ExpressionKind ExpressionKind;
 
 typedef struct Type Type;
 typedef struct VariableDeclaration VariableDeclaration;
-typedef struct VariableDeclarationList VariableDeclarationList;
+typedef struct Parameter Parameter;
+typedef struct ParameterList ParameterList;
+typedef struct FunctionDeclaration FunctionDeclaration;
+typedef struct FunctionCall FunctionCall;
+typedef struct Expression Expression;
+typedef struct ExpressionList ExpressionList;
+typedef struct TopLevelItem TopLevelItem;
+typedef struct TopLevelItemList TopLevelItemList;
 typedef struct Program Program;
 
 /**
@@ -35,6 +44,20 @@ enum TypeKind {
 	TYPE_ULI_KIND
 };
 
+enum TopLevelItemKind {
+	TOP_LEVEL_VARIABLE_DECLARATION,
+	TOP_LEVEL_FUNCTION_DECLARATION,
+	TOP_LEVEL_FUNCTION_CALL,
+	TOP_LEVEL_EMPTY_STATEMENT
+};
+
+enum ExpressionKind {
+	EXPRESSION_IDENTIFIER,
+	EXPRESSION_INTEGER_LITERAL,
+	EXPRESSION_STRING_LITERAL,
+	EXPRESSION_FUNCTION_CALL
+};
+
 struct Type {
 	TypeKind kind;
 };
@@ -44,13 +67,53 @@ struct VariableDeclaration {
 	Type * type;
 };
 
-struct VariableDeclarationList {
-	VariableDeclaration * declaration;
-	VariableDeclarationList * next;
+struct Parameter {
+	char * name;
+	Type * type;
+};
+
+struct ParameterList {
+	Parameter * parameter;
+	ParameterList * next;
+};
+
+struct FunctionDeclaration {
+	char * name;
+	ParameterList * parameters;
+	Type * returnType;
+	TopLevelItemList * body;
+};
+
+struct FunctionCall {
+	char * name;
+	ExpressionList * arguments;
+};
+
+struct Expression {
+	ExpressionKind kind;
+	char * value;
+	FunctionCall * functionCall;
+};
+
+struct ExpressionList {
+	Expression * expression;
+	ExpressionList * next;
+};
+
+struct TopLevelItem {
+	TopLevelItemKind kind;
+	VariableDeclaration * variableDeclaration;
+	FunctionDeclaration * functionDeclaration;
+	FunctionCall * functionCall;
+};
+
+struct TopLevelItemList {
+	TopLevelItem * item;
+	TopLevelItemList * next;
 };
 
 struct Program {
-	VariableDeclarationList * declarations;
+	TopLevelItemList * items;
 };
 
 /**
@@ -59,7 +122,14 @@ struct Program {
 
 void destroyType(Type * type);
 void destroyVariableDeclaration(VariableDeclaration * variableDeclaration);
-void destroyVariableDeclarationList(VariableDeclarationList * variableDeclarationList);
+void destroyParameter(Parameter * parameter);
+void destroyParameterList(ParameterList * parameterList);
+void destroyFunctionDeclaration(FunctionDeclaration * functionDeclaration);
+void destroyFunctionCall(FunctionCall * functionCall);
+void destroyExpression(Expression * expression);
+void destroyExpressionList(ExpressionList * expressionList);
+void destroyTopLevelItem(TopLevelItem * topLevelItem);
+void destroyTopLevelItemList(TopLevelItemList * topLevelItemList);
 void destroyProgram(Program * program);
 
 #endif

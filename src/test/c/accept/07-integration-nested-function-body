@@ -1,0 +1,6 @@
+fn outer
+    fn inner
+        value:int
+        ping()
+    inner(); ping()
+outer()

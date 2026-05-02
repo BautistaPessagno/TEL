@@ -1,0 +1,3 @@
+value:int;
+fn add left:int right:int -> int;
+add(value, 2)
