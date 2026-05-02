@@ -43,11 +43,12 @@ Type * TypeSemanticAction(TypeKind kind) {
 	return type;
 }
 
-VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type) {
+VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	VariableDeclaration * declaration = calloc(1, sizeof(VariableDeclaration));
 	declaration->name = name;
 	declaration->type = type;
+	declaration->initializer = initializer;
 	return declaration;
 }
 
@@ -126,6 +127,25 @@ Expression * FunctionCallExpressionSemanticAction(FunctionCall * functionCall) {
 	return expression;
 }
 
+Expression * BinaryExpressionSemanticAction(Expression * left, ExpressionOperator operator, Expression * right) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_BINARY_OPERATION;
+	expression->operator = operator;
+	expression->left = left;
+	expression->right = right;
+	return expression;
+}
+
+Expression * UnaryExpressionSemanticAction(ExpressionOperator operator, Expression * operand) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_UNARY_OPERATION;
+	expression->operator = operator;
+	expression->left = operand;
+	return expression;
+}
+
 ExpressionList * SingletonExpressionListSemanticAction(Expression * expression) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	ExpressionList * expressionList = calloc(1, sizeof(ExpressionList));
@@ -164,6 +184,22 @@ TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCal
 	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
 	item->kind = TOP_LEVEL_FUNCTION_CALL;
 	item->functionCall = functionCall;
+	return item;
+}
+
+TopLevelItem * ReturnStatementTopLevelItemSemanticAction(Expression * expression) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
+	item->kind = TOP_LEVEL_RETURN_STATEMENT;
+	item->expression = expression;
+	return item;
+}
+
+TopLevelItem * ExpressionStatementTopLevelItemSemanticAction(Expression * expression) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
+	item->kind = TOP_LEVEL_EXPRESSION_STATEMENT;
+	item->expression = expression;
 	return item;
 }
 

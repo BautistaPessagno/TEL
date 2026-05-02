@@ -1,0 +1,6 @@
+x:int = 5
+y:int = x + 3 * (2 - 1)
+message:char = "hi"
+z:int = add(x 2)
+calc:int = add(x + 1 2 * 3)
+nested:int = outer(inner(1))

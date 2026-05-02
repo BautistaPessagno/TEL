@@ -60,6 +60,7 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 <BOL><<EOF>>						{ return EOFLexemeAction(); }
 
 "fn"								{ return KeywordLexemeAction(FUNCTION); }
+"ret"								{ return KeywordLexemeAction(RETURN); }
 "main"								{ return KeywordLexemeAction(MAIN); }
 "int"								{ return KeywordLexemeAction(TYPE_INT); }
 "char"								{ return KeywordLexemeAction(TYPE_CHAR); }
@@ -72,6 +73,39 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 {string}							{ return StringLexemeAction(STRING_LITERAL); }
 {identifier}				        { return IdentifierLexemeAction(); }
 "->"								{ return PunctuationLexemeAction(ARROW); }
+">>="								{ return PunctuationLexemeAction(SHIFT_RIGHT_ASSIGN); }
+"<<="								{ return PunctuationLexemeAction(SHIFT_LEFT_ASSIGN); }
+"+="								{ return PunctuationLexemeAction(ADD_ASSIGN); }
+"-="								{ return PunctuationLexemeAction(SUBTRACT_ASSIGN); }
+"*="								{ return PunctuationLexemeAction(MULTIPLY_ASSIGN); }
+"/="								{ return PunctuationLexemeAction(DIVIDE_ASSIGN); }
+"%="								{ return PunctuationLexemeAction(MODULO_ASSIGN); }
+"&="								{ return PunctuationLexemeAction(BITWISE_AND_ASSIGN); }
+"|="								{ return PunctuationLexemeAction(BITWISE_OR_ASSIGN); }
+"^="								{ return PunctuationLexemeAction(BITWISE_XOR_ASSIGN); }
+"++"								{ return PunctuationLexemeAction(INCREMENT); }
+"--"								{ return PunctuationLexemeAction(DECREMENT); }
+"=="								{ return PunctuationLexemeAction(EQUAL); }
+"!="								{ return PunctuationLexemeAction(NOT_EQUAL); }
+"<="								{ return PunctuationLexemeAction(LESS_EQUAL); }
+">="								{ return PunctuationLexemeAction(GREATER_EQUAL); }
+"&&"								{ return PunctuationLexemeAction(LOGICAL_AND); }
+"||"								{ return PunctuationLexemeAction(LOGICAL_OR); }
+"<<"								{ return PunctuationLexemeAction(SHIFT_LEFT); }
+">>"								{ return PunctuationLexemeAction(SHIFT_RIGHT); }
+"="									{ return PunctuationLexemeAction(ASSIGN); }
+"+"									{ return PunctuationLexemeAction(ADD); }
+"-"									{ return PunctuationLexemeAction(SUBTRACT); }
+"*"									{ return PunctuationLexemeAction(MULTIPLY); }
+"/"									{ return PunctuationLexemeAction(DIVIDE); }
+"%"									{ return PunctuationLexemeAction(MODULO); }
+"!"									{ return PunctuationLexemeAction(LOGICAL_NOT); }
+"~"									{ return PunctuationLexemeAction(BITWISE_NOT); }
+"&"									{ return PunctuationLexemeAction(BITWISE_AND); }
+"|"									{ return PunctuationLexemeAction(BITWISE_OR); }
+"^"									{ return PunctuationLexemeAction(BITWISE_XOR); }
+"<"									{ return PunctuationLexemeAction(LESS_THAN); }
+">"									{ return PunctuationLexemeAction(GREATER_THAN); }
 ":"									{ return PunctuationLexemeAction(COLON); }
 {terminator}						{ return TerminatorLexemeAction(); }
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
