@@ -195,8 +195,37 @@ TopLevelItem * ReturnStatementTopLevelItemSemanticAction(Expression * expression
 	return item;
 }
 
+static int _isImplicitReturnExpression(const Expression * expression) {
+	if (expression == NULL) return 0;
+	switch (expression->kind) {
+		case EXPRESSION_IDENTIFIER:
+			return 1;
+		case EXPRESSION_BINARY_OPERATION:
+			switch (expression->operator) {
+				case EXPRESSION_OPERATOR_EQUAL:
+				case EXPRESSION_OPERATOR_NOT_EQUAL:
+				case EXPRESSION_OPERATOR_LESS_THAN:
+				case EXPRESSION_OPERATOR_GREATER_THAN:
+				case EXPRESSION_OPERATOR_LESS_EQUAL:
+				case EXPRESSION_OPERATOR_GREATER_EQUAL:
+				case EXPRESSION_OPERATOR_LOGICAL_OR:
+				case EXPRESSION_OPERATOR_LOGICAL_AND:
+					return 1;
+				default:
+					return 0;
+			}
+		case EXPRESSION_UNARY_OPERATION:
+			return expression->operator == EXPRESSION_OPERATOR_LOGICAL_NOT;
+		default:
+			return 0;
+	}
+}
+
 TopLevelItem * ExpressionStatementTopLevelItemSemanticAction(Expression * expression) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (_isImplicitReturnExpression(expression)) {
+		return ReturnStatementTopLevelItemSemanticAction(expression);
+	}
 	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
 	item->kind = TOP_LEVEL_EXPRESSION_STATEMENT;
 	item->expression = expression;
