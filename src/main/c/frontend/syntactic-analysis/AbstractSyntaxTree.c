@@ -75,6 +75,8 @@ void destroyFunctionDeclaration(FunctionDeclaration * functionDeclaration) {
 		functionDeclaration->parameters = NULL;
 		destroyType(functionDeclaration->returnType);
 		functionDeclaration->returnType = NULL;
+		destroyTopLevelItemList(functionDeclaration->body);
+		functionDeclaration->body = NULL;
 		free(functionDeclaration);
 	}
 }

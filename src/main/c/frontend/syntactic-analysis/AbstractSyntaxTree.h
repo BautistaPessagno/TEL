@@ -81,6 +81,7 @@ struct FunctionDeclaration {
 	char * name;
 	ParameterList * parameters;
 	Type * returnType;
+	TopLevelItemList * body;
 };
 
 struct FunctionCall {

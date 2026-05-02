@@ -71,6 +71,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> STRING_LITERAL
 %token <token> COLON
 %token <token> SEMICOLON
+%token <token> INDENT
+%token <token> DEDENT
 %token <token> OPEN_PARENTHESIS
 %token <token> CLOSE_PARENTHESIS
 %token <token> ARROW
@@ -94,6 +96,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
+%type <topLevelItemList> optionalFunctionBody
 %type <functionDeclaration> functionDeclaration
 %type <functionCall> functionCall
 %type <expression> expression
@@ -128,7 +131,12 @@ declaration:
 	;
 
 functionDeclaration:
-	 FUNCTION IDENTIFIER optionalParameterList optionalReturnType SEMICOLON	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4); }
+	 FUNCTION IDENTIFIER optionalParameterList optionalReturnType SEMICOLON optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
+	;
+
+optionalFunctionBody:
+	 %empty													{ $$ = NULL; }
+	| INDENT topLevelItemList DEDENT						{ $$ = $2; }
 	;
 
 optionalParameterList:

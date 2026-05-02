@@ -76,12 +76,13 @@ ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList,
 	return parameterList;
 }
 
-FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType) {
+FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType, TopLevelItemList * body) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	FunctionDeclaration * declaration = calloc(1, sizeof(FunctionDeclaration));
 	declaration->name = name;
 	declaration->parameters = parameters;
 	declaration->returnType = returnType;
+	declaration->body = body;
 	return declaration;
 }
 

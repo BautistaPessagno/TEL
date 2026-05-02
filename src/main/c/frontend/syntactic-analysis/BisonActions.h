@@ -21,7 +21,7 @@ VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type
 Parameter * ParameterSemanticAction(char * name, Type * type);
 ParameterList * SingletonParameterListSemanticAction(Parameter * parameter);
 ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList, Parameter * parameter);
-FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType);
+FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType, TopLevelItemList * body);
 FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * arguments);
 Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
