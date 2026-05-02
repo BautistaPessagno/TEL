@@ -1,0 +1,4 @@
+fn identity value:int -> int
+    ret value
+fn nothing
+    ret

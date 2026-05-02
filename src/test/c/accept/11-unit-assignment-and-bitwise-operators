@@ -1,0 +1,9 @@
+x = 5
+x++
+fn bits a:int b:int -> int
+    a &= b
+    a |= b
+    a ^= b
+    a <<= 1
+    a >>= 1
+    ret ~a & b | a ^ b

@@ -73,9 +73,9 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> SEMICOLON
 %token <token> INDENT
 %token <token> DEDENT
-%token <token> OPEN_PARENTHESIS
 %token <token> CLOSE_PARENTHESIS
 %token <token> ARROW
+%token <token> RETURN
 %token <token> FUNCTION
 %token <token> MAIN
 %token <token> TYPE_INT
@@ -85,9 +85,56 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_VOID
 %token <token> TYPE_UINT
 %token <token> TYPE_ULI
+%token <token> ASSIGN
+%token <token> ADD_ASSIGN
+%token <token> SUBTRACT_ASSIGN
+%token <token> MULTIPLY_ASSIGN
+%token <token> DIVIDE_ASSIGN
+%token <token> MODULO_ASSIGN
+%token <token> BITWISE_AND_ASSIGN
+%token <token> BITWISE_OR_ASSIGN
+%token <token> BITWISE_XOR_ASSIGN
+%token <token> SHIFT_LEFT_ASSIGN
+%token <token> SHIFT_RIGHT_ASSIGN
+%token <token> LOGICAL_OR
+%token <token> LOGICAL_AND
+%token <token> BITWISE_OR
+%token <token> BITWISE_XOR
+%token <token> BITWISE_AND
+%token <token> EQUAL
+%token <token> NOT_EQUAL
+%token <token> LESS_THAN
+%token <token> GREATER_THAN
+%token <token> LESS_EQUAL
+%token <token> GREATER_EQUAL
+%token <token> SHIFT_LEFT
+%token <token> SHIFT_RIGHT
+%token <token> ADD
+%token <token> SUBTRACT
+%token <token> MULTIPLY
+%token <token> DIVIDE
+%token <token> MODULO
+%token <token> LOGICAL_NOT
+%token <token> BITWISE_NOT
 
 %token <token> IGNORED
 %token <token> UNKNOWN
+
+%precedence ARGUMENT_BOUNDARY
+%nonassoc <token> OPEN_PARENTHESIS
+%right ASSIGN ADD_ASSIGN SUBTRACT_ASSIGN MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULO_ASSIGN BITWISE_AND_ASSIGN BITWISE_OR_ASSIGN BITWISE_XOR_ASSIGN SHIFT_LEFT_ASSIGN SHIFT_RIGHT_ASSIGN
+%left LOGICAL_OR
+%left LOGICAL_AND
+%left BITWISE_OR
+%left BITWISE_XOR
+%left BITWISE_AND
+%left EQUAL NOT_EQUAL
+%left LESS_THAN GREATER_THAN LESS_EQUAL GREATER_EQUAL
+%left SHIFT_LEFT SHIFT_RIGHT
+%left ADD SUBTRACT
+%left MULTIPLY DIVIDE MODULO
+%right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS PREFIX_INCREMENT PREFIX_DECREMENT
+%left <token> INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT
 
 /** Non-terminals. */
 %type <type> type
@@ -100,10 +147,16 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <functionDeclaration> functionDeclaration
 %type <functionCall> functionCall
 %type <expression> expression
+%type <expression> optionalInitializer
+%type <expression> optionalReturnExpression
 %type <expressionList> argumentList
 %type <expressionList> optionalArgumentList
 %type <topLevelItem> topLevelItem
+%type <topLevelItem> functionBodyItem
+%type <topLevelItem> returnStatement
+%type <topLevelItem> expressionStatement
 %type <topLevelItemList> topLevelItemList
+%type <topLevelItemList> functionBodyItemList
 %type <program> program
 
 %%
@@ -122,12 +175,17 @@ topLevelItemList:
 topLevelItem:
 	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
-	| functionCall SEMICOLON								{ $$ = FunctionCallTopLevelItemSemanticAction($1); }
+	| expressionStatement									{ $$ = $1; }
 	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
 	;
 
 declaration:
-	 IDENTIFIER COLON type SEMICOLON						{ $$ = VariableDeclarationSemanticAction($1, $3); }
+	 IDENTIFIER COLON type optionalInitializer SEMICOLON		{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
+	;
+
+optionalInitializer:
+	 %empty													{ $$ = NULL; }
+	| ASSIGN expression										{ $$ = $2; }
 	;
 
 functionDeclaration:
@@ -136,7 +194,33 @@ functionDeclaration:
 
 optionalFunctionBody:
 	 %empty													{ $$ = NULL; }
-	| INDENT topLevelItemList DEDENT						{ $$ = $2; }
+	| INDENT functionBodyItemList DEDENT					{ $$ = $2; }
+	;
+
+functionBodyItemList:
+	 functionBodyItem										{ $$ = SingletonTopLevelItemListSemanticAction($1); }
+	| functionBodyItemList functionBodyItem					{ $$ = AppendTopLevelItemListSemanticAction($1, $2); }
+	;
+
+functionBodyItem:
+	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
+	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
+	| returnStatement										{ $$ = $1; }
+	| expressionStatement									{ $$ = $1; }
+	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
+	;
+
+returnStatement:
+	 RETURN optionalReturnExpression SEMICOLON				{ $$ = ReturnStatementTopLevelItemSemanticAction($2); }
+	;
+
+optionalReturnExpression:
+	 %empty													{ $$ = NULL; }
+	| expression											{ $$ = $1; }
+	;
+
+expressionStatement:
+	 expression SEMICOLON									{ $$ = ExpressionStatementTopLevelItemSemanticAction($1); }
 	;
 
 optionalParameterList:
@@ -168,15 +252,53 @@ optionalArgumentList:
 	;
 
 argumentList:
-	 expression												{ $$ = SingletonExpressionListSemanticAction($1); }
-	| argumentList expression								{ $$ = AppendExpressionListSemanticAction($1, $2); }
+	 expression %prec ARGUMENT_BOUNDARY						{ $$ = SingletonExpressionListSemanticAction($1); }
+	| argumentList expression %prec ARGUMENT_BOUNDARY		{ $$ = AppendExpressionListSemanticAction($1, $2); }
 	;
 
 expression:
-	 IDENTIFIER												{ $$ = IdentifierExpressionSemanticAction($1); }
+	 IDENTIFIER %prec ARGUMENT_BOUNDARY						{ $$ = IdentifierExpressionSemanticAction($1); }
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
 	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
 	| functionCall											{ $$ = FunctionCallExpressionSemanticAction($1); }
+	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
+	| expression ASSIGN expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ASSIGN, $3); }
+	| expression ADD_ASSIGN expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ADD_ASSIGN, $3); }
+	| expression SUBTRACT_ASSIGN expression					{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_SUBTRACT_ASSIGN, $3); }
+	| expression MULTIPLY_ASSIGN expression					{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_MULTIPLY_ASSIGN, $3); }
+	| expression DIVIDE_ASSIGN expression					{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_DIVIDE_ASSIGN, $3); }
+	| expression MODULO_ASSIGN expression					{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_MODULO_ASSIGN, $3); }
+	| expression BITWISE_AND_ASSIGN expression				{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_BITWISE_AND_ASSIGN, $3); }
+	| expression BITWISE_OR_ASSIGN expression				{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_BITWISE_OR_ASSIGN, $3); }
+	| expression BITWISE_XOR_ASSIGN expression				{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_BITWISE_XOR_ASSIGN, $3); }
+	| expression SHIFT_LEFT_ASSIGN expression				{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_SHIFT_LEFT_ASSIGN, $3); }
+	| expression SHIFT_RIGHT_ASSIGN expression				{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_SHIFT_RIGHT_ASSIGN, $3); }
+	| expression LOGICAL_OR expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_LOGICAL_OR, $3); }
+	| expression LOGICAL_AND expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_LOGICAL_AND, $3); }
+	| expression BITWISE_OR expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_BITWISE_OR, $3); }
+	| expression BITWISE_XOR expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_BITWISE_XOR, $3); }
+	| expression BITWISE_AND expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_BITWISE_AND, $3); }
+	| expression EQUAL expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_EQUAL, $3); }
+	| expression NOT_EQUAL expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_NOT_EQUAL, $3); }
+	| expression LESS_THAN expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_LESS_THAN, $3); }
+	| expression GREATER_THAN expression					{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_GREATER_THAN, $3); }
+	| expression LESS_EQUAL expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_LESS_EQUAL, $3); }
+	| expression GREATER_EQUAL expression					{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_GREATER_EQUAL, $3); }
+	| expression SHIFT_LEFT expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_SHIFT_LEFT, $3); }
+	| expression SHIFT_RIGHT expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_SHIFT_RIGHT, $3); }
+	| expression ADD expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ADD, $3); }
+	| expression SUBTRACT expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_SUBTRACT, $3); }
+	| expression MULTIPLY expression						{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_MULTIPLY, $3); }
+	| expression DIVIDE expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_DIVIDE, $3); }
+	| expression MODULO expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_MODULO, $3); }
+	| ADD expression %prec UNARY_PLUS						{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_UNARY_PLUS, $2); }
+	| SUBTRACT expression %prec UNARY_MINUS					{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_UNARY_MINUS, $2); }
+	| LOGICAL_NOT expression								{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_LOGICAL_NOT, $2); }
+	| BITWISE_NOT expression								{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_BITWISE_NOT, $2); }
+	| INCREMENT expression %prec PREFIX_INCREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_PREFIX_INCREMENT, $2); }
+	| DECREMENT expression %prec PREFIX_DECREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_PREFIX_DECREMENT, $2); }
+	| expression INCREMENT %prec POSTFIX_INCREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, $1); }
+	| expression DECREMENT %prec POSTFIX_DECREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_DECREMENT, $1); }
 	;
 
 type:

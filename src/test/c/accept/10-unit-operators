@@ -1,0 +1,6 @@
+fn ops a:int b:int -> int
+    a = b + 3 * (2 - 1)
+    a += b % 2
+    a++
+    --b
+    ret a >= b && a != 0 || a << 1

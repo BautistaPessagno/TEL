@@ -17,7 +17,7 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
  */
 
 Type * TypeSemanticAction(TypeKind kind);
-VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type);
+VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer);
 Parameter * ParameterSemanticAction(char * name, Type * type);
 ParameterList * SingletonParameterListSemanticAction(Parameter * parameter);
 ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList, Parameter * parameter);
@@ -27,11 +27,15 @@ Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
 Expression * StringLiteralExpressionSemanticAction(char * value);
 Expression * FunctionCallExpressionSemanticAction(FunctionCall * functionCall);
+Expression * BinaryExpressionSemanticAction(Expression * left, ExpressionOperator operator, Expression * right);
+Expression * UnaryExpressionSemanticAction(ExpressionOperator operator, Expression * operand);
 ExpressionList * SingletonExpressionListSemanticAction(Expression * expression);
 ExpressionList * AppendExpressionListSemanticAction(ExpressionList * expressionList, Expression * expression);
 TopLevelItem * VariableDeclarationTopLevelItemSemanticAction(VariableDeclaration * declaration);
 TopLevelItem * FunctionDeclarationTopLevelItemSemanticAction(FunctionDeclaration * declaration);
 TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCall);
+TopLevelItem * ReturnStatementTopLevelItemSemanticAction(Expression * expression);
+TopLevelItem * ExpressionStatementTopLevelItemSemanticAction(Expression * expression);
 TopLevelItem * EmptyStatementTopLevelItemSemanticAction();
 TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item);
 TopLevelItemList * AppendTopLevelItemListSemanticAction(TopLevelItemList * itemList, TopLevelItem * item);

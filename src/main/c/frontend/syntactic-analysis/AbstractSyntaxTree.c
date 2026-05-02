@@ -36,6 +36,8 @@ void destroyVariableDeclaration(VariableDeclaration * variableDeclaration) {
 		}
 		destroyType(variableDeclaration->type);
 		variableDeclaration->type = NULL;
+		destroyExpression(variableDeclaration->initializer);
+		variableDeclaration->initializer = NULL;
 		free(variableDeclaration);
 	}
 }
@@ -103,6 +105,10 @@ void destroyExpression(Expression * expression) {
 		}
 		destroyFunctionCall(expression->functionCall);
 		expression->functionCall = NULL;
+		destroyExpression(expression->left);
+		expression->left = NULL;
+		destroyExpression(expression->right);
+		expression->right = NULL;
 		free(expression);
 	}
 }
@@ -127,6 +133,8 @@ void destroyTopLevelItem(TopLevelItem * topLevelItem) {
 		topLevelItem->functionDeclaration = NULL;
 		destroyFunctionCall(topLevelItem->functionCall);
 		topLevelItem->functionCall = NULL;
+		destroyExpression(topLevelItem->expression);
+		topLevelItem->expression = NULL;
 		free(topLevelItem);
 	}
 }
