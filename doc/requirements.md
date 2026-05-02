@@ -105,7 +105,7 @@ they stay the same, but using indentation instead of `{}`
 
 ## Pointers and arrays
 
-`arr: int[10]` ->  `int arr[10]`
+`arr:int[10]` ->  `int arr[10]`
 
 ## Variables and constants
 
