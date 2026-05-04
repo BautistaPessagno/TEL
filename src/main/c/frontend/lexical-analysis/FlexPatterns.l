@@ -61,6 +61,10 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 
 "fn"								{ return KeywordLexemeAction(FUNCTION); }
 "main"								{ return KeywordLexemeAction(MAIN); }
+"struct"							{ return KeywordLexemeAction(STRUCT); }
+"enum"								{ return KeywordLexemeAction(ENUM); }
+"union"								{ return KeywordLexemeAction(UNION); }
+"typedef"							{ return KeywordLexemeAction(TYPEDEF); }
 "int"								{ return KeywordLexemeAction(TYPE_INT); }
 "char"								{ return KeywordLexemeAction(TYPE_CHAR); }
 "float"							    { return KeywordLexemeAction(TYPE_FLOAT); }
@@ -68,10 +72,12 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 "void"								{ return KeywordLexemeAction(TYPE_VOID); }
 "uint"								{ return KeywordLexemeAction(TYPE_UINT); }
 "uli"								{ return KeywordLexemeAction(TYPE_ULI); }
+"long"								{ return KeywordLexemeAction(TYPE_LONG); }
 {integer}							{ return StringLexemeAction(INTEGER_LITERAL); }
 {string}							{ return StringLexemeAction(STRING_LITERAL); }
 {identifier}				        { return IdentifierLexemeAction(); }
 "->"								{ return PunctuationLexemeAction(ARROW); }
+"="									{ return PunctuationLexemeAction(ASSIGN); }
 ":"									{ return PunctuationLexemeAction(COLON); }
 {terminator}						{ return TerminatorLexemeAction(); }
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }

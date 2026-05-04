@@ -7,6 +7,7 @@
 #include "../../support/type/TokenLabel.h"
 #include "AbstractSyntaxTree.h"
 #include "BisonParser.h"
+#include <stdbool.h>
 #include <stdlib.h>
 
 /** Initialize module's internal state. */
@@ -17,11 +18,21 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
  */
 
 Type * TypeSemanticAction(TypeKind kind);
+Type * NamedTypeSemanticAction(TypeKind kind, char * name);
+bool IsKnownTypedefName(const char * name);
 VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type);
+VariableDeclarationList * SingletonVariableDeclarationListSemanticAction(VariableDeclaration * declaration);
+VariableDeclarationList * AppendVariableDeclarationListSemanticAction(VariableDeclarationList * declarationList, VariableDeclaration * declaration);
 Parameter * ParameterSemanticAction(char * name, Type * type);
 ParameterList * SingletonParameterListSemanticAction(Parameter * parameter);
 ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList, Parameter * parameter);
 FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType, TopLevelItemList * body);
+AggregateDeclaration * AggregateDeclarationSemanticAction(AggregateKind kind, char * name, VariableDeclarationList * fields);
+EnumMember * EnumMemberSemanticAction(char * name, char * value);
+EnumMemberList * SingletonEnumMemberListSemanticAction(EnumMember * member);
+EnumMemberList * AppendEnumMemberListSemanticAction(EnumMemberList * memberList, EnumMember * member);
+EnumDeclaration * EnumDeclarationSemanticAction(char * name, EnumMemberList * members);
+TypedefDeclaration * TypedefDeclarationSemanticAction(char * name, Type * type);
 FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * arguments);
 Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
@@ -31,6 +42,9 @@ ExpressionList * SingletonExpressionListSemanticAction(Expression * expression);
 ExpressionList * AppendExpressionListSemanticAction(ExpressionList * expressionList, Expression * expression);
 TopLevelItem * VariableDeclarationTopLevelItemSemanticAction(VariableDeclaration * declaration);
 TopLevelItem * FunctionDeclarationTopLevelItemSemanticAction(FunctionDeclaration * declaration);
+TopLevelItem * AggregateDeclarationTopLevelItemSemanticAction(AggregateDeclaration * declaration);
+TopLevelItem * EnumDeclarationTopLevelItemSemanticAction(EnumDeclaration * declaration);
+TopLevelItem * TypedefDeclarationTopLevelItemSemanticAction(TypedefDeclaration * declaration);
 TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCall);
 TopLevelItem * EmptyStatementTopLevelItemSemanticAction();
 TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item);

@@ -34,9 +34,15 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 	Type * type;
 	VariableDeclaration * declaration;
+	VariableDeclarationList * declarationList;
 	Parameter * parameter;
 	ParameterList * parameterList;
 	FunctionDeclaration * functionDeclaration;
+	AggregateDeclaration * aggregateDeclaration;
+	EnumMember * enumMember;
+	EnumMemberList * enumMemberList;
+	EnumDeclaration * enumDeclaration;
+	TypedefDeclaration * typedefDeclaration;
 	FunctionCall * functionCall;
 	Expression * expression;
 	ExpressionList * expressionList;
@@ -56,9 +62,15 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { free($$); } <string>
 %destructor { destroyType($$); } <type>
 %destructor { destroyVariableDeclaration($$); } <declaration>
+%destructor { destroyVariableDeclarationList($$); } <declarationList>
 %destructor { destroyParameter($$); } <parameter>
 %destructor { destroyParameterList($$); } <parameterList>
 %destructor { destroyFunctionDeclaration($$); } <functionDeclaration>
+%destructor { destroyAggregateDeclaration($$); } <aggregateDeclaration>
+%destructor { destroyEnumMember($$); } <enumMember>
+%destructor { destroyEnumMemberList($$); } <enumMemberList>
+%destructor { destroyEnumDeclaration($$); } <enumDeclaration>
+%destructor { destroyTypedefDeclaration($$); } <typedefDeclaration>
 %destructor { destroyFunctionCall($$); } <functionCall>
 %destructor { destroyExpression($$); } <expression>
 %destructor { destroyExpressionList($$); } <expressionList>
@@ -71,6 +83,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> STRING_LITERAL
 %token <token> COLON
 %token <token> SEMICOLON
+%token <token> ASSIGN
 %token <token> INDENT
 %token <token> DEDENT
 %token <token> OPEN_PARENTHESIS
@@ -78,6 +91,10 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> ARROW
 %token <token> FUNCTION
 %token <token> MAIN
+%token <token> STRUCT
+%token <token> ENUM
+%token <token> UNION
+%token <token> TYPEDEF
 %token <token> TYPE_INT
 %token <token> TYPE_CHAR
 %token <token> TYPE_FLOAT
@@ -85,6 +102,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_VOID
 %token <token> TYPE_UINT
 %token <token> TYPE_ULI
+%token <token> TYPE_LONG
 
 %token <token> IGNORED
 %token <token> UNKNOWN
@@ -93,11 +111,18 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <type> type
 %type <type> optionalReturnType
 %type <declaration> declaration
+%type <declarationList> variableDeclarationList
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
 %type <topLevelItemList> optionalFunctionBody
 %type <functionDeclaration> functionDeclaration
+%type <aggregateDeclaration> aggregateDeclaration
+%type <enumMember> enumMember
+%type <enumMemberList> enumMemberList
+%type <enumDeclaration> enumDeclaration
+%type <typedefDeclaration> typedefDeclaration
+%type <string> optionalEnumMemberValue
 %type <functionCall> functionCall
 %type <expression> expression
 %type <expressionList> argumentList
@@ -122,12 +147,21 @@ topLevelItemList:
 topLevelItem:
 	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
+	| aggregateDeclaration									{ $$ = AggregateDeclarationTopLevelItemSemanticAction($1); }
+	| enumDeclaration										{ $$ = EnumDeclarationTopLevelItemSemanticAction($1); }
+	| typedefDeclaration									{ $$ = TypedefDeclarationTopLevelItemSemanticAction($1); }
 	| functionCall SEMICOLON								{ $$ = FunctionCallTopLevelItemSemanticAction($1); }
 	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
 	;
 
 declaration:
 	 IDENTIFIER COLON type SEMICOLON						{ $$ = VariableDeclarationSemanticAction($1, $3); }
+	;
+
+variableDeclarationList:
+	 declaration											{ $$ = SingletonVariableDeclarationListSemanticAction($1); }
+	| variableDeclarationList declaration					{ $$ = AppendVariableDeclarationListSemanticAction($1, $2); }
+	| variableDeclarationList SEMICOLON						{ $$ = $1; }
 	;
 
 functionDeclaration:
@@ -156,6 +190,34 @@ parameter:
 optionalReturnType:
 	 %empty													{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
 	| ARROW type											{ $$ = $2; }
+	;
+
+aggregateDeclaration:
+	 STRUCT IDENTIFIER SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
+	| UNION IDENTIFIER SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
+	;
+
+enumDeclaration:
+	 ENUM IDENTIFIER SEMICOLON INDENT enumMemberList DEDENT	{ $$ = EnumDeclarationSemanticAction($2, $5); }
+	;
+
+enumMemberList:
+	 enumMember												{ $$ = SingletonEnumMemberListSemanticAction($1); }
+	| enumMemberList enumMember								{ $$ = AppendEnumMemberListSemanticAction($1, $2); }
+	| enumMemberList SEMICOLON								{ $$ = $1; }
+	;
+
+enumMember:
+	 IDENTIFIER optionalEnumMemberValue SEMICOLON			{ $$ = EnumMemberSemanticAction($1, $2); }
+	;
+
+optionalEnumMemberValue:
+	 %empty													{ $$ = NULL; }
+	| ASSIGN INTEGER_LITERAL								{ $$ = $2; }
+	;
+
+typedefDeclaration:
+	 TYPEDEF IDENTIFIER COLON type SEMICOLON				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
 	;
 
 functionCall:
@@ -187,6 +249,11 @@ type:
 	| TYPE_VOID												{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
 	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
 	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
+	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
+	| IDENTIFIER											{ if (!IsKnownTypedefName($1)) { free($1); YYERROR; } $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
+	| STRUCT IDENTIFIER										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
+	| ENUM IDENTIFIER										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
+	| UNION IDENTIFIER										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
 	;
 
 %%
