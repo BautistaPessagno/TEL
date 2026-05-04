@@ -70,6 +70,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> INTEGER_LITERAL
 %token <string> STRING_LITERAL
 %token <token> COLON
+%token <token> ASSIGN
 %token <token> SEMICOLON
 %token <token> INDENT
 %token <token> DEDENT
@@ -92,6 +93,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 /** Non-terminals. */
 %type <type> type
 %type <type> optionalReturnType
+%type <expression> optionalInitializer
 %type <declaration> declaration
 %type <parameter> parameter
 %type <parameterList> parameterList
@@ -127,7 +129,12 @@ topLevelItem:
 	;
 
 declaration:
-	 IDENTIFIER COLON type SEMICOLON						{ $$ = VariableDeclarationSemanticAction($1, $3); }
+	 IDENTIFIER COLON type optionalInitializer SEMICOLON		{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
+	;
+
+optionalInitializer:
+	 %empty													{ $$ = NULL; }
+	| ASSIGN expression										{ $$ = $2; }
 	;
 
 functionDeclaration:

@@ -17,7 +17,7 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
  */
 
 Type * TypeSemanticAction(TypeKind kind);
-VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type);
+VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer);
 Parameter * ParameterSemanticAction(char * name, Type * type);
 ParameterList * SingletonParameterListSemanticAction(Parameter * parameter);
 ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList, Parameter * parameter);

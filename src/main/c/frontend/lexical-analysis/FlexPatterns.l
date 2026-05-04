@@ -73,6 +73,7 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 {identifier}				        { return IdentifierLexemeAction(); }
 "->"								{ return PunctuationLexemeAction(ARROW); }
 ":"									{ return PunctuationLexemeAction(COLON); }
+"="									{ return PunctuationLexemeAction(ASSIGN); }
 {terminator}						{ return TerminatorLexemeAction(); }
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
 "("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }
