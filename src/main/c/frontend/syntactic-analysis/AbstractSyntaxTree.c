@@ -161,6 +161,17 @@ void destroyTypedefDeclaration(TypedefDeclaration * typedefDeclaration) {
 	}
 }
 
+void destroyPreprocessorDirective(PreprocessorDirective * preprocessorDirective) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (preprocessorDirective != NULL) {
+		if (preprocessorDirective->value != NULL) {
+			free(preprocessorDirective->value);
+			preprocessorDirective->value = NULL;
+		}
+		free(preprocessorDirective);
+	}
+}
+
 void destroyFunctionCall(FunctionCall * functionCall) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (functionCall != NULL) {
@@ -211,6 +222,8 @@ void destroyTopLevelItem(TopLevelItem * topLevelItem) {
 		topLevelItem->enumDeclaration = NULL;
 		destroyTypedefDeclaration(topLevelItem->typedefDeclaration);
 		topLevelItem->typedefDeclaration = NULL;
+		destroyPreprocessorDirective(topLevelItem->preprocessorDirective);
+		topLevelItem->preprocessorDirective = NULL;
 		destroyFunctionCall(topLevelItem->functionCall);
 		topLevelItem->functionCall = NULL;
 		free(topLevelItem);

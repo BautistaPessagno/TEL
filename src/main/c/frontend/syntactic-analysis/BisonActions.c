@@ -197,6 +197,14 @@ TypedefDeclaration * TypedefDeclarationSemanticAction(char * name, Type * type) 
 	return declaration;
 }
 
+PreprocessorDirective * PreprocessorDirectiveSemanticAction(PreprocessorDirectiveKind kind, char * value) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	PreprocessorDirective * directive = calloc(1, sizeof(PreprocessorDirective));
+	directive->kind = kind;
+	directive->value = value;
+	return directive;
+}
+
 FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * arguments) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	FunctionCall * functionCall = calloc(1, sizeof(FunctionCall));
@@ -291,6 +299,14 @@ TopLevelItem * TypedefDeclarationTopLevelItemSemanticAction(TypedefDeclaration *
 	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
 	item->kind = TOP_LEVEL_TYPEDEF_DECLARATION;
 	item->typedefDeclaration = declaration;
+	return item;
+}
+
+TopLevelItem * PreprocessorDirectiveTopLevelItemSemanticAction(PreprocessorDirective * directive) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
+	item->kind = TOP_LEVEL_PREPROCESSOR_DIRECTIVE;
+	item->preprocessorDirective = directive;
 	return item;
 }
 

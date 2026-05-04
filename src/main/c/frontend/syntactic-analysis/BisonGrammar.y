@@ -43,6 +43,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 	EnumMemberList * enumMemberList;
 	EnumDeclaration * enumDeclaration;
 	TypedefDeclaration * typedefDeclaration;
+	PreprocessorDirective * preprocessorDirective;
 	FunctionCall * functionCall;
 	Expression * expression;
 	ExpressionList * expressionList;
@@ -71,6 +72,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyEnumMemberList($$); } <enumMemberList>
 %destructor { destroyEnumDeclaration($$); } <enumDeclaration>
 %destructor { destroyTypedefDeclaration($$); } <typedefDeclaration>
+%destructor { destroyPreprocessorDirective($$); } <preprocessorDirective>
 %destructor { destroyFunctionCall($$); } <functionCall>
 %destructor { destroyExpression($$); } <expression>
 %destructor { destroyExpressionList($$); } <expressionList>
@@ -81,6 +83,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> IDENTIFIER
 %token <string> INTEGER_LITERAL
 %token <string> STRING_LITERAL
+%token <string> INCLUDE_DIRECTIVE
+%token <string> DEFINE_DIRECTIVE
 %token <token> COLON
 %token <token> SEMICOLON
 %token <token> ASSIGN
@@ -122,6 +126,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <enumMemberList> enumMemberList
 %type <enumDeclaration> enumDeclaration
 %type <typedefDeclaration> typedefDeclaration
+%type <preprocessorDirective> preprocessorDirective
 %type <string> optionalEnumMemberValue
 %type <functionCall> functionCall
 %type <expression> expression
@@ -150,6 +155,7 @@ topLevelItem:
 	| aggregateDeclaration									{ $$ = AggregateDeclarationTopLevelItemSemanticAction($1); }
 	| enumDeclaration										{ $$ = EnumDeclarationTopLevelItemSemanticAction($1); }
 	| typedefDeclaration									{ $$ = TypedefDeclarationTopLevelItemSemanticAction($1); }
+	| preprocessorDirective									{ $$ = PreprocessorDirectiveTopLevelItemSemanticAction($1); }
 	| functionCall SEMICOLON								{ $$ = FunctionCallTopLevelItemSemanticAction($1); }
 	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
 	;
@@ -218,6 +224,11 @@ optionalEnumMemberValue:
 
 typedefDeclaration:
 	 TYPEDEF IDENTIFIER COLON type SEMICOLON				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
+	;
+
+preprocessorDirective:
+	 INCLUDE_DIRECTIVE SEMICOLON							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_INCLUDE_DIRECTIVE, $1); }
+	| DEFINE_DIRECTIVE SEMICOLON							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_DEFINE_DIRECTIVE, $1); }
 	;
 
 functionCall:

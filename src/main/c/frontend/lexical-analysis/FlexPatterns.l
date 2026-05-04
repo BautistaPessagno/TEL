@@ -20,6 +20,7 @@ extern CompilationStatus IgnoredLexemeAction();
 extern CompilationStatus IndentationLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
 extern CompilationStatus LineBreakLexemeAction();
+extern CompilationStatus PreprocessorDirectiveLexemeAction(TokenLabel label, const char * keyword);
 extern CompilationStatus PunctuationLexemeAction(TokenLabel label);
 extern CompilationStatus StringLexemeAction(TokenLabel label);
 extern CompilationStatus TerminatorLexemeAction();
@@ -42,6 +43,8 @@ whitespace			[ \t\r]+
 terminator			[;]+
 linebreak			\n
 identifier          [_A-Za-z][_A-Za-z0-9]*
+includeDirective	"#include"{whitespace}+{identifier}
+defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 
 %x BOL
 
@@ -59,6 +62,8 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 <BOL>[ \t]*[^ \t\n]					{ CompilationStatus status = IndentationLexemeAction(); yyless(0); BEGIN(INITIAL); return status; }
 <BOL><<EOF>>						{ return EOFLexemeAction(); }
 
+{includeDirective}					{ return PreprocessorDirectiveLexemeAction(INCLUDE_DIRECTIVE, "#include"); }
+{defineDirective}					{ return PreprocessorDirectiveLexemeAction(DEFINE_DIRECTIVE, "#define"); }
 "fn"								{ return KeywordLexemeAction(FUNCTION); }
 "main"								{ return KeywordLexemeAction(MAIN); }
 "struct"							{ return KeywordLexemeAction(STRUCT); }

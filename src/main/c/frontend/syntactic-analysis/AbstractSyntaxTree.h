@@ -16,6 +16,7 @@ ModuleDestructor initializeAbstractSyntaxTreeModule();
 
 typedef enum TypeKind TypeKind;
 typedef enum AggregateKind AggregateKind;
+typedef enum PreprocessorDirectiveKind PreprocessorDirectiveKind;
 typedef enum TopLevelItemKind TopLevelItemKind;
 typedef enum ExpressionKind ExpressionKind;
 
@@ -30,6 +31,7 @@ typedef struct EnumMember EnumMember;
 typedef struct EnumMemberList EnumMemberList;
 typedef struct EnumDeclaration EnumDeclaration;
 typedef struct TypedefDeclaration TypedefDeclaration;
+typedef struct PreprocessorDirective PreprocessorDirective;
 typedef struct FunctionCall FunctionCall;
 typedef struct Expression Expression;
 typedef struct ExpressionList ExpressionList;
@@ -61,12 +63,18 @@ enum AggregateKind {
 	AGGREGATE_UNION_KIND
 };
 
+enum PreprocessorDirectiveKind {
+	PREPROCESSOR_INCLUDE_DIRECTIVE,
+	PREPROCESSOR_DEFINE_DIRECTIVE
+};
+
 enum TopLevelItemKind {
 	TOP_LEVEL_VARIABLE_DECLARATION,
 	TOP_LEVEL_FUNCTION_DECLARATION,
 	TOP_LEVEL_AGGREGATE_DECLARATION,
 	TOP_LEVEL_ENUM_DECLARATION,
 	TOP_LEVEL_TYPEDEF_DECLARATION,
+	TOP_LEVEL_PREPROCESSOR_DIRECTIVE,
 	TOP_LEVEL_FUNCTION_CALL,
 	TOP_LEVEL_EMPTY_STATEMENT
 };
@@ -136,6 +144,11 @@ struct TypedefDeclaration {
 	Type * type;
 };
 
+struct PreprocessorDirective {
+	PreprocessorDirectiveKind kind;
+	char * value;
+};
+
 struct FunctionCall {
 	char * name;
 	ExpressionList * arguments;
@@ -159,6 +172,7 @@ struct TopLevelItem {
 	AggregateDeclaration * aggregateDeclaration;
 	EnumDeclaration * enumDeclaration;
 	TypedefDeclaration * typedefDeclaration;
+	PreprocessorDirective * preprocessorDirective;
 	FunctionCall * functionCall;
 };
 
@@ -186,6 +200,7 @@ void destroyEnumMember(EnumMember * enumMember);
 void destroyEnumMemberList(EnumMemberList * enumMemberList);
 void destroyEnumDeclaration(EnumDeclaration * enumDeclaration);
 void destroyTypedefDeclaration(TypedefDeclaration * typedefDeclaration);
+void destroyPreprocessorDirective(PreprocessorDirective * preprocessorDirective);
 void destroyFunctionCall(FunctionCall * functionCall);
 void destroyExpression(Expression * expression);
 void destroyExpressionList(ExpressionList * expressionList);

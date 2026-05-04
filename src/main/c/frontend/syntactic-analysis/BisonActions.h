@@ -33,6 +33,7 @@ EnumMemberList * SingletonEnumMemberListSemanticAction(EnumMember * member);
 EnumMemberList * AppendEnumMemberListSemanticAction(EnumMemberList * memberList, EnumMember * member);
 EnumDeclaration * EnumDeclarationSemanticAction(char * name, EnumMemberList * members);
 TypedefDeclaration * TypedefDeclarationSemanticAction(char * name, Type * type);
+PreprocessorDirective * PreprocessorDirectiveSemanticAction(PreprocessorDirectiveKind kind, char * value);
 FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * arguments);
 Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
@@ -45,6 +46,7 @@ TopLevelItem * FunctionDeclarationTopLevelItemSemanticAction(FunctionDeclaration
 TopLevelItem * AggregateDeclarationTopLevelItemSemanticAction(AggregateDeclaration * declaration);
 TopLevelItem * EnumDeclarationTopLevelItemSemanticAction(EnumDeclaration * declaration);
 TopLevelItem * TypedefDeclarationTopLevelItemSemanticAction(TypedefDeclaration * declaration);
+TopLevelItem * PreprocessorDirectiveTopLevelItemSemanticAction(PreprocessorDirective * directive);
 TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCall);
 TopLevelItem * EmptyStatementTopLevelItemSemanticAction();
 TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item);

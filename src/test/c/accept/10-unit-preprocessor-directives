@@ -1,0 +1,4 @@
+#include stdio
+#define A 3
+#define BUFFER_SIZE (10 + 2)
+#define SQUARE(x) ((x) * (x))
