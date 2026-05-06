@@ -27,14 +27,19 @@ Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
 Expression * StringLiteralExpressionSemanticAction(char * value);
 Expression * FunctionCallExpressionSemanticAction(FunctionCall * functionCall);
+Expression * BinaryExpressionSemanticAction(Expression * left, ExpressionOperator operator, Expression * right);
+Expression * UnaryExpressionSemanticAction(ExpressionOperator operator, Expression * operand);
 ExpressionList * SingletonExpressionListSemanticAction(Expression * expression);
 ExpressionList * AppendExpressionListSemanticAction(ExpressionList * expressionList, Expression * expression);
 TopLevelItem * VariableDeclarationTopLevelItemSemanticAction(VariableDeclaration * declaration);
 TopLevelItem * FunctionDeclarationTopLevelItemSemanticAction(FunctionDeclaration * declaration);
 TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCall);
+TopLevelItem * ReturnStatementTopLevelItemSemanticAction(Expression * expression);
+TopLevelItem * ExpressionStatementTopLevelItemSemanticAction(Expression * expression);
 TopLevelItem * EmptyStatementTopLevelItemSemanticAction();
 TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item);
 TopLevelItemList * AppendTopLevelItemListSemanticAction(TopLevelItemList * itemList, TopLevelItem * item);
+TopLevelItemList * FunctionBodyTopLevelItemListSemanticAction(TopLevelItemList * itemList);
 Program * ProgramSemanticAction(TopLevelItemList * items);
 
 #endif

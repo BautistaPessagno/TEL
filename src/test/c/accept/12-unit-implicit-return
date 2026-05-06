@@ -1,0 +1,11 @@
+fn id v:int -> int
+    v
+fn cmp a:int b:int -> int
+    a > b
+fn ored x:int y:int -> int
+    x && y || x
+fn neg x:int -> int
+    !x
+fn mixed a:int b:int -> int
+    log("hi")
+    a == b
