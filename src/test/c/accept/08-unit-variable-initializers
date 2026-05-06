@@ -1,0 +1,8 @@
+value:int = 5
+message:char = "hello"
+copy:int = value
+result:int = add(value 2)
+fn setup
+    local:int = 1
+    text:char = "ready"
+    computed:int = add(local value)

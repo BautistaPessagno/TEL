@@ -65,6 +65,7 @@ struct Type {
 struct VariableDeclaration {
 	char * name;
 	Type * type;
+	Expression * initializer;
 };
 
 struct Parameter {
