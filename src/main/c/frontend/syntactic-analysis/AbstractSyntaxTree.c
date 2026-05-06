@@ -23,6 +23,10 @@ ModuleDestructor initializeAbstractSyntaxTreeModule() {
 void destroyType(Type * type) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (type != NULL) {
+		if (type->name != NULL) {
+			free(type->name);
+			type->name = NULL;
+		}
 		free(type);
 	}
 }
@@ -39,6 +43,17 @@ void destroyVariableDeclaration(VariableDeclaration * variableDeclaration) {
 		destroyExpression(variableDeclaration->initializer);
 		variableDeclaration->initializer = NULL;
 		free(variableDeclaration);
+	}
+}
+
+void destroyVariableDeclarationList(VariableDeclarationList * variableDeclarationList) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (variableDeclarationList != NULL) {
+		destroyVariableDeclaration(variableDeclarationList->declaration);
+		variableDeclarationList->declaration = NULL;
+		destroyVariableDeclarationList(variableDeclarationList->next);
+		variableDeclarationList->next = NULL;
+		free(variableDeclarationList);
 	}
 }
 
@@ -80,6 +95,82 @@ void destroyFunctionDeclaration(FunctionDeclaration * functionDeclaration) {
 		destroyTopLevelItemList(functionDeclaration->body);
 		functionDeclaration->body = NULL;
 		free(functionDeclaration);
+	}
+}
+
+void destroyAggregateDeclaration(AggregateDeclaration * aggregateDeclaration) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (aggregateDeclaration != NULL) {
+		if (aggregateDeclaration->name != NULL) {
+			free(aggregateDeclaration->name);
+			aggregateDeclaration->name = NULL;
+		}
+		destroyVariableDeclarationList(aggregateDeclaration->fields);
+		aggregateDeclaration->fields = NULL;
+		free(aggregateDeclaration);
+	}
+}
+
+void destroyEnumMember(EnumMember * enumMember) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (enumMember != NULL) {
+		if (enumMember->name != NULL) {
+			free(enumMember->name);
+			enumMember->name = NULL;
+		}
+		if (enumMember->value != NULL) {
+			free(enumMember->value);
+			enumMember->value = NULL;
+		}
+		free(enumMember);
+	}
+}
+
+void destroyEnumMemberList(EnumMemberList * enumMemberList) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (enumMemberList != NULL) {
+		destroyEnumMember(enumMemberList->member);
+		enumMemberList->member = NULL;
+		destroyEnumMemberList(enumMemberList->next);
+		enumMemberList->next = NULL;
+		free(enumMemberList);
+	}
+}
+
+void destroyEnumDeclaration(EnumDeclaration * enumDeclaration) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (enumDeclaration != NULL) {
+		if (enumDeclaration->name != NULL) {
+			free(enumDeclaration->name);
+			enumDeclaration->name = NULL;
+		}
+		destroyEnumMemberList(enumDeclaration->members);
+		enumDeclaration->members = NULL;
+		free(enumDeclaration);
+	}
+}
+
+void destroyTypedefDeclaration(TypedefDeclaration * typedefDeclaration) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (typedefDeclaration != NULL) {
+		if (typedefDeclaration->name != NULL) {
+			free(typedefDeclaration->name);
+			typedefDeclaration->name = NULL;
+		}
+		destroyType(typedefDeclaration->type);
+		typedefDeclaration->type = NULL;
+		free(typedefDeclaration);
+	}
+}
+
+void destroyPreprocessorDirective(PreprocessorDirective * preprocessorDirective) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (preprocessorDirective != NULL) {
+		if (preprocessorDirective->value != NULL) {
+			free(preprocessorDirective->value);
+			preprocessorDirective->value = NULL;
+		}
+		free(preprocessorDirective);
 	}
 }
 
@@ -133,6 +224,14 @@ void destroyTopLevelItem(TopLevelItem * topLevelItem) {
 		topLevelItem->variableDeclaration = NULL;
 		destroyFunctionDeclaration(topLevelItem->functionDeclaration);
 		topLevelItem->functionDeclaration = NULL;
+		destroyAggregateDeclaration(topLevelItem->aggregateDeclaration);
+		topLevelItem->aggregateDeclaration = NULL;
+		destroyEnumDeclaration(topLevelItem->enumDeclaration);
+		topLevelItem->enumDeclaration = NULL;
+		destroyTypedefDeclaration(topLevelItem->typedefDeclaration);
+		topLevelItem->typedefDeclaration = NULL;
+		destroyPreprocessorDirective(topLevelItem->preprocessorDirective);
+		topLevelItem->preprocessorDirective = NULL;
 		destroyFunctionCall(topLevelItem->functionCall);
 		topLevelItem->functionCall = NULL;
 		destroyExpression(topLevelItem->expression);

@@ -1,0 +1,17 @@
+struct Point
+    x:int
+    y:int
+
+union Number
+    asInt:int
+    asDouble:double
+
+enum Color
+    RED
+    GREEN = 2
+    BLUE
+
+typedef Count:uint
+typedef PointAlias:struct Point
+origin:PointAlias
+

@@ -1,5 +1,6 @@
 #include "FlexActions.h"
 #include "StackADT.h"
+#include "../syntactic-analysis/BisonActions.h"
 #include <string.h>
 
 /* MODULE INTERNAL STATE */
@@ -39,6 +40,7 @@ ModuleDestructor initializeFlexActionsModule(LexicalAnalyzer * lexicalAnalyzer) 
 static void _logTokenAction(const char * actionName, Token * token);
 static CompilationStatus _pushToken(TokenLabel label, const char * actionName);
 static CompilationStatus _pushDedentsUntil(unsigned int indentation);
+static char * _copyDirectiveValue(const char * lexeme, const char * keyword);
 
 /**
  * Logs a lexical-analyzer action over a token in DEBUGGING level.
@@ -86,10 +88,30 @@ static CompilationStatus _pushDedentsUntil(unsigned int indentation) {
 	return IN_PROGRESS;
 }
 
+static char * _copyDirectiveValue(const char * lexeme, const char * keyword) {
+	const char * start = lexeme + strlen(keyword);
+	while (*start == ' ' || *start == '\t' || *start == '\r') {
+		start++;
+	}
+
+	const char * end = lexeme + strlen(lexeme);
+	while (end > start && (end[-1] == ' ' || end[-1] == '\t' || end[-1] == '\r')) {
+		end--;
+	}
+
+	size_t length = end - start;
+	char * value = calloc(length + 1, sizeof(char));
+	strncpy(value, start, length);
+	return value;
+}
+
 /* PUBLIC FUNCTIONS */
 
 CompilationStatus IdentifierLexemeAction() {
 	Token * token = createToken(_lexicalAnalyzer, IDENTIFIER);
+	if (IsKnownTypedefName(token->lexeme)) {
+		token->label = TYPEDEF_NAME;
+	}
 	token->semanticValue->string = strdup(token->lexeme);
 	_logTokenAction(__FUNCTION__, token);
 	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
@@ -100,6 +122,15 @@ CompilationStatus IdentifierLexemeAction() {
 CompilationStatus StringLexemeAction(TokenLabel label) {
 	Token * token = createToken(_lexicalAnalyzer, label);
 	token->semanticValue->string = strdup(token->lexeme);
+	_logTokenAction(__FUNCTION__, token);
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
+	destroyToken(token);
+	return status;
+}
+
+CompilationStatus PreprocessorDirectiveLexemeAction(TokenLabel label, const char * keyword) {
+	Token * token = createToken(_lexicalAnalyzer, label);
+	token->semanticValue->string = _copyDirectiveValue(token->lexeme, keyword);
 	_logTokenAction(__FUNCTION__, token);
 	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
 	destroyToken(token);

@@ -34,9 +34,16 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 	Type * type;
 	VariableDeclaration * declaration;
+	VariableDeclarationList * declarationList;
 	Parameter * parameter;
 	ParameterList * parameterList;
 	FunctionDeclaration * functionDeclaration;
+	AggregateDeclaration * aggregateDeclaration;
+	EnumMember * enumMember;
+	EnumMemberList * enumMemberList;
+	EnumDeclaration * enumDeclaration;
+	TypedefDeclaration * typedefDeclaration;
+	PreprocessorDirective * preprocessorDirective;
 	FunctionCall * functionCall;
 	Expression * expression;
 	ExpressionList * expressionList;
@@ -56,9 +63,16 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { free($$); } <string>
 %destructor { destroyType($$); } <type>
 %destructor { destroyVariableDeclaration($$); } <declaration>
+%destructor { destroyVariableDeclarationList($$); } <declarationList>
 %destructor { destroyParameter($$); } <parameter>
 %destructor { destroyParameterList($$); } <parameterList>
 %destructor { destroyFunctionDeclaration($$); } <functionDeclaration>
+%destructor { destroyAggregateDeclaration($$); } <aggregateDeclaration>
+%destructor { destroyEnumMember($$); } <enumMember>
+%destructor { destroyEnumMemberList($$); } <enumMemberList>
+%destructor { destroyEnumDeclaration($$); } <enumDeclaration>
+%destructor { destroyTypedefDeclaration($$); } <typedefDeclaration>
+%destructor { destroyPreprocessorDirective($$); } <preprocessorDirective>
 %destructor { destroyFunctionCall($$); } <functionCall>
 %destructor { destroyExpression($$); } <expression>
 %destructor { destroyExpressionList($$); } <expressionList>
@@ -67,18 +81,26 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 /** Terminals. */
 %token <string> IDENTIFIER
+%token <string> TYPEDEF_NAME
 %token <string> INTEGER_LITERAL
 %token <string> STRING_LITERAL
+%token <string> INCLUDE_DIRECTIVE
+%token <string> DEFINE_DIRECTIVE
 %token <token> COLON
 %token <token> ASSIGN
 %token <token> SEMICOLON
 %token <token> INDENT
 %token <token> DEDENT
+%token <token> OPEN_PARENTHESIS
 %token <token> CLOSE_PARENTHESIS
 %token <token> ARROW
 %token <token> RETURN
 %token <token> FUNCTION
 %token <token> MAIN
+%token <token> STRUCT
+%token <token> ENUM
+%token <token> UNION
+%token <token> TYPEDEF
 %token <token> TYPE_INT
 %token <token> TYPE_CHAR
 %token <token> TYPE_FLOAT
@@ -86,7 +108,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_VOID
 %token <token> TYPE_UINT
 %token <token> TYPE_ULI
-%token <token> ASSIGN
+%token <token> TYPE_LONG
 %token <token> ADD_ASSIGN
 %token <token> SUBTRACT_ASSIGN
 %token <token> MULTIPLY_ASSIGN
@@ -117,12 +139,14 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> MODULO
 %token <token> LOGICAL_NOT
 %token <token> BITWISE_NOT
+%token <token> INCREMENT
+%token <token> DECREMENT
 
 %token <token> IGNORED
 %token <token> UNKNOWN
 
 %precedence ARGUMENT_BOUNDARY
-%nonassoc <token> OPEN_PARENTHESIS
+%nonassoc OPEN_PARENTHESIS
 %right ASSIGN ADD_ASSIGN SUBTRACT_ASSIGN MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULO_ASSIGN BITWISE_AND_ASSIGN BITWISE_OR_ASSIGN BITWISE_XOR_ASSIGN SHIFT_LEFT_ASSIGN SHIFT_RIGHT_ASSIGN
 %left LOGICAL_OR
 %left LOGICAL_AND
@@ -138,18 +162,26 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT
 
 /** Non-terminals. */
+%type <string> identifier
 %type <type> type
 %type <type> optionalReturnType
 %type <expression> optionalInitializer
 %type <declaration> declaration
+%type <declarationList> variableDeclarationList
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
 %type <topLevelItemList> optionalFunctionBody
 %type <functionDeclaration> functionDeclaration
+%type <aggregateDeclaration> aggregateDeclaration
+%type <enumMember> enumMember
+%type <enumMemberList> enumMemberList
+%type <enumDeclaration> enumDeclaration
+%type <typedefDeclaration> typedefDeclaration
+%type <preprocessorDirective> preprocessorDirective
+%type <string> optionalEnumMemberValue
 %type <functionCall> functionCall
 %type <expression> expression
-%type <expression> optionalInitializer
 %type <expression> optionalReturnExpression
 %type <expressionList> argumentList
 %type <expressionList> optionalArgumentList
@@ -169,6 +201,11 @@ program:
 	 topLevelItemList										{ $$ = ProgramSemanticAction($1); }
 	;
 
+identifier:
+	 IDENTIFIER												{ $$ = $1; }
+	| TYPEDEF_NAME											{ $$ = $1; }
+	;
+
 topLevelItemList:
 	 topLevelItem											{ $$ = SingletonTopLevelItemListSemanticAction($1); }
 	| topLevelItemList topLevelItem							{ $$ = AppendTopLevelItemListSemanticAction($1, $2); }
@@ -177,12 +214,16 @@ topLevelItemList:
 topLevelItem:
 	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
+	| aggregateDeclaration									{ $$ = AggregateDeclarationTopLevelItemSemanticAction($1); }
+	| enumDeclaration										{ $$ = EnumDeclarationTopLevelItemSemanticAction($1); }
+	| typedefDeclaration									{ $$ = TypedefDeclarationTopLevelItemSemanticAction($1); }
+	| preprocessorDirective									{ $$ = PreprocessorDirectiveTopLevelItemSemanticAction($1); }
 	| expressionStatement									{ $$ = $1; }
 	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
 	;
 
 declaration:
-	 IDENTIFIER COLON type optionalInitializer SEMICOLON		{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
+	 identifier COLON type optionalInitializer SEMICOLON	{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
 	;
 
 optionalInitializer:
@@ -190,8 +231,14 @@ optionalInitializer:
 	| ASSIGN expression										{ $$ = $2; }
 	;
 
+variableDeclarationList:
+	 declaration											{ $$ = SingletonVariableDeclarationListSemanticAction($1); }
+	| variableDeclarationList declaration					{ $$ = AppendVariableDeclarationListSemanticAction($1, $2); }
+	| variableDeclarationList SEMICOLON						{ $$ = $1; }
+	;
+
 functionDeclaration:
-	 FUNCTION IDENTIFIER optionalParameterList optionalReturnType SEMICOLON optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
+	 FUNCTION identifier optionalParameterList optionalReturnType SEMICOLON optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
 	;
 
 optionalFunctionBody:
@@ -207,6 +254,10 @@ functionBodyItemList:
 functionBodyItem:
 	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
+	| aggregateDeclaration									{ $$ = AggregateDeclarationTopLevelItemSemanticAction($1); }
+	| enumDeclaration										{ $$ = EnumDeclarationTopLevelItemSemanticAction($1); }
+	| typedefDeclaration									{ $$ = TypedefDeclarationTopLevelItemSemanticAction($1); }
+	| preprocessorDirective									{ $$ = PreprocessorDirectiveTopLevelItemSemanticAction($1); }
 	| returnStatement										{ $$ = $1; }
 	| expressionStatement									{ $$ = $1; }
 	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
@@ -236,7 +287,7 @@ parameterList:
 	;
 
 parameter:
-	 IDENTIFIER COLON type									{ $$ = ParameterSemanticAction($1, $3); }
+	 identifier COLON type									{ $$ = ParameterSemanticAction($1, $3); }
 	;
 
 optionalReturnType:
@@ -244,8 +295,41 @@ optionalReturnType:
 	| ARROW type											{ $$ = $2; }
 	;
 
+aggregateDeclaration:
+	 STRUCT identifier SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
+	| UNION identifier SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
+	;
+
+enumDeclaration:
+	 ENUM identifier SEMICOLON INDENT enumMemberList DEDENT	{ $$ = EnumDeclarationSemanticAction($2, $5); }
+	;
+
+enumMemberList:
+	 enumMember												{ $$ = SingletonEnumMemberListSemanticAction($1); }
+	| enumMemberList enumMember								{ $$ = AppendEnumMemberListSemanticAction($1, $2); }
+	| enumMemberList SEMICOLON								{ $$ = $1; }
+	;
+
+enumMember:
+	 identifier optionalEnumMemberValue SEMICOLON			{ $$ = EnumMemberSemanticAction($1, $2); }
+	;
+
+optionalEnumMemberValue:
+	 %empty													{ $$ = NULL; }
+	| ASSIGN INTEGER_LITERAL								{ $$ = $2; }
+	;
+
+typedefDeclaration:
+	 TYPEDEF identifier COLON type SEMICOLON				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
+	;
+
+preprocessorDirective:
+	 INCLUDE_DIRECTIVE SEMICOLON							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_INCLUDE_DIRECTIVE, $1); }
+	| DEFINE_DIRECTIVE SEMICOLON							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_DEFINE_DIRECTIVE, $1); }
+	;
+
 functionCall:
-	 IDENTIFIER OPEN_PARENTHESIS optionalArgumentList CLOSE_PARENTHESIS	{ $$ = FunctionCallSemanticAction($1, $3); }
+	 identifier OPEN_PARENTHESIS optionalArgumentList CLOSE_PARENTHESIS	{ $$ = FunctionCallSemanticAction($1, $3); }
 	;
 
 optionalArgumentList:
@@ -259,7 +343,7 @@ argumentList:
 	;
 
 expression:
-	 IDENTIFIER %prec ARGUMENT_BOUNDARY						{ $$ = IdentifierExpressionSemanticAction($1); }
+	 identifier %prec ARGUMENT_BOUNDARY						{ $$ = IdentifierExpressionSemanticAction($1); }
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
 	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
 	| functionCall											{ $$ = FunctionCallExpressionSemanticAction($1); }
@@ -311,6 +395,11 @@ type:
 	| TYPE_VOID												{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
 	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
 	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
+	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
+	| TYPEDEF_NAME											{ $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
+	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
+	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
+	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
 	;
 
 %%

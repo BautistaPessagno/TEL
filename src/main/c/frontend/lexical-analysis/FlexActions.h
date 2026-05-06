@@ -17,6 +17,7 @@ ModuleDestructor initializeFlexActionsModule(LexicalAnalyzer * lexicalAnalyzer);
 
 CompilationStatus IdentifierLexemeAction();
 CompilationStatus StringLexemeAction(TokenLabel label);
+CompilationStatus PreprocessorDirectiveLexemeAction(TokenLabel label, const char * keyword);
 CompilationStatus KeywordLexemeAction(TokenLabel label);
 CompilationStatus PunctuationLexemeAction(TokenLabel label);
 CompilationStatus IndentationLexemeAction();

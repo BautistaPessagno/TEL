@@ -1,0 +1,9 @@
+fn setup
+    struct Local
+        value:long
+    enum Status
+        OK
+        ERROR = 1
+    typedef LocalAlias:struct Local
+    item:LocalAlias
+
