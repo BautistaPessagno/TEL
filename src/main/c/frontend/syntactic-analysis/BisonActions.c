@@ -86,11 +86,12 @@ bool IsKnownTypedefName(const char * name) {
 	return false;
 }
 
-VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type) {
+VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	VariableDeclaration * declaration = calloc(1, sizeof(VariableDeclaration));
 	declaration->name = name;
 	declaration->type = type;
+	declaration->initializer = initializer;
 	return declaration;
 }
 

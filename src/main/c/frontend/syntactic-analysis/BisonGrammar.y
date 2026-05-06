@@ -87,8 +87,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> INCLUDE_DIRECTIVE
 %token <string> DEFINE_DIRECTIVE
 %token <token> COLON
-%token <token> SEMICOLON
 %token <token> ASSIGN
+%token <token> SEMICOLON
 %token <token> INDENT
 %token <token> DEDENT
 %token <token> OPEN_PARENTHESIS
@@ -116,6 +116,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <string> identifier
 %type <type> type
 %type <type> optionalReturnType
+%type <expression> optionalInitializer
 %type <declaration> declaration
 %type <declarationList> variableDeclarationList
 %type <parameter> parameter
@@ -168,7 +169,12 @@ topLevelItem:
 	;
 
 declaration:
-	 identifier COLON type SEMICOLON						{ $$ = VariableDeclarationSemanticAction($1, $3); }
+	 identifier COLON type optionalInitializer SEMICOLON	{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
+	;
+
+optionalInitializer:
+	 %empty													{ $$ = NULL; }
+	| ASSIGN expression										{ $$ = $2; }
 	;
 
 variableDeclarationList:

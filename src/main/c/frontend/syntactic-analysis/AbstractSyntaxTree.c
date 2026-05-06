@@ -40,6 +40,8 @@ void destroyVariableDeclaration(VariableDeclaration * variableDeclaration) {
 		}
 		destroyType(variableDeclaration->type);
 		variableDeclaration->type = NULL;
+		destroyExpression(variableDeclaration->initializer);
+		variableDeclaration->initializer = NULL;
 		free(variableDeclaration);
 	}
 }
