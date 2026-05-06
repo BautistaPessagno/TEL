@@ -26,12 +26,18 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState) {
 /* PRIVATE FUNCTIONS */
 
 static void _logSyntacticAnalyzerAction(const char * functionName);
+static void _convertExpressionStatementToImplicitReturn(TopLevelItem * item);
 
 /**
  * Logs a syntactic-analyzer action in DEBUGGING level.
  */
 static void _logSyntacticAnalyzerAction(const char * functionName) {
 	logDebugging(_logger, "%s", functionName);
+}
+
+static void _convertExpressionStatementToImplicitReturn(TopLevelItem * item) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	item->kind = TOP_LEVEL_RETURN_STATEMENT;
 }
 
 /* PUBLIC FUNCTIONS */
@@ -142,7 +148,7 @@ Expression * UnaryExpressionSemanticAction(ExpressionOperator operator, Expressi
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->kind = EXPRESSION_UNARY_OPERATION;
 	expression->operator = operator;
-	expression->left = operand;
+	expression->operand = operand;
 	return expression;
 }
 
@@ -223,9 +229,6 @@ static int _isImplicitReturnExpression(const Expression * expression) {
 
 TopLevelItem * ExpressionStatementTopLevelItemSemanticAction(Expression * expression) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	if (_isImplicitReturnExpression(expression)) {
-		return ReturnStatementTopLevelItemSemanticAction(expression);
-	}
 	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
 	item->kind = TOP_LEVEL_EXPRESSION_STATEMENT;
 	item->expression = expression;
@@ -253,6 +256,24 @@ TopLevelItemList * AppendTopLevelItemListSemanticAction(TopLevelItemList * itemL
 		tail = tail->next;
 	}
 	tail->next = SingletonTopLevelItemListSemanticAction(item);
+	return itemList;
+}
+
+TopLevelItemList * FunctionBodyTopLevelItemListSemanticAction(TopLevelItemList * itemList) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	TopLevelItem * lastItem = NULL;
+	TopLevelItemList * tail = itemList;
+	while (tail != NULL) {
+		if (tail->item != NULL && tail->item->kind != TOP_LEVEL_EMPTY_STATEMENT) {
+			lastItem = tail->item;
+		}
+		tail = tail->next;
+	}
+	if (lastItem != NULL
+		&& lastItem->kind == TOP_LEVEL_EXPRESSION_STATEMENT
+		&& _isImplicitReturnExpression(lastItem->expression)) {
+		_convertExpressionStatementToImplicitReturn(lastItem);
+	}
 	return itemList;
 }
 

@@ -105,6 +105,8 @@ void destroyExpression(Expression * expression) {
 		}
 		destroyFunctionCall(expression->functionCall);
 		expression->functionCall = NULL;
+		destroyExpression(expression->operand);
+		expression->operand = NULL;
 		destroyExpression(expression->left);
 		expression->left = NULL;
 		destroyExpression(expression->right);

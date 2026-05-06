@@ -140,6 +140,8 @@ struct Expression {
 	char * value;
 	FunctionCall * functionCall;
 	ExpressionOperator operator;
+	/* Unary operations use operand; binary operations use left and right. */
+	Expression * operand;
 	Expression * left;
 	Expression * right;
 };

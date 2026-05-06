@@ -39,6 +39,7 @@ TopLevelItem * ExpressionStatementTopLevelItemSemanticAction(Expression * expres
 TopLevelItem * EmptyStatementTopLevelItemSemanticAction();
 TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item);
 TopLevelItemList * AppendTopLevelItemListSemanticAction(TopLevelItemList * itemList, TopLevelItem * item);
+TopLevelItemList * FunctionBodyTopLevelItemListSemanticAction(TopLevelItemList * itemList);
 Program * ProgramSemanticAction(TopLevelItemList * items);
 
 #endif

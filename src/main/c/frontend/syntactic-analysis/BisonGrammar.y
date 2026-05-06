@@ -134,7 +134,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS PREFIX_INCREMENT PREFIX_DECREMENT
-%left <token> INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT
+%left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT
 
 /** Non-terminals. */
 %type <type> type
@@ -194,7 +194,7 @@ functionDeclaration:
 
 optionalFunctionBody:
 	 %empty													{ $$ = NULL; }
-	| INDENT functionBodyItemList DEDENT					{ $$ = $2; }
+	| INDENT functionBodyItemList DEDENT					{ $$ = FunctionBodyTopLevelItemListSemanticAction($2); }
 	;
 
 functionBodyItemList:
