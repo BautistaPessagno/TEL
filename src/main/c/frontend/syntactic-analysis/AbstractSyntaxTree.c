@@ -196,6 +196,12 @@ void destroyExpression(Expression * expression) {
 		}
 		destroyFunctionCall(expression->functionCall);
 		expression->functionCall = NULL;
+		destroyExpression(expression->operand);
+		expression->operand = NULL;
+		destroyExpression(expression->left);
+		expression->left = NULL;
+		destroyExpression(expression->right);
+		expression->right = NULL;
 		free(expression);
 	}
 }
@@ -228,6 +234,8 @@ void destroyTopLevelItem(TopLevelItem * topLevelItem) {
 		topLevelItem->preprocessorDirective = NULL;
 		destroyFunctionCall(topLevelItem->functionCall);
 		topLevelItem->functionCall = NULL;
+		destroyExpression(topLevelItem->expression);
+		topLevelItem->expression = NULL;
 		free(topLevelItem);
 	}
 }
