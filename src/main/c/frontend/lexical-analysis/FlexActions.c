@@ -1,5 +1,6 @@
 #include "FlexActions.h"
 #include "StackADT.h"
+#include "../syntactic-analysis/BisonActions.h"
 #include <string.h>
 
 /* MODULE INTERNAL STATE */
@@ -108,6 +109,9 @@ static char * _copyDirectiveValue(const char * lexeme, const char * keyword) {
 
 CompilationStatus IdentifierLexemeAction() {
 	Token * token = createToken(_lexicalAnalyzer, IDENTIFIER);
+	if (IsKnownTypedefName(token->lexeme)) {
+		token->label = TYPEDEF_NAME;
+	}
 	token->semanticValue->string = strdup(token->lexeme);
 	_logTokenAction(__FUNCTION__, token);
 	CompilationStatus status = pushToken(_lexicalAnalyzer, token);

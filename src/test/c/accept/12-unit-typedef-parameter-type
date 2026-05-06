@@ -1,0 +1,2 @@
+typedef Count:uint
+fn consume value:Count

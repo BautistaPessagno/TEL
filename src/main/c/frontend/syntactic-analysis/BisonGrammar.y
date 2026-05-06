@@ -81,6 +81,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 /** Terminals. */
 %token <string> IDENTIFIER
+%token <string> TYPEDEF_NAME
 %token <string> INTEGER_LITERAL
 %token <string> STRING_LITERAL
 %token <string> INCLUDE_DIRECTIVE
@@ -112,6 +113,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> UNKNOWN
 
 /** Non-terminals. */
+%type <string> identifier
 %type <type> type
 %type <type> optionalReturnType
 %type <declaration> declaration
@@ -144,6 +146,11 @@ program:
 	 topLevelItemList										{ $$ = ProgramSemanticAction($1); }
 	;
 
+identifier:
+	 IDENTIFIER												{ $$ = $1; }
+	| TYPEDEF_NAME											{ $$ = $1; }
+	;
+
 topLevelItemList:
 	 topLevelItem											{ $$ = SingletonTopLevelItemListSemanticAction($1); }
 	| topLevelItemList topLevelItem							{ $$ = AppendTopLevelItemListSemanticAction($1, $2); }
@@ -161,7 +168,7 @@ topLevelItem:
 	;
 
 declaration:
-	 IDENTIFIER COLON type SEMICOLON						{ $$ = VariableDeclarationSemanticAction($1, $3); }
+	 identifier COLON type SEMICOLON						{ $$ = VariableDeclarationSemanticAction($1, $3); }
 	;
 
 variableDeclarationList:
@@ -171,7 +178,7 @@ variableDeclarationList:
 	;
 
 functionDeclaration:
-	 FUNCTION IDENTIFIER optionalParameterList optionalReturnType SEMICOLON optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
+	 FUNCTION identifier optionalParameterList optionalReturnType SEMICOLON optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
 	;
 
 optionalFunctionBody:
@@ -190,7 +197,7 @@ parameterList:
 	;
 
 parameter:
-	 IDENTIFIER COLON type									{ $$ = ParameterSemanticAction($1, $3); }
+	 identifier COLON type									{ $$ = ParameterSemanticAction($1, $3); }
 	;
 
 optionalReturnType:
@@ -199,12 +206,12 @@ optionalReturnType:
 	;
 
 aggregateDeclaration:
-	 STRUCT IDENTIFIER SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
-	| UNION IDENTIFIER SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
+	 STRUCT identifier SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
+	| UNION identifier SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
 	;
 
 enumDeclaration:
-	 ENUM IDENTIFIER SEMICOLON INDENT enumMemberList DEDENT	{ $$ = EnumDeclarationSemanticAction($2, $5); }
+	 ENUM identifier SEMICOLON INDENT enumMemberList DEDENT	{ $$ = EnumDeclarationSemanticAction($2, $5); }
 	;
 
 enumMemberList:
@@ -214,7 +221,7 @@ enumMemberList:
 	;
 
 enumMember:
-	 IDENTIFIER optionalEnumMemberValue SEMICOLON			{ $$ = EnumMemberSemanticAction($1, $2); }
+	 identifier optionalEnumMemberValue SEMICOLON			{ $$ = EnumMemberSemanticAction($1, $2); }
 	;
 
 optionalEnumMemberValue:
@@ -223,7 +230,7 @@ optionalEnumMemberValue:
 	;
 
 typedefDeclaration:
-	 TYPEDEF IDENTIFIER COLON type SEMICOLON				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
+	 TYPEDEF identifier COLON type SEMICOLON				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
 	;
 
 preprocessorDirective:
@@ -232,7 +239,7 @@ preprocessorDirective:
 	;
 
 functionCall:
-	 IDENTIFIER OPEN_PARENTHESIS optionalArgumentList CLOSE_PARENTHESIS	{ $$ = FunctionCallSemanticAction($1, $3); }
+	 identifier OPEN_PARENTHESIS optionalArgumentList CLOSE_PARENTHESIS	{ $$ = FunctionCallSemanticAction($1, $3); }
 	;
 
 optionalArgumentList:
@@ -246,7 +253,7 @@ argumentList:
 	;
 
 expression:
-	 IDENTIFIER												{ $$ = IdentifierExpressionSemanticAction($1); }
+	 identifier												{ $$ = IdentifierExpressionSemanticAction($1); }
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
 	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
 	| functionCall											{ $$ = FunctionCallExpressionSemanticAction($1); }
@@ -261,10 +268,10 @@ type:
 	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
 	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
 	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
-	| IDENTIFIER											{ if (!IsKnownTypedefName($1)) { free($1); YYERROR; } $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
-	| STRUCT IDENTIFIER										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
-	| ENUM IDENTIFIER										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
-	| UNION IDENTIFIER										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
+	| TYPEDEF_NAME											{ $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
+	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
+	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
+	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
 	;
 
 %%
