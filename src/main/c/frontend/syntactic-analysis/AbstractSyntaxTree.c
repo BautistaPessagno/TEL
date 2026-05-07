@@ -98,6 +98,15 @@ void destroyFunctionDeclaration(FunctionDeclaration * functionDeclaration) {
 	}
 }
 
+void destroyMainDeclaration(MainDeclaration * mainDeclaration) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (mainDeclaration != NULL) {
+		destroyTopLevelItemList(mainDeclaration->body);
+		mainDeclaration->body = NULL;
+		free(mainDeclaration);
+	}
+}
+
 void destroyAggregateDeclaration(AggregateDeclaration * aggregateDeclaration) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (aggregateDeclaration != NULL) {
@@ -224,6 +233,8 @@ void destroyTopLevelItem(TopLevelItem * topLevelItem) {
 		topLevelItem->variableDeclaration = NULL;
 		destroyFunctionDeclaration(topLevelItem->functionDeclaration);
 		topLevelItem->functionDeclaration = NULL;
+		destroyMainDeclaration(topLevelItem->mainDeclaration);
+		topLevelItem->mainDeclaration = NULL;
 		destroyAggregateDeclaration(topLevelItem->aggregateDeclaration);
 		topLevelItem->aggregateDeclaration = NULL;
 		destroyEnumDeclaration(topLevelItem->enumDeclaration);

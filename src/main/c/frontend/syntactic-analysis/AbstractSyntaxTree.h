@@ -27,6 +27,7 @@ typedef struct VariableDeclarationList VariableDeclarationList;
 typedef struct Parameter Parameter;
 typedef struct ParameterList ParameterList;
 typedef struct FunctionDeclaration FunctionDeclaration;
+typedef struct MainDeclaration MainDeclaration;
 typedef struct AggregateDeclaration AggregateDeclaration;
 typedef struct EnumMember EnumMember;
 typedef struct EnumMemberList EnumMemberList;
@@ -72,6 +73,7 @@ enum PreprocessorDirectiveKind {
 enum TopLevelItemKind {
 	TOP_LEVEL_VARIABLE_DECLARATION,
 	TOP_LEVEL_FUNCTION_DECLARATION,
+	TOP_LEVEL_MAIN_DECLARATION,
 	TOP_LEVEL_AGGREGATE_DECLARATION,
 	TOP_LEVEL_ENUM_DECLARATION,
 	TOP_LEVEL_TYPEDEF_DECLARATION,
@@ -164,6 +166,10 @@ struct FunctionDeclaration {
 	TopLevelItemList * body;
 };
 
+struct MainDeclaration {
+	TopLevelItemList * body;
+};
+
 struct AggregateDeclaration {
 	AggregateKind kind;
 	char * name;
@@ -220,6 +226,7 @@ struct TopLevelItem {
 	TopLevelItemKind kind;
 	VariableDeclaration * variableDeclaration;
 	FunctionDeclaration * functionDeclaration;
+	MainDeclaration * mainDeclaration;
 	AggregateDeclaration * aggregateDeclaration;
 	EnumDeclaration * enumDeclaration;
 	TypedefDeclaration * typedefDeclaration;
@@ -247,6 +254,7 @@ void destroyVariableDeclarationList(VariableDeclarationList * variableDeclaratio
 void destroyParameter(Parameter * parameter);
 void destroyParameterList(ParameterList * parameterList);
 void destroyFunctionDeclaration(FunctionDeclaration * functionDeclaration);
+void destroyMainDeclaration(MainDeclaration * mainDeclaration);
 void destroyAggregateDeclaration(AggregateDeclaration * aggregateDeclaration);
 void destroyEnumMember(EnumMember * enumMember);
 void destroyEnumMemberList(EnumMemberList * enumMemberList);

@@ -133,7 +133,7 @@ if the program uses i/o functions, stdio will automatically be included
 
 we will allaw for c code in blocks like this
 
-```c
+```text
 \`
 // some c code
 \`

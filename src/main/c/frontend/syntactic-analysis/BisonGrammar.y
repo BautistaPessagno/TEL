@@ -38,6 +38,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 	Parameter * parameter;
 	ParameterList * parameterList;
 	FunctionDeclaration * functionDeclaration;
+	MainDeclaration * mainDeclaration;
 	AggregateDeclaration * aggregateDeclaration;
 	EnumMember * enumMember;
 	EnumMemberList * enumMemberList;
@@ -67,6 +68,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyParameter($$); } <parameter>
 %destructor { destroyParameterList($$); } <parameterList>
 %destructor { destroyFunctionDeclaration($$); } <functionDeclaration>
+%destructor { destroyMainDeclaration($$); } <mainDeclaration>
 %destructor { destroyAggregateDeclaration($$); } <aggregateDeclaration>
 %destructor { destroyEnumMember($$); } <enumMember>
 %destructor { destroyEnumMemberList($$); } <enumMemberList>
@@ -172,7 +174,9 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
 %type <topLevelItemList> optionalFunctionBody
+%type <topLevelItemList> functionBody
 %type <functionDeclaration> functionDeclaration
+%type <mainDeclaration> mainDeclaration
 %type <aggregateDeclaration> aggregateDeclaration
 %type <enumMember> enumMember
 %type <enumMemberList> enumMemberList
@@ -214,6 +218,7 @@ topLevelItemList:
 topLevelItem:
 	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
+	| mainDeclaration										{ $$ = MainDeclarationTopLevelItemSemanticAction($1); }
 	| aggregateDeclaration									{ $$ = AggregateDeclarationTopLevelItemSemanticAction($1); }
 	| enumDeclaration										{ $$ = EnumDeclarationTopLevelItemSemanticAction($1); }
 	| typedefDeclaration									{ $$ = TypedefDeclarationTopLevelItemSemanticAction($1); }
@@ -243,7 +248,15 @@ functionDeclaration:
 
 optionalFunctionBody:
 	 %empty													{ $$ = NULL; }
-	| INDENT functionBodyItemList DEDENT					{ $$ = FunctionBodyTopLevelItemListSemanticAction($2); }
+	| functionBody											{ $$ = $1; }
+	;
+
+functionBody:
+	 INDENT functionBodyItemList DEDENT						{ $$ = FunctionBodyTopLevelItemListSemanticAction($2); }
+	;
+
+mainDeclaration:
+	 MAIN SEMICOLON functionBody							{ $$ = MainDeclarationSemanticAction($3); }
 	;
 
 functionBodyItemList:

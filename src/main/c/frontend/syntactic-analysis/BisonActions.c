@@ -153,6 +153,13 @@ FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterLi
 	return declaration;
 }
 
+MainDeclaration * MainDeclarationSemanticAction(TopLevelItemList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	MainDeclaration * declaration = calloc(1, sizeof(MainDeclaration));
+	declaration->body = body;
+	return declaration;
+}
+
 AggregateDeclaration * AggregateDeclarationSemanticAction(AggregateKind kind, char * name, VariableDeclarationList * fields) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	AggregateDeclaration * declaration = calloc(1, sizeof(AggregateDeclaration));
@@ -301,6 +308,14 @@ TopLevelItem * FunctionDeclarationTopLevelItemSemanticAction(FunctionDeclaration
 	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
 	item->kind = TOP_LEVEL_FUNCTION_DECLARATION;
 	item->functionDeclaration = declaration;
+	return item;
+}
+
+TopLevelItem * MainDeclarationTopLevelItemSemanticAction(MainDeclaration * declaration) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
+	item->kind = TOP_LEVEL_MAIN_DECLARATION;
+	item->mainDeclaration = declaration;
 	return item;
 }
 
