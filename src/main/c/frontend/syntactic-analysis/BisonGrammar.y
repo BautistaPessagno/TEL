@@ -113,6 +113,10 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> DEDENT
 %token <token> OPEN_PARENTHESIS
 %token <token> CLOSE_PARENTHESIS
+%token <token> OPEN_BRACKET
+%token <token> CLOSE_BRACKET
+%token <token> OPEN_BRACE
+%token <token> CLOSE_BRACE
 %token <token> ARROW
 %token <token> RETURN
 %token <token> IF
@@ -171,10 +175,6 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> BITWISE_NOT
 %token <token> INCREMENT
 %token <token> DECREMENT
-%token <token> OPEN_BRACKET
-%token <token> CLOSE_BRACKET
-%token <token> OPEN_BRACE
-%token <token> CLOSE_BRACE
 
 %token <token> IGNORED
 %token <token> UNKNOWN
