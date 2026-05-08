@@ -1,0 +1,3 @@
+main
+    ford i 0 "ten"
+        x:int = i

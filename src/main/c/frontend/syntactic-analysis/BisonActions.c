@@ -499,10 +499,11 @@ ForStatement * ForStatementFromFordSemanticAction(char * iteratorName, Expressio
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * initializerIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
 	Expression * conditionIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
-	Expression * updateIterator = IdentifierExpressionSemanticAction(iteratorName);
+	Expression * updateIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
 	Expression * initializer = BinaryExpressionSemanticAction(initializerIterator, EXPRESSION_OPERATOR_ASSIGN, start);
 	Expression * condition = BinaryExpressionSemanticAction(conditionIterator, EXPRESSION_OPERATOR_LESS_THAN, end);
 	Expression * update = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, updateIterator);
+	free(iteratorName);
 	return ForStatementSemanticAction(initializer, condition, update, body);
 }
 

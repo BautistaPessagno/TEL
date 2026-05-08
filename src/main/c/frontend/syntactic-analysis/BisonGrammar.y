@@ -385,7 +385,6 @@ fordLoop:
 fordBound:
 	 identifier												{ $$ = IdentifierExpressionSemanticAction($1); }
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
-	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
 	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
 	;
 
