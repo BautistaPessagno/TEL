@@ -108,6 +108,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> COMMA
 %token <token> ASSIGN
 %token <token> SEMICOLON
+%token <token> LINEBREAK
 %token <token> INDENT
 %token <token> DEDENT
 %token <token> OPEN_PARENTHESIS
@@ -192,6 +193,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 /** Non-terminals. */
 %type <string> identifier
+%type <token> terminator
 %type <type> type
 %type <type> optionalReturnType
 %type <expression> optionalInitializer
@@ -227,6 +229,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <statement> whileStatement
 %type <statement> doWhileStatement
 %type <statement> switchStatement
+%type <statement> switchInlineStatement
 %type <statement> breakStatement
 %type <ifBranch> ifBranch
 %type <ifBranch> elifBranch
@@ -237,9 +240,11 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <forStatement> forLoop
 %type <whileStatement> whileLoop
 %type <doWhileStatement> doWhileLoop
-%type <switchStatement> switchControl
 %type <switchCase> switchCase
 %type <switchCase> switchCaseList
+%type <statementList> switchCaseBody
+%type <statementList> switchInlineStatementList
+%type <programItemList> optionalProgramItemList
 %type <programItemList> programItemList
 %type <statementList> statementList
 %type <program> program
@@ -249,12 +254,18 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 // IMPORTANT: To use λ in the following grammar, use the %empty symbol.
 
 program:
-	 programItemList										{ $$ = ProgramSemanticAction($1); }
+	 optionalProgramItemList								{ $$ = ProgramSemanticAction($1); }
+	| optionalProgramItemList mainDeclaration optionalProgramItemList	{ $$ = ProgramSemanticAction(ConcatenateProgramItemListSemanticAction(AppendProgramItemListSemanticAction($1, MainDeclarationProgramItemSemanticAction($2)), $3)); }
 	;
 
 identifier:
 	 IDENTIFIER												{ $$ = $1; }
 	| TYPEDEF_NAME											{ $$ = $1; }
+	;
+
+optionalProgramItemList:
+	 %empty													{ $$ = NULL; }
+	| programItemList										{ $$ = $1; }
 	;
 
 programItemList:
@@ -265,16 +276,15 @@ programItemList:
 programItem:
 	 declaration											{ $$ = VariableDeclarationProgramItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationProgramItemSemanticAction($1); }
-	| mainDeclaration										{ $$ = MainDeclarationProgramItemSemanticAction($1); }
 	| aggregateDeclaration									{ $$ = AggregateDeclarationProgramItemSemanticAction($1); }
 	| enumDeclaration										{ $$ = EnumDeclarationProgramItemSemanticAction($1); }
 	| typedefDeclaration									{ $$ = TypedefDeclarationProgramItemSemanticAction($1); }
 	| preprocessorDirective									{ $$ = PreprocessorDirectiveProgramItemSemanticAction($1); }
-	| SEMICOLON												{ $$ = EmptyProgramItemSemanticAction(); }
+	| terminator											{ $$ = EmptyProgramItemSemanticAction(); }
 	;
 
 declaration:
-	 identifier COLON type optionalInitializer SEMICOLON	{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
+	 identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
 	;
 
 optionalInitializer:
@@ -285,11 +295,11 @@ optionalInitializer:
 variableDeclarationList:
 	 declaration											{ $$ = SingletonVariableDeclarationListSemanticAction($1); }
 	| variableDeclarationList declaration					{ $$ = AppendVariableDeclarationListSemanticAction($1, $2); }
-	| variableDeclarationList SEMICOLON						{ $$ = $1; }
+	| variableDeclarationList terminator						{ $$ = $1; }
 	;
 
 functionDeclaration:
-	 FUNCTION identifier optionalParameterList optionalReturnType SEMICOLON optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
+	 FUNCTION identifier optionalParameterList optionalReturnType terminator optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
 	;
 
 optionalFunctionBody:
@@ -302,7 +312,7 @@ functionBody:
 	;
 
 mainDeclaration:
-	 MAIN SEMICOLON functionBody							{ $$ = MainDeclarationSemanticAction($3); }
+	 MAIN LINEBREAK functionBody							{ $$ = MainDeclarationSemanticAction($3); }
 	;
 
 statementList:
@@ -321,11 +331,11 @@ statement:
 	| doWhileStatement										{ $$ = $1; }
 	| switchStatement										{ $$ = $1; }
 	| breakStatement										{ $$ = $1; }
-	| SEMICOLON												{ $$ = EmptyStatementSemanticAction(); }
+	| terminator											{ $$ = EmptyStatementSemanticAction(); }
 	;
 
 returnStatement:
-	 RETURN optionalReturnExpression SEMICOLON				{ $$ = ReturnStatementSemanticAction($2); }
+	 RETURN optionalReturnExpression terminator				{ $$ = ReturnStatementSemanticAction($2); }
 	;
 
 optionalReturnExpression:
@@ -334,7 +344,7 @@ optionalReturnExpression:
 	;
 
 expressionStatement:
-	 expression SEMICOLON									{ $$ = ExpressionStatementSemanticAction($1); }
+	 expression terminator									{ $$ = ExpressionStatementSemanticAction($1); }
 	;
 
 ifStatement:
@@ -342,7 +352,7 @@ ifStatement:
 	;
 
 ifBranch:
-	 IF expression SEMICOLON INDENT statementList DEDENT	{ $$ = IfBranchSemanticAction($2, $5); }
+	 IF expression terminator INDENT statementList DEDENT	{ $$ = IfBranchSemanticAction($2, $5); }
 	;
 
 optionalElifBranchList:
@@ -356,12 +366,12 @@ elifBranchList:
 	;
 
 elifBranch:
-	 ELIF expression SEMICOLON INDENT statementList DEDENT	{ $$ = IfBranchSemanticAction($2, $5); }
+	 ELIF expression terminator INDENT statementList DEDENT	{ $$ = IfBranchSemanticAction($2, $5); }
 	;
 
 optionalElseBody:
 	 %empty													{ $$ = NULL; }
-	| ELSE SEMICOLON INDENT statementList DEDENT			{ $$ = $4; }
+	| ELSE terminator INDENT statementList DEDENT			{ $$ = $4; }
 	;
 
 fordStatement:
@@ -369,7 +379,7 @@ fordStatement:
 	;
 
 fordLoop:
-	 FORD identifier fordBound fordBound SEMICOLON INDENT statementList DEDENT	{ $$ = ForStatementFromFordSemanticAction($2, $3, $4, $7); }
+	 FORD identifier fordBound fordBound terminator INDENT statementList DEDENT	{ $$ = ForStatementFromFordSemanticAction($2, $3, $4, $7); }
 	;
 
 fordBound:
@@ -384,7 +394,7 @@ forStatement:
 	;
 
 forLoop:
-	 FOR expression COMMA expression COMMA expression SEMICOLON INDENT statementList DEDENT	{ $$ = ForStatementSemanticAction($2, $4, $6, $9); }
+	 FOR expression COMMA expression COMMA expression terminator INDENT statementList DEDENT	{ $$ = ForStatementSemanticAction($2, $4, $6, $9); }
 	;
 
 whileStatement:
@@ -392,7 +402,7 @@ whileStatement:
 	;
 
 whileLoop:
-	 WHILE expression SEMICOLON INDENT statementList DEDENT	{ $$ = WhileStatementSemanticAction($2, $5); }
+	 WHILE expression terminator INDENT statementList DEDENT	{ $$ = WhileStatementSemanticAction($2, $5); }
 	;
 
 doWhileStatement:
@@ -400,32 +410,51 @@ doWhileStatement:
 	;
 
 doWhileLoop:
-	 DO_WHILE SEMICOLON INDENT statementList DEDENT expression SEMICOLON	{ $$ = DoWhileStatementSemanticAction($4, $6); }
+	 DO_WHILE terminator INDENT statementList DEDENT expression terminator	{ $$ = DoWhileStatementSemanticAction($4, $6); }
 	;
 
 switchStatement:
-	 switchControl											{ $$ = SwitchStatementSemanticActionWrapper($1); }
-	;
-
-switchControl:
-	 SWITCH expression SEMICOLON INDENT switchCaseList DEDENT	{ $$ = SwitchStatementSemanticAction($2, $5); }
+	 SWITCH expression terminator INDENT switchCaseList DEDENT	{ $$ = SwitchStatementSemanticActionWrapper(SwitchStatementSemanticAction($2, $5)); }
 	;
 
 switchCaseList:
 	 switchCase												{ $$ = $1; }
 	| switchCaseList switchCase								{ $$ = AppendSwitchCaseSemanticAction($1, $2); }
+	| switchCaseList LINEBREAK								{ $$ = $1; }
 	;
 
 switchCase:
-	 expression COLON SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction($1, $5); }
-	| expression ARROW SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction($1, AppendStatementListSemanticAction($5, BreakStatementSemanticAction())); }
-	| DEFAULT COLON SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(NULL, $5); }
-	| DEFAULT ARROW SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(NULL, AppendStatementListSemanticAction($5, BreakStatementSemanticAction())); }
-	| DEFAULT BREAK SEMICOLON								{ $$ = SwitchCaseSemanticAction(NULL, SingletonStatementListSemanticAction(BreakStatementSemanticAction())); }
+	 expression COLON switchCaseBody						{ $$ = SwitchCaseSemanticAction($1, $3); }
+	| expression ARROW switchCaseBody						{ $$ = SwitchCaseSemanticAction($1, AppendStatementListSemanticAction($3, BreakStatementSemanticAction())); }
+	| DEFAULT COLON switchCaseBody							{ $$ = SwitchCaseSemanticAction(NULL, $3); }
+	| DEFAULT ARROW switchCaseBody							{ $$ = SwitchCaseSemanticAction(NULL, AppendStatementListSemanticAction($3, BreakStatementSemanticAction())); }
+	| DEFAULT BREAK terminator								{ $$ = SwitchCaseSemanticAction(NULL, SingletonStatementListSemanticAction(BreakStatementSemanticAction())); }
+	;
+
+switchCaseBody:
+	 terminator INDENT statementList DEDENT					{ $$ = $3; }
+	| switchInlineStatementList LINEBREAK					{ $$ = $1; }
+	;
+
+switchInlineStatementList:
+	 switchInlineStatement									{ $$ = SingletonStatementListSemanticAction($1); }
+	| switchInlineStatementList SEMICOLON switchInlineStatement	{ $$ = AppendStatementListSemanticAction($1, $3); }
+	;
+
+switchInlineStatement:
+	 identifier COLON type optionalInitializer				{ $$ = VariableDeclarationStatementSemanticAction(VariableDeclarationSemanticAction($1, $3, $4)); }
+	| RETURN optionalReturnExpression						{ $$ = ReturnStatementSemanticAction($2); }
+	| expression											{ $$ = ExpressionStatementSemanticAction($1); }
+	| BREAK													{ $$ = BreakStatementSemanticAction(); }
 	;
 
 breakStatement:
-	 BREAK SEMICOLON										{ $$ = BreakStatementSemanticAction(); }
+	 BREAK terminator										{ $$ = BreakStatementSemanticAction(); }
+	;
+
+terminator:
+	 SEMICOLON												{ $$ = $1; }
+	| LINEBREAK												{ $$ = $1; }
 	;
 
 optionalParameterList:
@@ -448,22 +477,22 @@ optionalReturnType:
 	;
 
 aggregateDeclaration:
-	 STRUCT identifier SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
-	| UNION identifier SEMICOLON INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
+	 STRUCT identifier terminator INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
+	| UNION identifier terminator INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
 	;
 
 enumDeclaration:
-	 ENUM identifier SEMICOLON INDENT enumMemberList DEDENT	{ $$ = EnumDeclarationSemanticAction($2, $5); }
+	 ENUM identifier terminator INDENT enumMemberList DEDENT	{ $$ = EnumDeclarationSemanticAction($2, $5); }
 	;
 
 enumMemberList:
 	 enumMember												{ $$ = SingletonEnumMemberListSemanticAction($1); }
 	| enumMemberList enumMember								{ $$ = AppendEnumMemberListSemanticAction($1, $2); }
-	| enumMemberList SEMICOLON								{ $$ = $1; }
+	| enumMemberList terminator								{ $$ = $1; }
 	;
 
 enumMember:
-	 identifier optionalEnumMemberValue SEMICOLON			{ $$ = EnumMemberSemanticAction($1, $2); }
+	 identifier optionalEnumMemberValue terminator			{ $$ = EnumMemberSemanticAction($1, $2); }
 	;
 
 optionalEnumMemberValue:
@@ -472,12 +501,12 @@ optionalEnumMemberValue:
 	;
 
 typedefDeclaration:
-	 TYPEDEF identifier COLON type SEMICOLON				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
+	 TYPEDEF identifier COLON type terminator				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
 	;
 
 preprocessorDirective:
-	 INCLUDE_DIRECTIVE SEMICOLON							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_INCLUDE_DIRECTIVE, $1); }
-	| DEFINE_DIRECTIVE SEMICOLON							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_DEFINE_DIRECTIVE, $1); }
+	 INCLUDE_DIRECTIVE terminator							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_INCLUDE_DIRECTIVE, $1); }
+	| DEFINE_DIRECTIVE terminator							{ $$ = PreprocessorDirectiveSemanticAction(PREPROCESSOR_DEFINE_DIRECTIVE, $1); }
 	;
 
 functionCall:

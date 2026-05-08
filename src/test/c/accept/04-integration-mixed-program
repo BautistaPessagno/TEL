@@ -3,5 +3,4 @@ message:char
 fn add left:int right:int -> int;
 fn log text:char -> void
 main
-    add(value 2);
-    log("done")
+    add(value 2); log("done"); add(1 3)

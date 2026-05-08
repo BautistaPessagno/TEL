@@ -367,12 +367,31 @@ ProgramItemList * SingletonProgramItemListSemanticAction(ProgramItem * item) {
 
 ProgramItemList * AppendProgramItemListSemanticAction(ProgramItemList * itemList, ProgramItem * item) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (itemList == NULL) {
+		return SingletonProgramItemListSemanticAction(item);
+	}
 	ProgramItemList * tail = itemList;
 	while (tail->next != NULL) {
 		tail = tail->next;
 	}
 	tail->next = SingletonProgramItemListSemanticAction(item);
 	return itemList;
+}
+
+ProgramItemList * ConcatenateProgramItemListSemanticAction(ProgramItemList * first, ProgramItemList * second) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (first == NULL) {
+		return second;
+	}
+	if (second == NULL) {
+		return first;
+	}
+	ProgramItemList * tail = first;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = second;
+	return first;
 }
 
 static int _isImplicitReturnExpression(const Expression * expression) {

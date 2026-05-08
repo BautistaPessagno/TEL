@@ -54,6 +54,7 @@ ProgramItem * PreprocessorDirectiveProgramItemSemanticAction(PreprocessorDirecti
 ProgramItem * EmptyProgramItemSemanticAction();
 ProgramItemList * SingletonProgramItemListSemanticAction(ProgramItem * item);
 ProgramItemList * AppendProgramItemListSemanticAction(ProgramItemList * itemList, ProgramItem * item);
+ProgramItemList * ConcatenateProgramItemListSemanticAction(ProgramItemList * first, ProgramItemList * second);
 Statement * VariableDeclarationStatementSemanticAction(VariableDeclaration * declaration);
 Statement * ReturnStatementSemanticAction(Expression * expression);
 Statement * ExpressionStatementSemanticAction(Expression * expression);
