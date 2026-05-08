@@ -2,7 +2,7 @@
 
 ## Keywords
 
-single words will be kept the same since they are just one token
+Single words are kept as-is, since they are single tokens.
 
 - int -> int
 - char -> char
@@ -13,125 +13,143 @@ single words will be kept the same since they are just one token
 - uint -> unsigned int
 - uli -> unsigned long int
 
-and they will be used like this
+They are used like this:
 
 `x:int` -> `int x`
 
 ## Function declarations
 
-we will use `fn name args -> return_type`
+Functions are declared with `fn name args -> return_type`, where:
 
-we can omit the return_type if the function returns void
+- `args` is a space-separated list of `name:type` pairs
+- `-> return_type` declares the return type, and may be omitted if the function returns `void`
 
-### Example
+### Examples
 
-instead of
+A function returning `int`:
 
 ```c
 int foo(int arg1, char arg2);
 ```
 
-we will have
+becomes:
 
 ```
-fn foo arg1:int arg2:char
+fn foo arg1:int arg2:char -> int
 ```
 
-## Sentence termination
+A `void` function lets the return type be omitted:
 
-We will not be requiring `;` at the end of each line 
+```c
+void bar(int x);
+```
 
-we will still be accepting programs that have it and ones that use it to separate sentences in the same line
+becomes:
+
+```
+fn bar x:int
+```
+
+## Statement termination
+
+Semicolons are optional at the end of a line. To place multiple statements on the same line, separate them with `;`.
 
 ## Indentation
 
-Instead of using `{}` for blocks of code, we will be using indentation like python
+Instead of using `{}` for code blocks, we use indentation, like Python.
 
-## Flux control structures
+## Control flow
 
-### if-else
+### Conditionals
 
 - `if` -> `if`
 - `else if` -> `elif`
 - `else` -> `else`
 
-### loops
+### Loops
 
 - `ford i 0 n` -> `for (int i = 0; i < n; i++)`
-- `for i = 0, condition, i--` -> `for (int i = 0; condition i++)`
+- `for i = 0, condition, i++` -> `for (int i = 0; condition; i++)`
 - `while` -> `while`
 - `dw` -> `do while`
 
 ### Switch
 
-the switch will have this structure
+Two variants are supported, distinguished by the case separator.
 
-```c
+**C-style (`:`) — fall-through:** cases fall through to the next one unless an explicit `break` is provided.
+
+```
 switch variable
-    1: ...
-    2: ...
-    default break
+    1: do_one()
+    2: do_two()
+       break
+    3: do_three()
+    default: do_default()
 ```
 
-or if we want it to include a break in each case we can do like in java and use
+Here, case `1` falls through into case `2`, which breaks; case `3` falls through into `default`.
 
-```c
+**Java-style (`->`) — automatic break:** each case ends implicitly, with no fall-through.
+
+```
 switch variable
-    1 -> ...
-    2 -> ...
-    default break
+    1 -> do_one()
+    2 -> do_two()
+    3 -> do_three()
+    default -> do_default()
 ```
 
 ## Arithmetic operators
 
-They will be the same as in c
+Same as in C:
 
-+, -, *, /, %, ==, !=, <, >, <=, >=, +=, ++, etc
++, -, *, /, %, ==, !=, <, >, <=, >=, +=, ++, etc.
 
-## Logic Operators and bitwise operators
+## Logical and bitwise operators
 
-The same as in c
+Same as in C:
 
 &&, ||, !, &, |, ^, ~, <<, >>
 
 ## Preprocessing directives
 
-`#define A 3` stays the same, but when it comes to includes
+`#define A 3` stays the same, but `#include` directives change:
 `#include stdio` -> `#include <stdio.h>`
 
-## Structs, enums, unions
+### Implicit I/O
 
-they stay the same, but using indentation instead of `{}`
+If the program uses I/O functions, `stdio` is automatically included.
+
+## Structs, enums, and unions
+
+Same as in C, but using indentation instead of `{}`.
 
 ## Pointers and arrays
 
-`arr:int[10]` ->  `int arr[10]`
+`arr:int[10]` -> `int arr[10]`
 
 ## Variables and constants
 
-they will stay the same
+Same as in C.
 
 ## Literals
 
-they will stay the same
+Same as in C.
 
 ## Comments
 
-we will support both multi line and //
+We support both multi-line `/* */` and single-line `//` comments.
 
-## Entry Point
+## Entry point
 
-the main function will be the entry point where
+The `main` function is the entry point and is translated as:
 
 `main` -> `int main(int argc, char * argv[])`
 
-## implicit i/o
+## Inline C
 
-if the program uses i/o functions, stdio will automatically be included
-
-## c blocks
-
-we will allaw for c code in blocks like this
+We allow embedding C code in blocks like this:
 
 ```c
 \`
@@ -141,6 +159,6 @@ we will allaw for c code in blocks like this
 
 ## Type inference
 
-if we can we would like to include
+Where possible, types are inferred:
 
 `x = 5` -> `int x = 5`
