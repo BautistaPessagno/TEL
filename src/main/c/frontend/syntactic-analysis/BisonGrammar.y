@@ -171,6 +171,10 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> BITWISE_NOT
 %token <token> INCREMENT
 %token <token> DECREMENT
+%token <token> OPEN_BRACKET
+%token <token> CLOSE_BRACKET
+%token <token> OPEN_BRACE
+%token <token> CLOSE_BRACE
 
 %token <token> IGNORED
 %token <token> UNKNOWN

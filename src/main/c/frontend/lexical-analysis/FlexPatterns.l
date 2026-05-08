@@ -132,6 +132,10 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
 "("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }
 ")"									{ return PunctuationLexemeAction(CLOSE_PARENTHESIS); }
+"["									{ return PunctuationLexemeAction(OPEN_BRACKET); }
+"]"									{ return PunctuationLexemeAction(CLOSE_BRACKET); }
+"{"									{ return PunctuationLexemeAction(OPEN_BRACE); }
+"}"									{ return PunctuationLexemeAction(CLOSE_BRACE); }
 
 {whitespace}						{ return IgnoredLexemeAction(); }
 .									{ return UnknownLexemeAction(); }
