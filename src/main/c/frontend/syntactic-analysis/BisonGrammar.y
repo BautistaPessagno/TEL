@@ -194,7 +194,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS UNARY_DEREFERENCE UNARY_ADDRESS_OF PREFIX_INCREMENT PREFIX_DECREMENT
-%left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT
+%left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT ARRAY_INDEX
 
 /** Non-terminals. */
 %type <string> identifier
@@ -574,6 +574,7 @@ expression:
 	| DECREMENT expression %prec PREFIX_DECREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_PREFIX_DECREMENT, $2); }
 	| expression INCREMENT %prec POSTFIX_INCREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, $1); }
 	| expression DECREMENT %prec POSTFIX_DECREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_DECREMENT, $1); }
+	| expression OPEN_BRACKET expression CLOSE_BRACKET %prec ARRAY_INDEX	{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ARRAY_INDEX, $3); }
 	;
 
 type:
