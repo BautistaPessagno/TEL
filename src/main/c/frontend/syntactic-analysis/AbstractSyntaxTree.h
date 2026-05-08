@@ -164,7 +164,7 @@ enum ExpressionOperator {
 struct Type {
 	TypeKind kind;
 	char * name;
-	Type * pointee;
+	Type * pointee;                  /* TYPE_POINTER_KIND: pointed-to type. TYPE_ARRAY_KIND: element type. */
 	Expression * arraySize;
 	ParameterList * functionParams;
 	Type * returnType;
