@@ -19,6 +19,7 @@ typedef enum AggregateKind AggregateKind;
 typedef enum PreprocessorDirectiveKind PreprocessorDirectiveKind;
 typedef enum ProgramItemKind ProgramItemKind;
 typedef enum StatementKind StatementKind;
+typedef enum SwitchCaseKind SwitchCaseKind;
 typedef enum ExpressionKind ExpressionKind;
 typedef enum ExpressionOperator ExpressionOperator;
 
@@ -40,6 +41,14 @@ typedef struct Expression Expression;
 typedef struct ExpressionList ExpressionList;
 typedef struct ProgramItem ProgramItem;
 typedef struct ProgramItemList ProgramItemList;
+typedef struct IfBranch IfBranch;
+typedef struct IfStatement IfStatement;
+typedef struct FordStatement FordStatement;
+typedef struct ForStatement ForStatement;
+typedef struct WhileStatement WhileStatement;
+typedef struct DoWhileStatement DoWhileStatement;
+typedef struct SwitchCase SwitchCase;
+typedef struct SwitchStatement SwitchStatement;
 typedef struct Statement Statement;
 typedef struct StatementList StatementList;
 typedef struct Program Program;
@@ -88,7 +97,19 @@ enum StatementKind {
 	STATEMENT_VARIABLE_DECLARATION,
 	STATEMENT_RETURN,
 	STATEMENT_EXPRESSION,
+	STATEMENT_IF,
+	STATEMENT_FORD,
+	STATEMENT_FOR,
+	STATEMENT_WHILE,
+	STATEMENT_DO_WHILE,
+	STATEMENT_SWITCH,
+	STATEMENT_BREAK,
 	STATEMENT_EMPTY
+};
+
+enum SwitchCaseKind {
+	SWITCH_CASE_COLON,
+	SWITCH_CASE_ARROW
 };
 
 enum ExpressionKind {
@@ -245,10 +266,63 @@ struct ProgramItemList {
 	ProgramItemList * next;
 };
 
+struct IfBranch {
+	Expression * condition;
+	StatementList * body;
+	IfBranch * next;
+};
+
+struct IfStatement {
+	IfBranch * branches;
+	StatementList * elseBody;
+};
+
+struct FordStatement {
+	char * iteratorName;
+	Expression * start;
+	Expression * end;
+	StatementList * body;
+};
+
+struct ForStatement {
+	Expression * initializer;
+	Expression * condition;
+	Expression * update;
+	StatementList * body;
+};
+
+struct WhileStatement {
+	Expression * condition;
+	StatementList * body;
+};
+
+struct DoWhileStatement {
+	StatementList * body;
+	Expression * condition;
+};
+
+struct SwitchCase {
+	SwitchCaseKind kind;
+	Expression * matchExpression;
+	StatementList * body;
+	SwitchCase * next;
+};
+
+struct SwitchStatement {
+	Expression * discriminant;
+	SwitchCase * cases;
+};
+
 struct Statement {
 	StatementKind kind;
 	VariableDeclaration * variableDeclaration;
 	Expression * expression;
+	IfStatement * ifStatement;
+	FordStatement * fordStatement;
+	ForStatement * forStatement;
+	WhileStatement * whileStatement;
+	DoWhileStatement * doWhileStatement;
+	SwitchStatement * switchStatement;
 };
 
 struct StatementList {
@@ -282,6 +356,14 @@ void destroyExpression(Expression * expression);
 void destroyExpressionList(ExpressionList * expressionList);
 void destroyProgramItem(ProgramItem * programItem);
 void destroyProgramItemList(ProgramItemList * programItemList);
+void destroyIfBranch(IfBranch * ifBranch);
+void destroyIfStatement(IfStatement * ifStatement);
+void destroyFordStatement(FordStatement * fordStatement);
+void destroyForStatement(ForStatement * forStatement);
+void destroyWhileStatement(WhileStatement * whileStatement);
+void destroyDoWhileStatement(DoWhileStatement * doWhileStatement);
+void destroySwitchCase(SwitchCase * switchCase);
+void destroySwitchStatement(SwitchStatement * switchStatement);
 void destroyStatement(Statement * statement);
 void destroyStatementList(StatementList * statementList);
 void destroyProgram(Program * program);

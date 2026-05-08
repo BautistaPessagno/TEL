@@ -50,6 +50,13 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 	ExpressionList * expressionList;
 	ProgramItem * programItem;
 	ProgramItemList * programItemList;
+	IfBranch * ifBranch;
+	FordStatement * fordStatement;
+	ForStatement * forStatement;
+	WhileStatement * whileStatement;
+	DoWhileStatement * doWhileStatement;
+	SwitchCase * switchCase;
+	SwitchStatement * switchStatement;
 	Statement * statement;
 	StatementList * statementList;
 	Program * program;
@@ -82,6 +89,13 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyExpressionList($$); } <expressionList>
 %destructor { destroyProgramItem($$); } <programItem>
 %destructor { destroyProgramItemList($$); } <programItemList>
+%destructor { destroyIfBranch($$); } <ifBranch>
+%destructor { destroyFordStatement($$); } <fordStatement>
+%destructor { destroyForStatement($$); } <forStatement>
+%destructor { destroyWhileStatement($$); } <whileStatement>
+%destructor { destroyDoWhileStatement($$); } <doWhileStatement>
+%destructor { destroySwitchCase($$); } <switchCase>
+%destructor { destroySwitchStatement($$); } <switchStatement>
 %destructor { destroyStatement($$); } <statement>
 %destructor { destroyStatementList($$); } <statementList>
 
@@ -93,6 +107,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> INCLUDE_DIRECTIVE
 %token <string> DEFINE_DIRECTIVE
 %token <token> COLON
+%token <token> COMMA
 %token <token> ASSIGN
 %token <token> SEMICOLON
 %token <token> INDENT
@@ -101,6 +116,16 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> CLOSE_PARENTHESIS
 %token <token> ARROW
 %token <token> RETURN
+%token <token> IF
+%token <token> ELIF
+%token <token> ELSE
+%token <token> FORD
+%token <token> FOR
+%token <token> WHILE
+%token <token> DO_WHILE
+%token <token> SWITCH
+%token <token> DEFAULT
+%token <token> BREAK
 %token <token> FUNCTION
 %token <token> MAIN
 %token <token> STRUCT
@@ -190,6 +215,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <string> optionalEnumMemberValue
 %type <functionCall> functionCall
 %type <expression> expression
+%type <expression> fordBound
 %type <expression> optionalReturnExpression
 %type <expressionList> argumentList
 %type <expressionList> optionalArgumentList
@@ -197,6 +223,26 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <statement> statement
 %type <statement> returnStatement
 %type <statement> expressionStatement
+%type <statement> ifStatement
+%type <statement> fordStatement
+%type <statement> forStatement
+%type <statement> whileStatement
+%type <statement> doWhileStatement
+%type <statement> switchStatement
+%type <statement> breakStatement
+%type <ifBranch> ifBranch
+%type <ifBranch> elifBranch
+%type <ifBranch> optionalElifBranchList
+%type <ifBranch> elifBranchList
+%type <statementList> optionalElseBody
+%type <fordStatement> fordLoop
+%type <forStatement> forLoop
+%type <whileStatement> whileLoop
+%type <doWhileStatement> doWhileLoop
+%type <switchStatement> switchControl
+%type <switchCase> switchCase
+%type <switchCase> switchCaseList
+%type <token> switchCaseSeparator
 %type <programItemList> programItemList
 %type <statementList> statementList
 %type <program> program
@@ -271,6 +317,13 @@ statement:
 	 declaration											{ $$ = VariableDeclarationStatementSemanticAction($1); }
 	| returnStatement										{ $$ = $1; }
 	| expressionStatement									{ $$ = $1; }
+	| ifStatement											{ $$ = $1; }
+	| fordStatement											{ $$ = $1; }
+	| forStatement											{ $$ = $1; }
+	| whileStatement										{ $$ = $1; }
+	| doWhileStatement										{ $$ = $1; }
+	| switchStatement										{ $$ = $1; }
+	| breakStatement										{ $$ = $1; }
 	| SEMICOLON												{ $$ = EmptyStatementSemanticAction(); }
 	;
 
@@ -285,6 +338,101 @@ optionalReturnExpression:
 
 expressionStatement:
 	 expression SEMICOLON									{ $$ = ExpressionStatementSemanticAction($1); }
+	;
+
+ifStatement:
+	 ifBranch optionalElifBranchList optionalElseBody		{ $$ = IfStatementSemanticActionWrapper(IfStatementSemanticAction(AppendIfBranchSemanticAction($1, $2), $3)); }
+	;
+
+ifBranch:
+	 IF expression SEMICOLON INDENT statementList DEDENT	{ $$ = IfBranchSemanticAction($2, $5); }
+	;
+
+optionalElifBranchList:
+	 %empty													{ $$ = NULL; }
+	| elifBranchList										{ $$ = $1; }
+	;
+
+elifBranchList:
+	 elifBranch												{ $$ = $1; }
+	| elifBranchList elifBranch								{ $$ = AppendIfBranchSemanticAction($1, $2); }
+	;
+
+elifBranch:
+	 ELIF expression SEMICOLON INDENT statementList DEDENT	{ $$ = IfBranchSemanticAction($2, $5); }
+	;
+
+optionalElseBody:
+	 %empty													{ $$ = NULL; }
+	| ELSE SEMICOLON INDENT statementList DEDENT			{ $$ = $4; }
+	;
+
+fordStatement:
+	 fordLoop												{ $$ = FordStatementSemanticActionWrapper($1); }
+	;
+
+fordLoop:
+	 FORD identifier fordBound fordBound SEMICOLON INDENT statementList DEDENT	{ $$ = FordStatementSemanticAction($2, $3, $4, $7); }
+	;
+
+fordBound:
+	 identifier												{ $$ = IdentifierExpressionSemanticAction($1); }
+	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
+	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
+	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
+	;
+
+forStatement:
+	 forLoop												{ $$ = ForStatementSemanticActionWrapper($1); }
+	;
+
+forLoop:
+	 FOR expression COMMA expression COMMA expression SEMICOLON INDENT statementList DEDENT	{ $$ = ForStatementSemanticAction($2, $4, $6, $9); }
+	;
+
+whileStatement:
+	 whileLoop												{ $$ = WhileStatementSemanticActionWrapper($1); }
+	;
+
+whileLoop:
+	 WHILE expression SEMICOLON INDENT statementList DEDENT	{ $$ = WhileStatementSemanticAction($2, $5); }
+	;
+
+doWhileStatement:
+	 doWhileLoop											{ $$ = DoWhileStatementSemanticActionWrapper($1); }
+	;
+
+doWhileLoop:
+	 DO_WHILE SEMICOLON INDENT statementList DEDENT expression SEMICOLON	{ $$ = DoWhileStatementSemanticAction($4, $6); }
+	;
+
+switchStatement:
+	 switchControl											{ $$ = SwitchStatementSemanticActionWrapper($1); }
+	;
+
+switchControl:
+	 SWITCH expression SEMICOLON INDENT switchCaseList DEDENT	{ $$ = SwitchStatementSemanticAction($2, $5); }
+	;
+
+switchCaseList:
+	 switchCase												{ $$ = $1; }
+	| switchCaseList switchCase								{ $$ = AppendSwitchCaseSemanticAction($1, $2); }
+	;
+
+switchCase:
+	 expression switchCaseSeparator SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction($2 == ARROW ? SWITCH_CASE_ARROW : SWITCH_CASE_COLON, $1, $5); }
+	| DEFAULT COLON SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(SWITCH_CASE_COLON, NULL, $5); }
+	| DEFAULT ARROW SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(SWITCH_CASE_ARROW, NULL, $5); }
+	| DEFAULT BREAK SEMICOLON								{ $$ = SwitchCaseSemanticAction(SWITCH_CASE_COLON, NULL, SingletonStatementListSemanticAction(BreakStatementSemanticAction())); }
+	;
+
+switchCaseSeparator:
+	 COLON													{ $$ = COLON; }
+	| ARROW													{ $$ = ARROW; }
+	;
+
+breakStatement:
+	 BREAK SEMICOLON										{ $$ = BreakStatementSemanticAction(); }
 	;
 
 optionalParameterList:

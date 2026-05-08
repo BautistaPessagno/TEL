@@ -425,6 +425,150 @@ Statement * ExpressionStatementSemanticAction(Expression * expression) {
 	return statement;
 }
 
+IfBranch * IfBranchSemanticAction(Expression * condition, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	IfBranch * branch = calloc(1, sizeof(IfBranch));
+	branch->condition = condition;
+	branch->body = body;
+	return branch;
+}
+
+IfBranch * AppendIfBranchSemanticAction(IfBranch * branchList, IfBranch * branch) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	IfBranch * tail = branchList;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = branch;
+	return branchList;
+}
+
+IfStatement * IfStatementSemanticAction(IfBranch * branches, StatementList * elseBody) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	IfStatement * ifStatement = calloc(1, sizeof(IfStatement));
+	ifStatement->branches = branches;
+	ifStatement->elseBody = elseBody;
+	return ifStatement;
+}
+
+FordStatement * FordStatementSemanticAction(char * iteratorName, Expression * start, Expression * end, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	FordStatement * fordStatement = calloc(1, sizeof(FordStatement));
+	fordStatement->iteratorName = iteratorName;
+	fordStatement->start = start;
+	fordStatement->end = end;
+	fordStatement->body = body;
+	return fordStatement;
+}
+
+ForStatement * ForStatementSemanticAction(Expression * initializer, Expression * condition, Expression * update, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	ForStatement * forStatement = calloc(1, sizeof(ForStatement));
+	forStatement->initializer = initializer;
+	forStatement->condition = condition;
+	forStatement->update = update;
+	forStatement->body = body;
+	return forStatement;
+}
+
+WhileStatement * WhileStatementSemanticAction(Expression * condition, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	WhileStatement * whileStatement = calloc(1, sizeof(WhileStatement));
+	whileStatement->condition = condition;
+	whileStatement->body = body;
+	return whileStatement;
+}
+
+DoWhileStatement * DoWhileStatementSemanticAction(StatementList * body, Expression * condition) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	DoWhileStatement * doWhileStatement = calloc(1, sizeof(DoWhileStatement));
+	doWhileStatement->body = body;
+	doWhileStatement->condition = condition;
+	return doWhileStatement;
+}
+
+SwitchCase * SwitchCaseSemanticAction(SwitchCaseKind kind, Expression * matchExpression, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	SwitchCase * switchCase = calloc(1, sizeof(SwitchCase));
+	switchCase->kind = kind;
+	switchCase->matchExpression = matchExpression;
+	switchCase->body = body;
+	return switchCase;
+}
+
+SwitchCase * AppendSwitchCaseSemanticAction(SwitchCase * caseList, SwitchCase * switchCase) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	SwitchCase * tail = caseList;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = switchCase;
+	return caseList;
+}
+
+SwitchStatement * SwitchStatementSemanticAction(Expression * discriminant, SwitchCase * cases) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	SwitchStatement * switchStatement = calloc(1, sizeof(SwitchStatement));
+	switchStatement->discriminant = discriminant;
+	switchStatement->cases = cases;
+	return switchStatement;
+}
+
+Statement * IfStatementSemanticActionWrapper(IfStatement * ifStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_IF;
+	statement->ifStatement = ifStatement;
+	return statement;
+}
+
+Statement * FordStatementSemanticActionWrapper(FordStatement * fordStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_FORD;
+	statement->fordStatement = fordStatement;
+	return statement;
+}
+
+Statement * ForStatementSemanticActionWrapper(ForStatement * forStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_FOR;
+	statement->forStatement = forStatement;
+	return statement;
+}
+
+Statement * WhileStatementSemanticActionWrapper(WhileStatement * whileStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_WHILE;
+	statement->whileStatement = whileStatement;
+	return statement;
+}
+
+Statement * DoWhileStatementSemanticActionWrapper(DoWhileStatement * doWhileStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_DO_WHILE;
+	statement->doWhileStatement = doWhileStatement;
+	return statement;
+}
+
+Statement * SwitchStatementSemanticActionWrapper(SwitchStatement * switchStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_SWITCH;
+	statement->switchStatement = switchStatement;
+	return statement;
+}
+
+Statement * BreakStatementSemanticAction() {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_BREAK;
+	return statement;
+}
+
 Statement * EmptyStatementSemanticAction() {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Statement * statement = calloc(1, sizeof(Statement));

@@ -258,6 +258,108 @@ void destroyProgramItemList(ProgramItemList * programItemList) {
 	}
 }
 
+void destroyIfBranch(IfBranch * ifBranch) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (ifBranch != NULL) {
+		destroyExpression(ifBranch->condition);
+		ifBranch->condition = NULL;
+		destroyStatementList(ifBranch->body);
+		ifBranch->body = NULL;
+		destroyIfBranch(ifBranch->next);
+		ifBranch->next = NULL;
+		free(ifBranch);
+	}
+}
+
+void destroyIfStatement(IfStatement * ifStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (ifStatement != NULL) {
+		destroyIfBranch(ifStatement->branches);
+		ifStatement->branches = NULL;
+		destroyStatementList(ifStatement->elseBody);
+		ifStatement->elseBody = NULL;
+		free(ifStatement);
+	}
+}
+
+void destroyFordStatement(FordStatement * fordStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (fordStatement != NULL) {
+		if (fordStatement->iteratorName != NULL) {
+			free(fordStatement->iteratorName);
+			fordStatement->iteratorName = NULL;
+		}
+		destroyExpression(fordStatement->start);
+		fordStatement->start = NULL;
+		destroyExpression(fordStatement->end);
+		fordStatement->end = NULL;
+		destroyStatementList(fordStatement->body);
+		fordStatement->body = NULL;
+		free(fordStatement);
+	}
+}
+
+void destroyForStatement(ForStatement * forStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (forStatement != NULL) {
+		destroyExpression(forStatement->initializer);
+		forStatement->initializer = NULL;
+		destroyExpression(forStatement->condition);
+		forStatement->condition = NULL;
+		destroyExpression(forStatement->update);
+		forStatement->update = NULL;
+		destroyStatementList(forStatement->body);
+		forStatement->body = NULL;
+		free(forStatement);
+	}
+}
+
+void destroyWhileStatement(WhileStatement * whileStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (whileStatement != NULL) {
+		destroyExpression(whileStatement->condition);
+		whileStatement->condition = NULL;
+		destroyStatementList(whileStatement->body);
+		whileStatement->body = NULL;
+		free(whileStatement);
+	}
+}
+
+void destroyDoWhileStatement(DoWhileStatement * doWhileStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (doWhileStatement != NULL) {
+		destroyStatementList(doWhileStatement->body);
+		doWhileStatement->body = NULL;
+		destroyExpression(doWhileStatement->condition);
+		doWhileStatement->condition = NULL;
+		free(doWhileStatement);
+	}
+}
+
+void destroySwitchCase(SwitchCase * switchCase) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (switchCase != NULL) {
+		destroyExpression(switchCase->matchExpression);
+		switchCase->matchExpression = NULL;
+		destroyStatementList(switchCase->body);
+		switchCase->body = NULL;
+		destroySwitchCase(switchCase->next);
+		switchCase->next = NULL;
+		free(switchCase);
+	}
+}
+
+void destroySwitchStatement(SwitchStatement * switchStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (switchStatement != NULL) {
+		destroyExpression(switchStatement->discriminant);
+		switchStatement->discriminant = NULL;
+		destroySwitchCase(switchStatement->cases);
+		switchStatement->cases = NULL;
+		free(switchStatement);
+	}
+}
+
 void destroyStatement(Statement * statement) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (statement != NULL) {
@@ -265,6 +367,18 @@ void destroyStatement(Statement * statement) {
 		statement->variableDeclaration = NULL;
 		destroyExpression(statement->expression);
 		statement->expression = NULL;
+		destroyIfStatement(statement->ifStatement);
+		statement->ifStatement = NULL;
+		destroyFordStatement(statement->fordStatement);
+		statement->fordStatement = NULL;
+		destroyForStatement(statement->forStatement);
+		statement->forStatement = NULL;
+		destroyWhileStatement(statement->whileStatement);
+		statement->whileStatement = NULL;
+		destroyDoWhileStatement(statement->doWhileStatement);
+		statement->doWhileStatement = NULL;
+		destroySwitchStatement(statement->switchStatement);
+		statement->switchStatement = NULL;
 		free(statement);
 	}
 }

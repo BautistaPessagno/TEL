@@ -1,0 +1,10 @@
+main
+    x:int = 2
+    switch x
+        1:
+            x = 10
+            break
+        2 -> 
+            x = 20
+        default break
+    ret x

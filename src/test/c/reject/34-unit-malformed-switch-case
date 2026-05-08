@@ -1,0 +1,5 @@
+main
+    x:int = 1
+    switch x
+        1
+            x = 2
