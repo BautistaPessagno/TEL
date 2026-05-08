@@ -590,6 +590,8 @@ type:
 	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
 	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
 	| type MULTIPLY %prec UNARY_DEREFERENCE					{ $$ = PointerTypeSemanticAction($1); }
+	| type OPEN_BRACKET expression CLOSE_BRACKET			{ $$ = ArrayTypeSemanticAction($1, $3); }
+	| type OPEN_BRACKET CLOSE_BRACKET						{ $$ = ArrayTypeSemanticAction($1, NULL); }
 	;
 
 %%

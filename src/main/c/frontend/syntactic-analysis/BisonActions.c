@@ -91,6 +91,15 @@ Type * PointerTypeSemanticAction(Type * pointee) {
 	return type;
 }
 
+Type * ArrayTypeSemanticAction(Type * element, Expression * size) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Type * type = calloc(1, sizeof(Type));
+	type->kind = TYPE_ARRAY_KIND;
+	type->pointee = element;
+	type->arraySize = size;
+	return type;
+}
+
 bool IsKnownTypedefName(const char * name) {
 	for (TypedefNameNode * node = _typedefNames; node != NULL; node = node->next) {
 		if (strcmp(node->name, name) == 0) {

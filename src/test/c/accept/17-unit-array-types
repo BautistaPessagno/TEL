@@ -1,0 +1,5 @@
+arr:int[10]
+arr2:int[100]
+arr3:int[2*5]
+fn sum numbers:int[] size:int -> int
+    0
