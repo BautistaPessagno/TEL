@@ -67,7 +67,8 @@ enum TypeKind {
 	TYPE_NAMED_KIND,
 	TYPE_STRUCT_KIND,
 	TYPE_ENUM_KIND,
-	TYPE_UNION_KIND
+	TYPE_UNION_KIND,
+	TYPE_POINTER_KIND
 };
 
 enum AggregateKind {
@@ -157,6 +158,10 @@ enum ExpressionOperator {
 struct Type {
 	TypeKind kind;
 	char * name;
+	Type * pointee;
+	Expression * arraySize;
+	ParameterList * functionParams;
+	Type * returnType;
 };
 
 struct VariableDeclaration {

@@ -83,6 +83,14 @@ Type * NamedTypeSemanticAction(TypeKind kind, char * name) {
 	return type;
 }
 
+Type * PointerTypeSemanticAction(Type * pointee) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Type * type = calloc(1, sizeof(Type));
+	type->kind = TYPE_POINTER_KIND;
+	type->pointee = pointee;
+	return type;
+}
+
 bool IsKnownTypedefName(const char * name) {
 	for (TypedefNameNode * node = _typedefNames; node != NULL; node = node->next) {
 		if (strcmp(node->name, name) == 0) {

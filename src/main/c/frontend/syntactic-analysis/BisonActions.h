@@ -19,6 +19,7 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
 
 Type * TypeSemanticAction(TypeKind kind);
 Type * NamedTypeSemanticAction(TypeKind kind, char * name);
+Type * PointerTypeSemanticAction(Type * pointee);
 bool IsKnownTypedefName(const char * name);
 VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer);
 VariableDeclarationList * SingletonVariableDeclarationListSemanticAction(VariableDeclaration * declaration);
