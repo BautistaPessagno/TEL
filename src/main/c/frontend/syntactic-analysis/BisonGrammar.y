@@ -615,6 +615,14 @@ type:
 	| type MULTIPLY %prec UNARY_DEREFERENCE					{ $$ = PointerTypeSemanticAction($1); }
 	| type OPEN_BRACKET expression CLOSE_BRACKET			{ $$ = ArrayTypeSemanticAction($1, $3); }
 	| type OPEN_BRACKET CLOSE_BRACKET						{ $$ = ArrayTypeSemanticAction($1, NULL); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER bareTypeList ARROW type CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction($3, $5); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER ARROW type CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction(NULL, $4); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER bareTypeList CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)); }
 	;
 
 %%
