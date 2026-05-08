@@ -143,6 +143,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_UINT
 %token <token> TYPE_ULI
 %token <token> TYPE_LONG
+%token <token> NULL_LITERAL
 %token <token> ADD_ASSIGN
 %token <token> SUBTRACT_ASSIGN
 %token <token> MULTIPLY_ASSIGN
@@ -175,7 +176,6 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> BITWISE_NOT
 %token <token> INCREMENT
 %token <token> DECREMENT
-%token <token> NULL_LITERAL
 
 %token <token> IGNORED
 %token <token> UNKNOWN
