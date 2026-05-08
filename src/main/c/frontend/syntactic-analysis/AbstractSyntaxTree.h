@@ -17,7 +17,8 @@ ModuleDestructor initializeAbstractSyntaxTreeModule();
 typedef enum TypeKind TypeKind;
 typedef enum AggregateKind AggregateKind;
 typedef enum PreprocessorDirectiveKind PreprocessorDirectiveKind;
-typedef enum TopLevelItemKind TopLevelItemKind;
+typedef enum ProgramItemKind ProgramItemKind;
+typedef enum StatementKind StatementKind;
 typedef enum ExpressionKind ExpressionKind;
 typedef enum ExpressionOperator ExpressionOperator;
 
@@ -37,8 +38,10 @@ typedef struct PreprocessorDirective PreprocessorDirective;
 typedef struct FunctionCall FunctionCall;
 typedef struct Expression Expression;
 typedef struct ExpressionList ExpressionList;
-typedef struct TopLevelItem TopLevelItem;
-typedef struct TopLevelItemList TopLevelItemList;
+typedef struct ProgramItem ProgramItem;
+typedef struct ProgramItemList ProgramItemList;
+typedef struct Statement Statement;
+typedef struct StatementList StatementList;
 typedef struct Program Program;
 
 /**
@@ -70,18 +73,22 @@ enum PreprocessorDirectiveKind {
 	PREPROCESSOR_DEFINE_DIRECTIVE
 };
 
-enum TopLevelItemKind {
-	TOP_LEVEL_VARIABLE_DECLARATION,
-	TOP_LEVEL_FUNCTION_DECLARATION,
-	TOP_LEVEL_MAIN_DECLARATION,
-	TOP_LEVEL_AGGREGATE_DECLARATION,
-	TOP_LEVEL_ENUM_DECLARATION,
-	TOP_LEVEL_TYPEDEF_DECLARATION,
-	TOP_LEVEL_PREPROCESSOR_DIRECTIVE,
-	TOP_LEVEL_FUNCTION_CALL,
-	TOP_LEVEL_RETURN_STATEMENT,
-	TOP_LEVEL_EXPRESSION_STATEMENT,
-	TOP_LEVEL_EMPTY_STATEMENT
+enum ProgramItemKind {
+	PROGRAM_ITEM_VARIABLE_DECLARATION,
+	PROGRAM_ITEM_FUNCTION_DECLARATION,
+	PROGRAM_ITEM_MAIN_DECLARATION,
+	PROGRAM_ITEM_AGGREGATE_DECLARATION,
+	PROGRAM_ITEM_ENUM_DECLARATION,
+	PROGRAM_ITEM_TYPEDEF_DECLARATION,
+	PROGRAM_ITEM_PREPROCESSOR_DIRECTIVE,
+	PROGRAM_ITEM_EMPTY
+};
+
+enum StatementKind {
+	STATEMENT_VARIABLE_DECLARATION,
+	STATEMENT_RETURN,
+	STATEMENT_EXPRESSION,
+	STATEMENT_EMPTY
 };
 
 enum ExpressionKind {
@@ -163,11 +170,11 @@ struct FunctionDeclaration {
 	char * name;
 	ParameterList * parameters;
 	Type * returnType;
-	TopLevelItemList * body;
+	StatementList * body;
 };
 
 struct MainDeclaration {
-	TopLevelItemList * body;
+	StatementList * body;
 };
 
 struct AggregateDeclaration {
@@ -222,8 +229,8 @@ struct ExpressionList {
 	ExpressionList * next;
 };
 
-struct TopLevelItem {
-	TopLevelItemKind kind;
+struct ProgramItem {
+	ProgramItemKind kind;
 	VariableDeclaration * variableDeclaration;
 	FunctionDeclaration * functionDeclaration;
 	MainDeclaration * mainDeclaration;
@@ -231,17 +238,26 @@ struct TopLevelItem {
 	EnumDeclaration * enumDeclaration;
 	TypedefDeclaration * typedefDeclaration;
 	PreprocessorDirective * preprocessorDirective;
-	FunctionCall * functionCall;
+};
+
+struct ProgramItemList {
+	ProgramItem * item;
+	ProgramItemList * next;
+};
+
+struct Statement {
+	StatementKind kind;
+	VariableDeclaration * variableDeclaration;
 	Expression * expression;
 };
 
-struct TopLevelItemList {
-	TopLevelItem * item;
-	TopLevelItemList * next;
+struct StatementList {
+	Statement * statement;
+	StatementList * next;
 };
 
 struct Program {
-	TopLevelItemList * items;
+	ProgramItemList * items;
 };
 
 /**
@@ -264,8 +280,10 @@ void destroyPreprocessorDirective(PreprocessorDirective * preprocessorDirective)
 void destroyFunctionCall(FunctionCall * functionCall);
 void destroyExpression(Expression * expression);
 void destroyExpressionList(ExpressionList * expressionList);
-void destroyTopLevelItem(TopLevelItem * topLevelItem);
-void destroyTopLevelItemList(TopLevelItemList * topLevelItemList);
+void destroyProgramItem(ProgramItem * programItem);
+void destroyProgramItemList(ProgramItemList * programItemList);
+void destroyStatement(Statement * statement);
+void destroyStatementList(StatementList * statementList);
 void destroyProgram(Program * program);
 
 #endif

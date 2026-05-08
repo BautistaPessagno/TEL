@@ -48,8 +48,10 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 	FunctionCall * functionCall;
 	Expression * expression;
 	ExpressionList * expressionList;
-	TopLevelItem * topLevelItem;
-	TopLevelItemList * topLevelItemList;
+	ProgramItem * programItem;
+	ProgramItemList * programItemList;
+	Statement * statement;
+	StatementList * statementList;
 	Program * program;
 }
 
@@ -78,8 +80,10 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyFunctionCall($$); } <functionCall>
 %destructor { destroyExpression($$); } <expression>
 %destructor { destroyExpressionList($$); } <expressionList>
-%destructor { destroyTopLevelItem($$); } <topLevelItem>
-%destructor { destroyTopLevelItemList($$); } <topLevelItemList>
+%destructor { destroyProgramItem($$); } <programItem>
+%destructor { destroyProgramItemList($$); } <programItemList>
+%destructor { destroyStatement($$); } <statement>
+%destructor { destroyStatementList($$); } <statementList>
 
 /** Terminals. */
 %token <string> IDENTIFIER
@@ -173,8 +177,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
-%type <topLevelItemList> optionalFunctionBody
-%type <topLevelItemList> functionBody
+%type <statementList> optionalFunctionBody
+%type <statementList> functionBody
 %type <functionDeclaration> functionDeclaration
 %type <mainDeclaration> mainDeclaration
 %type <aggregateDeclaration> aggregateDeclaration
@@ -189,12 +193,12 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <expression> optionalReturnExpression
 %type <expressionList> argumentList
 %type <expressionList> optionalArgumentList
-%type <topLevelItem> topLevelItem
-%type <topLevelItem> functionBodyItem
-%type <topLevelItem> returnStatement
-%type <topLevelItem> expressionStatement
-%type <topLevelItemList> topLevelItemList
-%type <topLevelItemList> functionBodyItemList
+%type <programItem> programItem
+%type <statement> statement
+%type <statement> returnStatement
+%type <statement> expressionStatement
+%type <programItemList> programItemList
+%type <statementList> statementList
 %type <program> program
 
 %%
@@ -202,7 +206,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 // IMPORTANT: To use λ in the following grammar, use the %empty symbol.
 
 program:
-	 topLevelItemList										{ $$ = ProgramSemanticAction($1); }
+	 programItemList										{ $$ = ProgramSemanticAction($1); }
 	;
 
 identifier:
@@ -210,21 +214,20 @@ identifier:
 	| TYPEDEF_NAME											{ $$ = $1; }
 	;
 
-topLevelItemList:
-	 topLevelItem											{ $$ = SingletonTopLevelItemListSemanticAction($1); }
-	| topLevelItemList topLevelItem							{ $$ = AppendTopLevelItemListSemanticAction($1, $2); }
+programItemList:
+	 programItem											{ $$ = SingletonProgramItemListSemanticAction($1); }
+	| programItemList programItem							{ $$ = AppendProgramItemListSemanticAction($1, $2); }
 	;
 
-topLevelItem:
-	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
-	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
-	| mainDeclaration										{ $$ = MainDeclarationTopLevelItemSemanticAction($1); }
-	| aggregateDeclaration									{ $$ = AggregateDeclarationTopLevelItemSemanticAction($1); }
-	| enumDeclaration										{ $$ = EnumDeclarationTopLevelItemSemanticAction($1); }
-	| typedefDeclaration									{ $$ = TypedefDeclarationTopLevelItemSemanticAction($1); }
-	| preprocessorDirective									{ $$ = PreprocessorDirectiveTopLevelItemSemanticAction($1); }
-	| expressionStatement									{ $$ = $1; }
-	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
+programItem:
+	 declaration											{ $$ = VariableDeclarationProgramItemSemanticAction($1); }
+	| functionDeclaration									{ $$ = FunctionDeclarationProgramItemSemanticAction($1); }
+	| mainDeclaration										{ $$ = MainDeclarationProgramItemSemanticAction($1); }
+	| aggregateDeclaration									{ $$ = AggregateDeclarationProgramItemSemanticAction($1); }
+	| enumDeclaration										{ $$ = EnumDeclarationProgramItemSemanticAction($1); }
+	| typedefDeclaration									{ $$ = TypedefDeclarationProgramItemSemanticAction($1); }
+	| preprocessorDirective									{ $$ = PreprocessorDirectiveProgramItemSemanticAction($1); }
+	| SEMICOLON												{ $$ = EmptyProgramItemSemanticAction(); }
 	;
 
 declaration:
@@ -252,32 +255,27 @@ optionalFunctionBody:
 	;
 
 functionBody:
-	 INDENT functionBodyItemList DEDENT						{ $$ = FunctionBodyTopLevelItemListSemanticAction($2); }
+	 INDENT statementList DEDENT							{ $$ = FunctionBodyStatementListSemanticAction($2); }
 	;
 
 mainDeclaration:
 	 MAIN SEMICOLON functionBody							{ $$ = MainDeclarationSemanticAction($3); }
 	;
 
-functionBodyItemList:
-	 functionBodyItem										{ $$ = SingletonTopLevelItemListSemanticAction($1); }
-	| functionBodyItemList functionBodyItem					{ $$ = AppendTopLevelItemListSemanticAction($1, $2); }
+statementList:
+	 statement												{ $$ = SingletonStatementListSemanticAction($1); }
+	| statementList statement								{ $$ = AppendStatementListSemanticAction($1, $2); }
 	;
 
-functionBodyItem:
-	 declaration											{ $$ = VariableDeclarationTopLevelItemSemanticAction($1); }
-	| functionDeclaration									{ $$ = FunctionDeclarationTopLevelItemSemanticAction($1); }
-	| aggregateDeclaration									{ $$ = AggregateDeclarationTopLevelItemSemanticAction($1); }
-	| enumDeclaration										{ $$ = EnumDeclarationTopLevelItemSemanticAction($1); }
-	| typedefDeclaration									{ $$ = TypedefDeclarationTopLevelItemSemanticAction($1); }
-	| preprocessorDirective									{ $$ = PreprocessorDirectiveTopLevelItemSemanticAction($1); }
+statement:
+	 declaration											{ $$ = VariableDeclarationStatementSemanticAction($1); }
 	| returnStatement										{ $$ = $1; }
 	| expressionStatement									{ $$ = $1; }
-	| SEMICOLON												{ $$ = EmptyStatementTopLevelItemSemanticAction(); }
+	| SEMICOLON												{ $$ = EmptyStatementSemanticAction(); }
 	;
 
 returnStatement:
-	 RETURN optionalReturnExpression SEMICOLON				{ $$ = ReturnStatementTopLevelItemSemanticAction($2); }
+	 RETURN optionalReturnExpression SEMICOLON				{ $$ = ReturnStatementSemanticAction($2); }
 	;
 
 optionalReturnExpression:
@@ -286,7 +284,7 @@ optionalReturnExpression:
 	;
 
 expressionStatement:
-	 expression SEMICOLON									{ $$ = ExpressionStatementTopLevelItemSemanticAction($1); }
+	 expression SEMICOLON									{ $$ = ExpressionStatementSemanticAction($1); }
 	;
 
 optionalParameterList:

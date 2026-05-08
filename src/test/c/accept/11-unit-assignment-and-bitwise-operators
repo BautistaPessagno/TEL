@@ -1,6 +1,6 @@
-x = 5
-x++
 fn bits a:int b:int -> int
+    a = 5
+    a++
     a &= b
     a |= b
     a ^= b
