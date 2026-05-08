@@ -69,7 +69,7 @@ Instead of using `{}` for code blocks, we use indentation, like Python.
 ### Loops
 
 - `ford i 0 n` -> `for (int i = 0; i < n; i++)`
-- `for i = 0, condition, i--` -> `for (int i = 0; condition; i--)`
+- `for i = 0, condition, i++` -> `for (int i = 0; condition; i++)`
 - `while` -> `while`
 - `dw` -> `do while`
 
