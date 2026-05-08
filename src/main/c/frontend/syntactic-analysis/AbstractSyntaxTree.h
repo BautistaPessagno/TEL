@@ -19,7 +19,6 @@ typedef enum AggregateKind AggregateKind;
 typedef enum PreprocessorDirectiveKind PreprocessorDirectiveKind;
 typedef enum ProgramItemKind ProgramItemKind;
 typedef enum StatementKind StatementKind;
-typedef enum SwitchCaseKind SwitchCaseKind;
 typedef enum ExpressionKind ExpressionKind;
 typedef enum ExpressionOperator ExpressionOperator;
 
@@ -43,7 +42,6 @@ typedef struct ProgramItem ProgramItem;
 typedef struct ProgramItemList ProgramItemList;
 typedef struct IfBranch IfBranch;
 typedef struct IfStatement IfStatement;
-typedef struct FordStatement FordStatement;
 typedef struct ForStatement ForStatement;
 typedef struct WhileStatement WhileStatement;
 typedef struct DoWhileStatement DoWhileStatement;
@@ -98,18 +96,12 @@ enum StatementKind {
 	STATEMENT_RETURN,
 	STATEMENT_EXPRESSION,
 	STATEMENT_IF,
-	STATEMENT_FORD,
 	STATEMENT_FOR,
 	STATEMENT_WHILE,
 	STATEMENT_DO_WHILE,
 	STATEMENT_SWITCH,
 	STATEMENT_BREAK,
 	STATEMENT_EMPTY
-};
-
-enum SwitchCaseKind {
-	SWITCH_CASE_COLON,
-	SWITCH_CASE_ARROW
 };
 
 enum ExpressionKind {
@@ -277,13 +269,6 @@ struct IfStatement {
 	StatementList * elseBody;
 };
 
-struct FordStatement {
-	char * iteratorName;
-	Expression * start;
-	Expression * end;
-	StatementList * body;
-};
-
 struct ForStatement {
 	Expression * initializer;
 	Expression * condition;
@@ -302,7 +287,6 @@ struct DoWhileStatement {
 };
 
 struct SwitchCase {
-	SwitchCaseKind kind;
 	Expression * matchExpression;
 	StatementList * body;
 	SwitchCase * next;
@@ -318,7 +302,6 @@ struct Statement {
 	VariableDeclaration * variableDeclaration;
 	Expression * expression;
 	IfStatement * ifStatement;
-	FordStatement * fordStatement;
 	ForStatement * forStatement;
 	WhileStatement * whileStatement;
 	DoWhileStatement * doWhileStatement;
@@ -358,7 +341,6 @@ void destroyProgramItem(ProgramItem * programItem);
 void destroyProgramItemList(ProgramItemList * programItemList);
 void destroyIfBranch(IfBranch * ifBranch);
 void destroyIfStatement(IfStatement * ifStatement);
-void destroyFordStatement(FordStatement * fordStatement);
 void destroyForStatement(ForStatement * forStatement);
 void destroyWhileStatement(WhileStatement * whileStatement);
 void destroyDoWhileStatement(DoWhileStatement * doWhileStatement);

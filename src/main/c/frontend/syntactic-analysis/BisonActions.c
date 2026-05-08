@@ -451,16 +451,6 @@ IfStatement * IfStatementSemanticAction(IfBranch * branches, StatementList * els
 	return ifStatement;
 }
 
-FordStatement * FordStatementSemanticAction(char * iteratorName, Expression * start, Expression * end, StatementList * body) {
-	_logSyntacticAnalyzerAction(__FUNCTION__);
-	FordStatement * fordStatement = calloc(1, sizeof(FordStatement));
-	fordStatement->iteratorName = iteratorName;
-	fordStatement->start = start;
-	fordStatement->end = end;
-	fordStatement->body = body;
-	return fordStatement;
-}
-
 ForStatement * ForStatementSemanticAction(Expression * initializer, Expression * condition, Expression * update, StatementList * body) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	ForStatement * forStatement = calloc(1, sizeof(ForStatement));
@@ -469,6 +459,17 @@ ForStatement * ForStatementSemanticAction(Expression * initializer, Expression *
 	forStatement->update = update;
 	forStatement->body = body;
 	return forStatement;
+}
+
+ForStatement * ForStatementFromFordSemanticAction(char * iteratorName, Expression * start, Expression * end, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * initializerIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
+	Expression * conditionIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
+	Expression * updateIterator = IdentifierExpressionSemanticAction(iteratorName);
+	Expression * initializer = BinaryExpressionSemanticAction(initializerIterator, EXPRESSION_OPERATOR_ASSIGN, start);
+	Expression * condition = BinaryExpressionSemanticAction(conditionIterator, EXPRESSION_OPERATOR_LESS_THAN, end);
+	Expression * update = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, updateIterator);
+	return ForStatementSemanticAction(initializer, condition, update, body);
 }
 
 WhileStatement * WhileStatementSemanticAction(Expression * condition, StatementList * body) {
@@ -487,10 +488,9 @@ DoWhileStatement * DoWhileStatementSemanticAction(StatementList * body, Expressi
 	return doWhileStatement;
 }
 
-SwitchCase * SwitchCaseSemanticAction(SwitchCaseKind kind, Expression * matchExpression, StatementList * body) {
+SwitchCase * SwitchCaseSemanticAction(Expression * matchExpression, StatementList * body) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	SwitchCase * switchCase = calloc(1, sizeof(SwitchCase));
-	switchCase->kind = kind;
 	switchCase->matchExpression = matchExpression;
 	switchCase->body = body;
 	return switchCase;
@@ -519,14 +519,6 @@ Statement * IfStatementSemanticActionWrapper(IfStatement * ifStatement) {
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->kind = STATEMENT_IF;
 	statement->ifStatement = ifStatement;
-	return statement;
-}
-
-Statement * FordStatementSemanticActionWrapper(FordStatement * fordStatement) {
-	_logSyntacticAnalyzerAction(__FUNCTION__);
-	Statement * statement = calloc(1, sizeof(Statement));
-	statement->kind = STATEMENT_FORD;
-	statement->fordStatement = fordStatement;
 	return statement;
 }
 

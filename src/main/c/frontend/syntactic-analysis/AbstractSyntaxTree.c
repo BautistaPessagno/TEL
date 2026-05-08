@@ -282,23 +282,6 @@ void destroyIfStatement(IfStatement * ifStatement) {
 	}
 }
 
-void destroyFordStatement(FordStatement * fordStatement) {
-	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
-	if (fordStatement != NULL) {
-		if (fordStatement->iteratorName != NULL) {
-			free(fordStatement->iteratorName);
-			fordStatement->iteratorName = NULL;
-		}
-		destroyExpression(fordStatement->start);
-		fordStatement->start = NULL;
-		destroyExpression(fordStatement->end);
-		fordStatement->end = NULL;
-		destroyStatementList(fordStatement->body);
-		fordStatement->body = NULL;
-		free(fordStatement);
-	}
-}
-
 void destroyForStatement(ForStatement * forStatement) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (forStatement != NULL) {
@@ -369,8 +352,6 @@ void destroyStatement(Statement * statement) {
 		statement->expression = NULL;
 		destroyIfStatement(statement->ifStatement);
 		statement->ifStatement = NULL;
-		destroyFordStatement(statement->fordStatement);
-		statement->fordStatement = NULL;
 		destroyForStatement(statement->forStatement);
 		statement->forStatement = NULL;
 		destroyWhileStatement(statement->whileStatement);

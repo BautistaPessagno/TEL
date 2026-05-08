@@ -51,7 +51,6 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 	ProgramItem * programItem;
 	ProgramItemList * programItemList;
 	IfBranch * ifBranch;
-	FordStatement * fordStatement;
 	ForStatement * forStatement;
 	WhileStatement * whileStatement;
 	DoWhileStatement * doWhileStatement;
@@ -90,7 +89,6 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyProgramItem($$); } <programItem>
 %destructor { destroyProgramItemList($$); } <programItemList>
 %destructor { destroyIfBranch($$); } <ifBranch>
-%destructor { destroyFordStatement($$); } <fordStatement>
 %destructor { destroyForStatement($$); } <forStatement>
 %destructor { destroyWhileStatement($$); } <whileStatement>
 %destructor { destroyDoWhileStatement($$); } <doWhileStatement>
@@ -235,14 +233,13 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <ifBranch> optionalElifBranchList
 %type <ifBranch> elifBranchList
 %type <statementList> optionalElseBody
-%type <fordStatement> fordLoop
+%type <forStatement> fordLoop
 %type <forStatement> forLoop
 %type <whileStatement> whileLoop
 %type <doWhileStatement> doWhileLoop
 %type <switchStatement> switchControl
 %type <switchCase> switchCase
 %type <switchCase> switchCaseList
-%type <token> switchCaseSeparator
 %type <programItemList> programItemList
 %type <statementList> statementList
 %type <program> program
@@ -368,11 +365,11 @@ optionalElseBody:
 	;
 
 fordStatement:
-	 fordLoop												{ $$ = FordStatementSemanticActionWrapper($1); }
+	 fordLoop												{ $$ = ForStatementSemanticActionWrapper($1); }
 	;
 
 fordLoop:
-	 FORD identifier fordBound fordBound SEMICOLON INDENT statementList DEDENT	{ $$ = FordStatementSemanticAction($2, $3, $4, $7); }
+	 FORD identifier fordBound fordBound SEMICOLON INDENT statementList DEDENT	{ $$ = ForStatementFromFordSemanticAction($2, $3, $4, $7); }
 	;
 
 fordBound:
@@ -420,15 +417,11 @@ switchCaseList:
 	;
 
 switchCase:
-	 expression switchCaseSeparator SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction($2 == ARROW ? SWITCH_CASE_ARROW : SWITCH_CASE_COLON, $1, $5); }
-	| DEFAULT COLON SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(SWITCH_CASE_COLON, NULL, $5); }
-	| DEFAULT ARROW SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(SWITCH_CASE_ARROW, NULL, $5); }
-	| DEFAULT BREAK SEMICOLON								{ $$ = SwitchCaseSemanticAction(SWITCH_CASE_COLON, NULL, SingletonStatementListSemanticAction(BreakStatementSemanticAction())); }
-	;
-
-switchCaseSeparator:
-	 COLON													{ $$ = COLON; }
-	| ARROW													{ $$ = ARROW; }
+	 expression COLON SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction($1, $5); }
+	| expression ARROW SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction($1, AppendStatementListSemanticAction($5, BreakStatementSemanticAction())); }
+	| DEFAULT COLON SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(NULL, $5); }
+	| DEFAULT ARROW SEMICOLON INDENT statementList DEDENT	{ $$ = SwitchCaseSemanticAction(NULL, AppendStatementListSemanticAction($5, BreakStatementSemanticAction())); }
+	| DEFAULT BREAK SEMICOLON								{ $$ = SwitchCaseSemanticAction(NULL, SingletonStatementListSemanticAction(BreakStatementSemanticAction())); }
 	;
 
 breakStatement:
