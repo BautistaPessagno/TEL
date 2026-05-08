@@ -110,6 +110,9 @@ VariableDeclarationList * SingletonVariableDeclarationListSemanticAction(Variabl
 
 VariableDeclarationList * AppendVariableDeclarationListSemanticAction(VariableDeclarationList * declarationList, VariableDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (declarationList == NULL) {
+		return SingletonVariableDeclarationListSemanticAction(declaration);
+	}
 	VariableDeclarationList * tail = declarationList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -135,6 +138,9 @@ ParameterList * SingletonParameterListSemanticAction(Parameter * parameter) {
 
 ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList, Parameter * parameter) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (parameterList == NULL) {
+		return SingletonParameterListSemanticAction(parameter);
+	}
 	ParameterList * tail = parameterList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -186,6 +192,9 @@ EnumMemberList * SingletonEnumMemberListSemanticAction(EnumMember * member) {
 
 EnumMemberList * AppendEnumMemberListSemanticAction(EnumMemberList * memberList, EnumMember * member) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (memberList == NULL) {
+		return SingletonEnumMemberListSemanticAction(member);
+	}
 	EnumMemberList * tail = memberList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -287,6 +296,9 @@ ExpressionList * SingletonExpressionListSemanticAction(Expression * expression) 
 
 ExpressionList * AppendExpressionListSemanticAction(ExpressionList * expressionList, Expression * expression) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (expressionList == NULL) {
+		return SingletonExpressionListSemanticAction(expression);
+	}
 	ExpressionList * tail = expressionList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -454,6 +466,9 @@ IfBranch * IfBranchSemanticAction(Expression * condition, StatementList * body) 
 
 IfBranch * AppendIfBranchSemanticAction(IfBranch * branchList, IfBranch * branch) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (branchList == NULL) {
+		return branch;
+	}
 	IfBranch * tail = branchList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -517,6 +532,9 @@ SwitchCase * SwitchCaseSemanticAction(Expression * matchExpression, StatementLis
 
 SwitchCase * AppendSwitchCaseSemanticAction(SwitchCase * caseList, SwitchCase * switchCase) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (caseList == NULL) {
+		return switchCase;
+	}
 	SwitchCase * tail = caseList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -596,6 +614,9 @@ StatementList * SingletonStatementListSemanticAction(Statement * statement) {
 
 StatementList * AppendStatementListSemanticAction(StatementList * statementList, Statement * statement) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (statementList == NULL) {
+		return SingletonStatementListSemanticAction(statement);
+	}
 	StatementList * tail = statementList;
 	while (tail->next != NULL) {
 		tail = tail->next;

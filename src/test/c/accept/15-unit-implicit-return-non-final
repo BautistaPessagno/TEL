@@ -1,0 +1,4 @@
+fn nonfinal value:int -> int
+    value
+    log("middle")
+    value

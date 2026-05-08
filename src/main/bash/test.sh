@@ -25,6 +25,28 @@ for test in $(ls src/test/c/accept/); do
 done
 echo ""
 
+echo "Compiler should convert implicit returns exactly when expected..."
+echo ""
+
+assert_implicit_return_count() {
+	TEST="$1"
+	EXPECTED_COUNT="$2"
+	OUTPUT="$(LOGGING_LEVEL=DEBUGGING ".build/Flex-Bison-Compiler" < "src/test/c/accept/$TEST" 2>&1)"
+	RESULT="$?"
+	COUNT="$(printf "%s\n" "$OUTPUT" | grep -c "_convertExpressionStatementToImplicitReturn")"
+	if [ "$RESULT" == "0" ] && [ "$COUNT" == "$EXPECTED_COUNT" ]; then
+		echo -e "    $TEST, ${GREEN}converted $COUNT implicit return(s)${OFF}"
+	else
+		STATUS=1
+		echo -e "    $TEST, ${RED}expected $EXPECTED_COUNT implicit return conversion(s), got $COUNT (status $RESULT)${OFF}"
+	fi
+}
+
+assert_implicit_return_count "12-unit-implicit-return" "5"
+assert_implicit_return_count "13-unit-main-implicit-return" "1"
+assert_implicit_return_count "15-unit-implicit-return-non-final" "1"
+echo ""
+
 echo "Compiler should reject..."
 echo ""
 

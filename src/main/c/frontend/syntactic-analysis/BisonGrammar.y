@@ -409,6 +409,7 @@ doWhileStatement:
 	 doWhileLoop											{ $$ = DoWhileStatementSemanticActionWrapper($1); }
 	;
 
+// The first expression after the dedent is intentionally the dw condition.
 doWhileLoop:
 	 DO_WHILE terminator INDENT statementList DEDENT expression terminator	{ $$ = DoWhileStatementSemanticAction($4, $6); }
 	;
