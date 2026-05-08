@@ -3,5 +3,4 @@
 count:int
 
 fn setup
-    #define LOCAL_FLAG 1
     value:int

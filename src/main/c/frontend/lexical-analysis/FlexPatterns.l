@@ -66,6 +66,16 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 {defineDirective}					{ return PreprocessorDirectiveLexemeAction(DEFINE_DIRECTIVE, "#define"); }
 "fn"								{ return KeywordLexemeAction(FUNCTION); }
 "ret"								{ return KeywordLexemeAction(RETURN); }
+"if"								{ return KeywordLexemeAction(IF); }
+"elif"								{ return KeywordLexemeAction(ELIF); }
+"else"								{ return KeywordLexemeAction(ELSE); }
+"ford"								{ return KeywordLexemeAction(FORD); }
+"for"								{ return KeywordLexemeAction(FOR); }
+"while"								{ return KeywordLexemeAction(WHILE); }
+"dw"								{ return KeywordLexemeAction(DO_WHILE); }
+"switch"							{ return KeywordLexemeAction(SWITCH); }
+"default"							{ return KeywordLexemeAction(DEFAULT); }
+"break"								{ return KeywordLexemeAction(BREAK); }
 "main"								{ return KeywordLexemeAction(MAIN); }
 "struct"							{ return KeywordLexemeAction(STRUCT); }
 "enum"								{ return KeywordLexemeAction(ENUM); }
@@ -117,6 +127,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "<"									{ return PunctuationLexemeAction(LESS_THAN); }
 ">"									{ return PunctuationLexemeAction(GREATER_THAN); }
 ":"									{ return PunctuationLexemeAction(COLON); }
+","									{ return PunctuationLexemeAction(COMMA); }
 {terminator}						{ return TerminatorLexemeAction(); }
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
 "("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }

@@ -151,7 +151,7 @@ The `main` function is the entry point and is translated as:
 
 We allow embedding C code in blocks like this:
 
-```c
+```text
 \`
 // some c code
 \`

@@ -1,3 +1,4 @@
-ping();
-log("hello" 1);
-add(value 2)
+fn calls value:int
+    ping();
+    log("hello" 1);
+    add(value 2)

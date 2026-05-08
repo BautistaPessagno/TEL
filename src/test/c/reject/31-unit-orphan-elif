@@ -1,0 +1,4 @@
+main
+    x:int = 0
+    elif x == 0
+        x = 1

@@ -43,6 +43,7 @@ Rises an ephemeral container, ready to start development:
 
 ```bash
 docker compose run --rm compiler
+
 ```
 
 ### Build

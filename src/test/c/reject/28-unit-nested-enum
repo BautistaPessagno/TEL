@@ -1,0 +1,3 @@
+fn outer
+    enum Local
+        VALUE

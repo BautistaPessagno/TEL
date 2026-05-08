@@ -92,9 +92,18 @@ void destroyFunctionDeclaration(FunctionDeclaration * functionDeclaration) {
 		functionDeclaration->parameters = NULL;
 		destroyType(functionDeclaration->returnType);
 		functionDeclaration->returnType = NULL;
-		destroyTopLevelItemList(functionDeclaration->body);
+		destroyStatementList(functionDeclaration->body);
 		functionDeclaration->body = NULL;
 		free(functionDeclaration);
+	}
+}
+
+void destroyMainDeclaration(MainDeclaration * mainDeclaration) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (mainDeclaration != NULL) {
+		destroyStatementList(mainDeclaration->body);
+		mainDeclaration->body = NULL;
+		free(mainDeclaration);
 	}
 }
 
@@ -217,44 +226,159 @@ void destroyExpressionList(ExpressionList * expressionList) {
 	}
 }
 
-void destroyTopLevelItem(TopLevelItem * topLevelItem) {
+void destroyProgramItem(ProgramItem * programItem) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
-	if (topLevelItem != NULL) {
-		destroyVariableDeclaration(topLevelItem->variableDeclaration);
-		topLevelItem->variableDeclaration = NULL;
-		destroyFunctionDeclaration(topLevelItem->functionDeclaration);
-		topLevelItem->functionDeclaration = NULL;
-		destroyAggregateDeclaration(topLevelItem->aggregateDeclaration);
-		topLevelItem->aggregateDeclaration = NULL;
-		destroyEnumDeclaration(topLevelItem->enumDeclaration);
-		topLevelItem->enumDeclaration = NULL;
-		destroyTypedefDeclaration(topLevelItem->typedefDeclaration);
-		topLevelItem->typedefDeclaration = NULL;
-		destroyPreprocessorDirective(topLevelItem->preprocessorDirective);
-		topLevelItem->preprocessorDirective = NULL;
-		destroyFunctionCall(topLevelItem->functionCall);
-		topLevelItem->functionCall = NULL;
-		destroyExpression(topLevelItem->expression);
-		topLevelItem->expression = NULL;
-		free(topLevelItem);
+	if (programItem != NULL) {
+		destroyVariableDeclaration(programItem->variableDeclaration);
+		programItem->variableDeclaration = NULL;
+		destroyFunctionDeclaration(programItem->functionDeclaration);
+		programItem->functionDeclaration = NULL;
+		destroyMainDeclaration(programItem->mainDeclaration);
+		programItem->mainDeclaration = NULL;
+		destroyAggregateDeclaration(programItem->aggregateDeclaration);
+		programItem->aggregateDeclaration = NULL;
+		destroyEnumDeclaration(programItem->enumDeclaration);
+		programItem->enumDeclaration = NULL;
+		destroyTypedefDeclaration(programItem->typedefDeclaration);
+		programItem->typedefDeclaration = NULL;
+		destroyPreprocessorDirective(programItem->preprocessorDirective);
+		programItem->preprocessorDirective = NULL;
+		free(programItem);
 	}
 }
 
-void destroyTopLevelItemList(TopLevelItemList * topLevelItemList) {
+void destroyProgramItemList(ProgramItemList * programItemList) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
-	if (topLevelItemList != NULL) {
-		destroyTopLevelItem(topLevelItemList->item);
-		topLevelItemList->item = NULL;
-		destroyTopLevelItemList(topLevelItemList->next);
-		topLevelItemList->next = NULL;
-		free(topLevelItemList);
+	if (programItemList != NULL) {
+		destroyProgramItem(programItemList->item);
+		programItemList->item = NULL;
+		destroyProgramItemList(programItemList->next);
+		programItemList->next = NULL;
+		free(programItemList);
+	}
+}
+
+void destroyIfBranch(IfBranch * ifBranch) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (ifBranch != NULL) {
+		destroyExpression(ifBranch->condition);
+		ifBranch->condition = NULL;
+		destroyStatementList(ifBranch->body);
+		ifBranch->body = NULL;
+		destroyIfBranch(ifBranch->next);
+		ifBranch->next = NULL;
+		free(ifBranch);
+	}
+}
+
+void destroyIfStatement(IfStatement * ifStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (ifStatement != NULL) {
+		destroyIfBranch(ifStatement->branches);
+		ifStatement->branches = NULL;
+		destroyStatementList(ifStatement->elseBody);
+		ifStatement->elseBody = NULL;
+		free(ifStatement);
+	}
+}
+
+void destroyForStatement(ForStatement * forStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (forStatement != NULL) {
+		destroyExpression(forStatement->initializer);
+		forStatement->initializer = NULL;
+		destroyExpression(forStatement->condition);
+		forStatement->condition = NULL;
+		destroyExpression(forStatement->update);
+		forStatement->update = NULL;
+		destroyStatementList(forStatement->body);
+		forStatement->body = NULL;
+		free(forStatement);
+	}
+}
+
+void destroyWhileStatement(WhileStatement * whileStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (whileStatement != NULL) {
+		destroyExpression(whileStatement->condition);
+		whileStatement->condition = NULL;
+		destroyStatementList(whileStatement->body);
+		whileStatement->body = NULL;
+		free(whileStatement);
+	}
+}
+
+void destroyDoWhileStatement(DoWhileStatement * doWhileStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (doWhileStatement != NULL) {
+		destroyStatementList(doWhileStatement->body);
+		doWhileStatement->body = NULL;
+		destroyExpression(doWhileStatement->condition);
+		doWhileStatement->condition = NULL;
+		free(doWhileStatement);
+	}
+}
+
+void destroySwitchCase(SwitchCase * switchCase) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (switchCase != NULL) {
+		destroyExpression(switchCase->matchExpression);
+		switchCase->matchExpression = NULL;
+		destroyStatementList(switchCase->body);
+		switchCase->body = NULL;
+		destroySwitchCase(switchCase->next);
+		switchCase->next = NULL;
+		free(switchCase);
+	}
+}
+
+void destroySwitchStatement(SwitchStatement * switchStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (switchStatement != NULL) {
+		destroyExpression(switchStatement->discriminant);
+		switchStatement->discriminant = NULL;
+		destroySwitchCase(switchStatement->cases);
+		switchStatement->cases = NULL;
+		free(switchStatement);
+	}
+}
+
+void destroyStatement(Statement * statement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (statement != NULL) {
+		destroyVariableDeclaration(statement->variableDeclaration);
+		statement->variableDeclaration = NULL;
+		destroyExpression(statement->expression);
+		statement->expression = NULL;
+		destroyIfStatement(statement->ifStatement);
+		statement->ifStatement = NULL;
+		destroyForStatement(statement->forStatement);
+		statement->forStatement = NULL;
+		destroyWhileStatement(statement->whileStatement);
+		statement->whileStatement = NULL;
+		destroyDoWhileStatement(statement->doWhileStatement);
+		statement->doWhileStatement = NULL;
+		destroySwitchStatement(statement->switchStatement);
+		statement->switchStatement = NULL;
+		free(statement);
+	}
+}
+
+void destroyStatementList(StatementList * statementList) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (statementList != NULL) {
+		destroyStatement(statementList->statement);
+		statementList->statement = NULL;
+		destroyStatementList(statementList->next);
+		statementList->next = NULL;
+		free(statementList);
 	}
 }
 
 void destroyProgram(Program * program) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (program != NULL) {
-		destroyTopLevelItemList(program->items);
+		destroyProgramItemList(program->items);
 		program->items = NULL;
 		free(program);
 	}

@@ -177,7 +177,7 @@ CompilationStatus IndentationLexemeAction() {
 }
 
 CompilationStatus LineBreakLexemeAction() {
-	return _pushToken(SEMICOLON, __FUNCTION__);
+	return _pushToken(LINEBREAK, __FUNCTION__);
 }
 
 CompilationStatus TerminatorLexemeAction() {

@@ -1,0 +1,13 @@
+main
+    n:int = 5
+    ford i 0 n
+        n += i
+    for i = 0, i < n, i++
+        n += 1
+    while n > 0
+        n--
+    dw
+        n++
+        n += 1
+    (n < 3)
+    ret n

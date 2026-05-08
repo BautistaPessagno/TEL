@@ -1,0 +1,2 @@
+fn outer
+    typedef Local:int

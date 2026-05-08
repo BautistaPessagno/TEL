@@ -43,7 +43,7 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState) {
 
 static void _logSyntacticAnalyzerAction(const char * functionName);
 static void _registerTypedefName(const char * name);
-static void _convertExpressionStatementToImplicitReturn(TopLevelItem * item);
+static void _convertExpressionStatementToImplicitReturn(Statement * statement);
 
 /**
  * Logs a syntactic-analyzer action in DEBUGGING level.
@@ -62,9 +62,9 @@ static void _registerTypedefName(const char * name) {
 	_typedefNames = node;
 }
 
-static void _convertExpressionStatementToImplicitReturn(TopLevelItem * item) {
+static void _convertExpressionStatementToImplicitReturn(Statement * statement) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	item->kind = TOP_LEVEL_RETURN_STATEMENT;
+	statement->kind = STATEMENT_RETURN;
 }
 
 /* PUBLIC FUNCTIONS */
@@ -110,6 +110,9 @@ VariableDeclarationList * SingletonVariableDeclarationListSemanticAction(Variabl
 
 VariableDeclarationList * AppendVariableDeclarationListSemanticAction(VariableDeclarationList * declarationList, VariableDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (declarationList == NULL) {
+		return SingletonVariableDeclarationListSemanticAction(declaration);
+	}
 	VariableDeclarationList * tail = declarationList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -135,6 +138,9 @@ ParameterList * SingletonParameterListSemanticAction(Parameter * parameter) {
 
 ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList, Parameter * parameter) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (parameterList == NULL) {
+		return SingletonParameterListSemanticAction(parameter);
+	}
 	ParameterList * tail = parameterList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -143,12 +149,19 @@ ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList,
 	return parameterList;
 }
 
-FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType, TopLevelItemList * body) {
+FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType, StatementList * body) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	FunctionDeclaration * declaration = calloc(1, sizeof(FunctionDeclaration));
 	declaration->name = name;
 	declaration->parameters = parameters;
 	declaration->returnType = returnType;
+	declaration->body = body;
+	return declaration;
+}
+
+MainDeclaration * MainDeclarationSemanticAction(StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	MainDeclaration * declaration = calloc(1, sizeof(MainDeclaration));
 	declaration->body = body;
 	return declaration;
 }
@@ -179,6 +192,9 @@ EnumMemberList * SingletonEnumMemberListSemanticAction(EnumMember * member) {
 
 EnumMemberList * AppendEnumMemberListSemanticAction(EnumMemberList * memberList, EnumMember * member) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (memberList == NULL) {
+		return SingletonEnumMemberListSemanticAction(member);
+	}
 	EnumMemberList * tail = memberList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -280,6 +296,9 @@ ExpressionList * SingletonExpressionListSemanticAction(Expression * expression) 
 
 ExpressionList * AppendExpressionListSemanticAction(ExpressionList * expressionList, Expression * expression) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (expressionList == NULL) {
+		return SingletonExpressionListSemanticAction(expression);
+	}
 	ExpressionList * tail = expressionList;
 	while (tail->next != NULL) {
 		tail = tail->next;
@@ -288,68 +307,103 @@ ExpressionList * AppendExpressionListSemanticAction(ExpressionList * expressionL
 	return expressionList;
 }
 
-TopLevelItem * VariableDeclarationTopLevelItemSemanticAction(VariableDeclaration * declaration) {
+ProgramItem * VariableDeclarationProgramItemSemanticAction(VariableDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_VARIABLE_DECLARATION;
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_VARIABLE_DECLARATION;
 	item->variableDeclaration = declaration;
 	return item;
 }
 
-TopLevelItem * FunctionDeclarationTopLevelItemSemanticAction(FunctionDeclaration * declaration) {
+ProgramItem * FunctionDeclarationProgramItemSemanticAction(FunctionDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_FUNCTION_DECLARATION;
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_FUNCTION_DECLARATION;
 	item->functionDeclaration = declaration;
 	return item;
 }
 
-TopLevelItem * AggregateDeclarationTopLevelItemSemanticAction(AggregateDeclaration * declaration) {
+ProgramItem * MainDeclarationProgramItemSemanticAction(MainDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_AGGREGATE_DECLARATION;
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_MAIN_DECLARATION;
+	item->mainDeclaration = declaration;
+	return item;
+}
+
+ProgramItem * AggregateDeclarationProgramItemSemanticAction(AggregateDeclaration * declaration) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_AGGREGATE_DECLARATION;
 	item->aggregateDeclaration = declaration;
 	return item;
 }
 
-TopLevelItem * EnumDeclarationTopLevelItemSemanticAction(EnumDeclaration * declaration) {
+ProgramItem * EnumDeclarationProgramItemSemanticAction(EnumDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_ENUM_DECLARATION;
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_ENUM_DECLARATION;
 	item->enumDeclaration = declaration;
 	return item;
 }
 
-TopLevelItem * TypedefDeclarationTopLevelItemSemanticAction(TypedefDeclaration * declaration) {
+ProgramItem * TypedefDeclarationProgramItemSemanticAction(TypedefDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_TYPEDEF_DECLARATION;
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_TYPEDEF_DECLARATION;
 	item->typedefDeclaration = declaration;
 	return item;
 }
 
-TopLevelItem * PreprocessorDirectiveTopLevelItemSemanticAction(PreprocessorDirective * directive) {
+ProgramItem * PreprocessorDirectiveProgramItemSemanticAction(PreprocessorDirective * directive) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_PREPROCESSOR_DIRECTIVE;
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_PREPROCESSOR_DIRECTIVE;
 	item->preprocessorDirective = directive;
 	return item;
 }
 
-TopLevelItem * FunctionCallTopLevelItemSemanticAction(FunctionCall * functionCall) {
+ProgramItem * EmptyProgramItemSemanticAction() {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_FUNCTION_CALL;
-	item->functionCall = functionCall;
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_EMPTY;
 	return item;
 }
 
-TopLevelItem * ReturnStatementTopLevelItemSemanticAction(Expression * expression) {
+ProgramItemList * SingletonProgramItemListSemanticAction(ProgramItem * item) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_RETURN_STATEMENT;
-	item->expression = expression;
-	return item;
+	ProgramItemList * itemList = calloc(1, sizeof(ProgramItemList));
+	itemList->item = item;
+	return itemList;
+}
+
+ProgramItemList * AppendProgramItemListSemanticAction(ProgramItemList * itemList, ProgramItem * item) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (itemList == NULL) {
+		return SingletonProgramItemListSemanticAction(item);
+	}
+	ProgramItemList * tail = itemList;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = SingletonProgramItemListSemanticAction(item);
+	return itemList;
+}
+
+ProgramItemList * ConcatenateProgramItemListSemanticAction(ProgramItemList * first, ProgramItemList * second) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (first == NULL) {
+		return second;
+	}
+	if (second == NULL) {
+		return first;
+	}
+	ProgramItemList * tail = first;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = second;
+	return first;
 }
 
 static int _isImplicitReturnExpression(const Expression * expression) {
@@ -378,57 +432,219 @@ static int _isImplicitReturnExpression(const Expression * expression) {
 	}
 }
 
-TopLevelItem * ExpressionStatementTopLevelItemSemanticAction(Expression * expression) {
+Statement * VariableDeclarationStatementSemanticAction(VariableDeclaration * declaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_EXPRESSION_STATEMENT;
-	item->expression = expression;
-	return item;
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_VARIABLE_DECLARATION;
+	statement->variableDeclaration = declaration;
+	return statement;
 }
 
-TopLevelItem * EmptyStatementTopLevelItemSemanticAction() {
+Statement * ReturnStatementSemanticAction(Expression * expression) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * item = calloc(1, sizeof(TopLevelItem));
-	item->kind = TOP_LEVEL_EMPTY_STATEMENT;
-	return item;
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_RETURN;
+	statement->expression = expression;
+	return statement;
 }
 
-TopLevelItemList * SingletonTopLevelItemListSemanticAction(TopLevelItem * item) {
+Statement * ExpressionStatementSemanticAction(Expression * expression) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItemList * itemList = calloc(1, sizeof(TopLevelItemList));
-	itemList->item = item;
-	return itemList;
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_EXPRESSION;
+	statement->expression = expression;
+	return statement;
 }
 
-TopLevelItemList * AppendTopLevelItemListSemanticAction(TopLevelItemList * itemList, TopLevelItem * item) {
+IfBranch * IfBranchSemanticAction(Expression * condition, StatementList * body) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItemList * tail = itemList;
+	IfBranch * branch = calloc(1, sizeof(IfBranch));
+	branch->condition = condition;
+	branch->body = body;
+	return branch;
+}
+
+IfBranch * AppendIfBranchSemanticAction(IfBranch * branchList, IfBranch * branch) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (branchList == NULL) {
+		return branch;
+	}
+	IfBranch * tail = branchList;
 	while (tail->next != NULL) {
 		tail = tail->next;
 	}
-	tail->next = SingletonTopLevelItemListSemanticAction(item);
-	return itemList;
+	tail->next = branch;
+	return branchList;
 }
 
-TopLevelItemList * FunctionBodyTopLevelItemListSemanticAction(TopLevelItemList * itemList) {
+IfStatement * IfStatementSemanticAction(IfBranch * branches, StatementList * elseBody) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	TopLevelItem * lastItem = NULL;
-	TopLevelItemList * tail = itemList;
+	IfStatement * ifStatement = calloc(1, sizeof(IfStatement));
+	ifStatement->branches = branches;
+	ifStatement->elseBody = elseBody;
+	return ifStatement;
+}
+
+ForStatement * ForStatementSemanticAction(Expression * initializer, Expression * condition, Expression * update, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	ForStatement * forStatement = calloc(1, sizeof(ForStatement));
+	forStatement->initializer = initializer;
+	forStatement->condition = condition;
+	forStatement->update = update;
+	forStatement->body = body;
+	return forStatement;
+}
+
+ForStatement * ForStatementFromFordSemanticAction(char * iteratorName, Expression * start, Expression * end, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * initializerIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
+	Expression * conditionIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
+	Expression * updateIterator = IdentifierExpressionSemanticAction(strdup(iteratorName));
+	Expression * initializer = BinaryExpressionSemanticAction(initializerIterator, EXPRESSION_OPERATOR_ASSIGN, start);
+	Expression * condition = BinaryExpressionSemanticAction(conditionIterator, EXPRESSION_OPERATOR_LESS_THAN, end);
+	Expression * update = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, updateIterator);
+	free(iteratorName);
+	return ForStatementSemanticAction(initializer, condition, update, body);
+}
+
+WhileStatement * WhileStatementSemanticAction(Expression * condition, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	WhileStatement * whileStatement = calloc(1, sizeof(WhileStatement));
+	whileStatement->condition = condition;
+	whileStatement->body = body;
+	return whileStatement;
+}
+
+DoWhileStatement * DoWhileStatementSemanticAction(StatementList * body, Expression * condition) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	DoWhileStatement * doWhileStatement = calloc(1, sizeof(DoWhileStatement));
+	doWhileStatement->body = body;
+	doWhileStatement->condition = condition;
+	return doWhileStatement;
+}
+
+SwitchCase * SwitchCaseSemanticAction(Expression * matchExpression, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	SwitchCase * switchCase = calloc(1, sizeof(SwitchCase));
+	switchCase->matchExpression = matchExpression;
+	switchCase->body = body;
+	return switchCase;
+}
+
+SwitchCase * AppendSwitchCaseSemanticAction(SwitchCase * caseList, SwitchCase * switchCase) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (caseList == NULL) {
+		return switchCase;
+	}
+	SwitchCase * tail = caseList;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = switchCase;
+	return caseList;
+}
+
+SwitchStatement * SwitchStatementSemanticAction(Expression * discriminant, SwitchCase * cases) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	SwitchStatement * switchStatement = calloc(1, sizeof(SwitchStatement));
+	switchStatement->discriminant = discriminant;
+	switchStatement->cases = cases;
+	return switchStatement;
+}
+
+Statement * IfStatementSemanticActionWrapper(IfStatement * ifStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_IF;
+	statement->ifStatement = ifStatement;
+	return statement;
+}
+
+Statement * ForStatementSemanticActionWrapper(ForStatement * forStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_FOR;
+	statement->forStatement = forStatement;
+	return statement;
+}
+
+Statement * WhileStatementSemanticActionWrapper(WhileStatement * whileStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_WHILE;
+	statement->whileStatement = whileStatement;
+	return statement;
+}
+
+Statement * DoWhileStatementSemanticActionWrapper(DoWhileStatement * doWhileStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_DO_WHILE;
+	statement->doWhileStatement = doWhileStatement;
+	return statement;
+}
+
+Statement * SwitchStatementSemanticActionWrapper(SwitchStatement * switchStatement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_SWITCH;
+	statement->switchStatement = switchStatement;
+	return statement;
+}
+
+Statement * BreakStatementSemanticAction() {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_BREAK;
+	return statement;
+}
+
+Statement * EmptyStatementSemanticAction() {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_EMPTY;
+	return statement;
+}
+
+StatementList * SingletonStatementListSemanticAction(Statement * statement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	StatementList * statementList = calloc(1, sizeof(StatementList));
+	statementList->statement = statement;
+	return statementList;
+}
+
+StatementList * AppendStatementListSemanticAction(StatementList * statementList, Statement * statement) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (statementList == NULL) {
+		return SingletonStatementListSemanticAction(statement);
+	}
+	StatementList * tail = statementList;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = SingletonStatementListSemanticAction(statement);
+	return statementList;
+}
+
+StatementList * FunctionBodyStatementListSemanticAction(StatementList * statementList) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * lastStatement = NULL;
+	StatementList * tail = statementList;
 	while (tail != NULL) {
-		if (tail->item != NULL && tail->item->kind != TOP_LEVEL_EMPTY_STATEMENT) {
-			lastItem = tail->item;
+		if (tail->statement != NULL && tail->statement->kind != STATEMENT_EMPTY) {
+			lastStatement = tail->statement;
 		}
 		tail = tail->next;
 	}
-	if (lastItem != NULL
-		&& lastItem->kind == TOP_LEVEL_EXPRESSION_STATEMENT
-		&& _isImplicitReturnExpression(lastItem->expression)) {
-		_convertExpressionStatementToImplicitReturn(lastItem);
+	if (lastStatement != NULL
+		&& lastStatement->kind == STATEMENT_EXPRESSION
+		&& _isImplicitReturnExpression(lastStatement->expression)) {
+		_convertExpressionStatementToImplicitReturn(lastStatement);
 	}
-	return itemList;
+	return statementList;
 }
 
-Program * ProgramSemanticAction(TopLevelItemList * items) {
+Program * ProgramSemanticAction(ProgramItemList * items) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Program * program = calloc(1, sizeof(Program));
 	program->items = items;

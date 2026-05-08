@@ -1,0 +1,4 @@
+main
+    x:int = 0
+    if x == 0
+    ret x
