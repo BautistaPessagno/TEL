@@ -89,6 +89,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "uint"								{ return KeywordLexemeAction(TYPE_UINT); }
 "uli"								{ return KeywordLexemeAction(TYPE_ULI); }
 "long"								{ return KeywordLexemeAction(TYPE_LONG); }
+"null"								{ return KeywordLexemeAction(NULL_LITERAL); }
 {integer}							{ return StringLexemeAction(INTEGER_LITERAL); }
 {string}							{ return StringLexemeAction(STRING_LITERAL); }
 {identifier}				        { return IdentifierLexemeAction(); }

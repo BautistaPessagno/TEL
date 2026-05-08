@@ -39,6 +39,7 @@ FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * argument
 Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
 Expression * StringLiteralExpressionSemanticAction(char * value);
+Expression * NullLiteralExpressionSemanticAction(void);
 Expression * FunctionCallExpressionSemanticAction(FunctionCall * functionCall);
 Expression * BinaryExpressionSemanticAction(Expression * left, ExpressionOperator operator, Expression * right);
 Expression * UnaryExpressionSemanticAction(ExpressionOperator operator, Expression * operand);

@@ -260,6 +260,13 @@ Expression * StringLiteralExpressionSemanticAction(char * value) {
 	return expression;
 }
 
+Expression * NullLiteralExpressionSemanticAction(void) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_NULL_LITERAL;
+	return expression;
+}
+
 Expression * FunctionCallExpressionSemanticAction(FunctionCall * functionCall) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));

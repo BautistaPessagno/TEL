@@ -175,6 +175,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> BITWISE_NOT
 %token <token> INCREMENT
 %token <token> DECREMENT
+%token <token> NULL_LITERAL
 
 %token <token> IGNORED
 %token <token> UNKNOWN
@@ -531,6 +532,7 @@ expression:
 	 identifier %prec ARGUMENT_BOUNDARY						{ $$ = IdentifierExpressionSemanticAction($1); }
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
 	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
+	| NULL_LITERAL											{ $$ = NullLiteralExpressionSemanticAction(); }
 	| functionCall											{ $$ = FunctionCallExpressionSemanticAction($1); }
 	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
 	| expression ASSIGN expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ASSIGN, $3); }
