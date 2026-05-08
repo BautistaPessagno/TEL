@@ -193,7 +193,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %left SHIFT_LEFT SHIFT_RIGHT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
-%right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS PREFIX_INCREMENT PREFIX_DECREMENT
+%right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS UNARY_DEREFERENCE UNARY_ADDRESS_OF PREFIX_INCREMENT PREFIX_DECREMENT
 %left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT
 
 /** Non-terminals. */
@@ -566,6 +566,8 @@ expression:
 	| expression MODULO expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_MODULO, $3); }
 	| ADD expression %prec UNARY_PLUS						{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_UNARY_PLUS, $2); }
 	| SUBTRACT expression %prec UNARY_MINUS					{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_UNARY_MINUS, $2); }
+	| MULTIPLY expression %prec UNARY_DEREFERENCE			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_DEREFERENCE, $2); }
+	| BITWISE_AND expression %prec UNARY_ADDRESS_OF			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_ADDRESS_OF, $2); }
 	| LOGICAL_NOT expression								{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_LOGICAL_NOT, $2); }
 	| BITWISE_NOT expression								{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_BITWISE_NOT, $2); }
 	| INCREMENT expression %prec PREFIX_INCREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_PREFIX_INCREMENT, $2); }
@@ -587,7 +589,7 @@ type:
 	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
 	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
 	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
-	| type MULTIPLY											{ $$ = PointerTypeSemanticAction($1); }
+	| type MULTIPLY %prec UNARY_DEREFERENCE					{ $$ = PointerTypeSemanticAction($1); }
 	;
 
 %%
