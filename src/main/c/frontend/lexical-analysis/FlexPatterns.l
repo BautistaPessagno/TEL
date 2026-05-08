@@ -64,6 +64,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 
 {includeDirective}					{ return PreprocessorDirectiveLexemeAction(INCLUDE_DIRECTIVE, "#include"); }
 {defineDirective}					{ return PreprocessorDirectiveLexemeAction(DEFINE_DIRECTIVE, "#define"); }
+"fn*"								{ return KeywordLexemeAction(FUNCTION_POINTER); }
 "fn"								{ return KeywordLexemeAction(FUNCTION); }
 "ret"								{ return KeywordLexemeAction(RETURN); }
 "if"								{ return KeywordLexemeAction(IF); }

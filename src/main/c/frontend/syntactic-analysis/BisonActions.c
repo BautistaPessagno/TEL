@@ -100,6 +100,40 @@ Type * ArrayTypeSemanticAction(Type * element, Expression * size) {
 	return type;
 }
 
+Type * FunctionPointerTypeSemanticAction(ParameterList * params, Type * returnType) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Type * type = calloc(1, sizeof(Type));
+	type->kind = TYPE_FUNCTION_POINTER_KIND;
+	type->functionParams = params;
+	type->returnType = returnType;
+	return type;
+}
+
+ParameterList * SingletonBareParameterListSemanticAction(Type * type) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Parameter * parameter = calloc(1, sizeof(Parameter));
+	parameter->name = NULL;
+	parameter->type = type;
+	ParameterList * list = calloc(1, sizeof(ParameterList));
+	list->parameter = parameter;
+	list->next = NULL;
+	return list;
+}
+
+ParameterList * AppendBareParameterListSemanticAction(ParameterList * list, Type * type) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Parameter * parameter = calloc(1, sizeof(Parameter));
+	parameter->name = NULL;
+	parameter->type = type;
+	ParameterList * tail = calloc(1, sizeof(ParameterList));
+	tail->parameter = parameter;
+	tail->next = NULL;
+	ParameterList * cursor = list;
+	while (cursor->next != NULL) cursor = cursor->next;
+	cursor->next = tail;
+	return list;
+}
+
 bool IsKnownTypedefName(const char * name) {
 	for (TypedefNameNode * node = _typedefNames; node != NULL; node = node->next) {
 		if (strcmp(node->name, name) == 0) {

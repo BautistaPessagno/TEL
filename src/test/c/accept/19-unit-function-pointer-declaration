@@ -1,0 +1,4 @@
+fn* compare int int -> int
+fn* notify int
+fn* getter -> int
+fn* tick

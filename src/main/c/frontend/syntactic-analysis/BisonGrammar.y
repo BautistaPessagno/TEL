@@ -130,6 +130,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> DEFAULT
 %token <token> BREAK
 %token <token> FUNCTION
+%token <token> FUNCTION_POINTER
 %token <token> MAIN
 %token <token> STRUCT
 %token <token> ENUM
@@ -207,6 +208,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
+%type <parameterList> bareTypeList
+%type <declaration> functionPointerDeclaration
 %type <statementList> optionalFunctionBody
 %type <statementList> functionBody
 %type <functionDeclaration> functionDeclaration
@@ -281,6 +284,7 @@ programItemList:
 programItem:
 	 declaration											{ $$ = VariableDeclarationProgramItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationProgramItemSemanticAction($1); }
+	| functionPointerDeclaration							{ $$ = VariableDeclarationProgramItemSemanticAction($1); }
 	| aggregateDeclaration									{ $$ = AggregateDeclarationProgramItemSemanticAction($1); }
 	| enumDeclaration										{ $$ = EnumDeclarationProgramItemSemanticAction($1); }
 	| typedefDeclaration									{ $$ = TypedefDeclarationProgramItemSemanticAction($1); }
@@ -327,6 +331,7 @@ statementList:
 
 statement:
 	 declaration											{ $$ = VariableDeclarationStatementSemanticAction($1); }
+	| functionPointerDeclaration							{ $$ = VariableDeclarationStatementSemanticAction($1); }
 	| returnStatement										{ $$ = $1; }
 	| expressionStatement									{ $$ = $1; }
 	| ifStatement											{ $$ = $1; }
@@ -474,6 +479,22 @@ parameterList:
 
 parameter:
 	 identifier COLON type									{ $$ = ParameterSemanticAction($1, $3); }
+	;
+
+bareTypeList:
+	 type													{ $$ = SingletonBareParameterListSemanticAction($1); }
+	| bareTypeList type										{ $$ = AppendBareParameterListSemanticAction($1, $2); }
+	;
+
+functionPointerDeclaration:
+	 FUNCTION_POINTER identifier bareTypeList ARROW type terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, $5), NULL); }
+	| FUNCTION_POINTER identifier ARROW type terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, $4), NULL); }
+	| FUNCTION_POINTER identifier bareTypeList terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
+	| FUNCTION_POINTER identifier terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
 	;
 
 optionalReturnType:
