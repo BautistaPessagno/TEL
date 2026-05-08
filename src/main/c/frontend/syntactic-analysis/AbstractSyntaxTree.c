@@ -219,6 +219,8 @@ void destroyExpression(Expression * expression) {
 		expression->left = NULL;
 		destroyExpression(expression->right);
 		expression->right = NULL;
+		destroyExpressionList(expression->elements);
+		expression->elements = NULL;
 		free(expression);
 	}
 }

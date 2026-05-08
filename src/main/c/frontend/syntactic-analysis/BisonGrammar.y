@@ -533,6 +533,7 @@ expression:
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
 	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
 	| NULL_LITERAL											{ $$ = NullLiteralExpressionSemanticAction(); }
+	| OPEN_BRACE optionalArgumentList CLOSE_BRACE			{ $$ = ArrayLiteralExpressionSemanticAction($2); }
 	| functionCall											{ $$ = FunctionCallExpressionSemanticAction($1); }
 	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
 	| expression ASSIGN expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ASSIGN, $3); }

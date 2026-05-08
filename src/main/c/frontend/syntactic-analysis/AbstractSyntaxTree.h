@@ -113,7 +113,8 @@ enum ExpressionKind {
 	EXPRESSION_FUNCTION_CALL,
 	EXPRESSION_BINARY_OPERATION,
 	EXPRESSION_UNARY_OPERATION,
-	EXPRESSION_NULL_LITERAL
+	EXPRESSION_NULL_LITERAL,
+	EXPRESSION_ARRAY_LITERAL
 };
 
 enum ExpressionOperator {
@@ -245,6 +246,7 @@ struct Expression {
 	Expression * operand;
 	Expression * left;
 	Expression * right;
+	ExpressionList * elements;
 };
 
 struct ExpressionList {

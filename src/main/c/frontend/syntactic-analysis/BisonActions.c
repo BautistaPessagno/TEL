@@ -284,6 +284,14 @@ Expression * NullLiteralExpressionSemanticAction(void) {
 	return expression;
 }
 
+Expression * ArrayLiteralExpressionSemanticAction(ExpressionList * elements) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_ARRAY_LITERAL;
+	expression->elements = elements;
+	return expression;
+}
+
 Expression * FunctionCallExpressionSemanticAction(FunctionCall * functionCall) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
