@@ -195,6 +195,9 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS UNARY_DEREFERENCE UNARY_ADDRESS_OF PREFIX_INCREMENT PREFIX_DECREMENT
+/* OPEN_BRACKET sits at postfix precedence so `type OPEN_BRACKET ...` and
+ * `expression OPEN_BRACKET expression CLOSE_BRACKET %prec ARRAY_INDEX` resolve
+ * by default-shift; removing it reintroduces shift/reduce conflicts on `[`. */
 %left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT ARRAY_INDEX OPEN_BRACKET
 
 /** Non-terminals. */
@@ -612,6 +615,9 @@ type:
 	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
 	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
 	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
+	/* TODO: compound forms like `int*[3]`, `int[3][4]`, `int[]*` parse via these
+	 * recursive rules but their AST shape is not yet a defined contract. Pin
+	 * desired semantics and add accept/reject fixtures before relying on them. */
 	| type MULTIPLY %prec UNARY_DEREFERENCE					{ $$ = PointerTypeSemanticAction($1); }
 	| type OPEN_BRACKET expression CLOSE_BRACKET			{ $$ = ArrayTypeSemanticAction($1, $3); }
 	| type OPEN_BRACKET CLOSE_BRACKET						{ $$ = ArrayTypeSemanticAction($1, NULL); }

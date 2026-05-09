@@ -122,6 +122,9 @@ ParameterList * SingletonBareParameterListSemanticAction(Type * type) {
 
 ParameterList * AppendBareParameterListSemanticAction(ParameterList * list, Type * type) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (list == NULL) {
+		return SingletonBareParameterListSemanticAction(type);
+	}
 	Parameter * parameter = calloc(1, sizeof(Parameter));
 	parameter->name = NULL;
 	parameter->type = type;
