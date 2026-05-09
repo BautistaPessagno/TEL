@@ -1,0 +1,4 @@
+p:int*
+pp:int**
+buf:char*
+ratio:float*

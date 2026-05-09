@@ -1,0 +1,1 @@
+fn* cb a:int -> int

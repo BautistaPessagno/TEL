@@ -113,6 +113,10 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> DEDENT
 %token <token> OPEN_PARENTHESIS
 %token <token> CLOSE_PARENTHESIS
+%token <token> OPEN_BRACKET
+%token <token> CLOSE_BRACKET
+%token <token> OPEN_BRACE
+%token <token> CLOSE_BRACE
 %token <token> ARROW
 %token <token> RETURN
 %token <token> IF
@@ -126,6 +130,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> DEFAULT
 %token <token> BREAK
 %token <token> FUNCTION
+%token <token> FUNCTION_POINTER
 %token <token> MAIN
 %token <token> STRUCT
 %token <token> ENUM
@@ -139,6 +144,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_UINT
 %token <token> TYPE_ULI
 %token <token> TYPE_LONG
+%token <token> NULL_LITERAL
 %token <token> ADD_ASSIGN
 %token <token> SUBTRACT_ASSIGN
 %token <token> MULTIPLY_ASSIGN
@@ -188,8 +194,11 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %left SHIFT_LEFT SHIFT_RIGHT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
-%right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS PREFIX_INCREMENT PREFIX_DECREMENT
-%left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT
+%right LOGICAL_NOT BITWISE_NOT UNARY_PLUS UNARY_MINUS UNARY_DEREFERENCE UNARY_ADDRESS_OF PREFIX_INCREMENT PREFIX_DECREMENT
+/* OPEN_BRACKET sits at postfix precedence so `type OPEN_BRACKET ...` and
+ * `expression OPEN_BRACKET expression CLOSE_BRACKET %prec ARRAY_INDEX` resolve
+ * by default-shift; removing it reintroduces shift/reduce conflicts on `[`. */
+%left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT ARRAY_INDEX OPEN_BRACKET
 
 /** Non-terminals. */
 %type <string> identifier
@@ -202,6 +211,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
+%type <parameterList> bareTypeList
+%type <declaration> functionPointerDeclaration
 %type <statementList> optionalFunctionBody
 %type <statementList> functionBody
 %type <functionDeclaration> functionDeclaration
@@ -276,6 +287,7 @@ programItemList:
 programItem:
 	 declaration											{ $$ = VariableDeclarationProgramItemSemanticAction($1); }
 	| functionDeclaration									{ $$ = FunctionDeclarationProgramItemSemanticAction($1); }
+	| functionPointerDeclaration							{ $$ = VariableDeclarationProgramItemSemanticAction($1); }
 	| aggregateDeclaration									{ $$ = AggregateDeclarationProgramItemSemanticAction($1); }
 	| enumDeclaration										{ $$ = EnumDeclarationProgramItemSemanticAction($1); }
 	| typedefDeclaration									{ $$ = TypedefDeclarationProgramItemSemanticAction($1); }
@@ -322,6 +334,7 @@ statementList:
 
 statement:
 	 declaration											{ $$ = VariableDeclarationStatementSemanticAction($1); }
+	| functionPointerDeclaration							{ $$ = VariableDeclarationStatementSemanticAction($1); }
 	| returnStatement										{ $$ = $1; }
 	| expressionStatement									{ $$ = $1; }
 	| ifStatement											{ $$ = $1; }
@@ -471,6 +484,22 @@ parameter:
 	 identifier COLON type									{ $$ = ParameterSemanticAction($1, $3); }
 	;
 
+bareTypeList:
+	 type													{ $$ = SingletonBareParameterListSemanticAction($1); }
+	| bareTypeList type										{ $$ = AppendBareParameterListSemanticAction($1, $2); }
+	;
+
+functionPointerDeclaration:
+	 FUNCTION_POINTER identifier bareTypeList ARROW type terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, $5), NULL); }
+	| FUNCTION_POINTER identifier ARROW type terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, $4), NULL); }
+	| FUNCTION_POINTER identifier bareTypeList terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
+	| FUNCTION_POINTER identifier terminator
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
+	;
+
 optionalReturnType:
 	 %empty													{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
 	| ARROW type											{ $$ = $2; }
@@ -527,6 +556,8 @@ expression:
 	 identifier %prec ARGUMENT_BOUNDARY						{ $$ = IdentifierExpressionSemanticAction($1); }
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
 	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
+	| NULL_LITERAL											{ $$ = NullLiteralExpressionSemanticAction(); }
+	| OPEN_BRACE optionalArgumentList CLOSE_BRACE			{ $$ = ArrayLiteralExpressionSemanticAction($2); }
 	| functionCall											{ $$ = FunctionCallExpressionSemanticAction($1); }
 	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
 	| expression ASSIGN expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ASSIGN, $3); }
@@ -560,12 +591,15 @@ expression:
 	| expression MODULO expression							{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_MODULO, $3); }
 	| ADD expression %prec UNARY_PLUS						{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_UNARY_PLUS, $2); }
 	| SUBTRACT expression %prec UNARY_MINUS					{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_UNARY_MINUS, $2); }
+	| MULTIPLY expression %prec UNARY_DEREFERENCE			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_DEREFERENCE, $2); }
+	| BITWISE_AND expression %prec UNARY_ADDRESS_OF			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_ADDRESS_OF, $2); }
 	| LOGICAL_NOT expression								{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_LOGICAL_NOT, $2); }
 	| BITWISE_NOT expression								{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_BITWISE_NOT, $2); }
 	| INCREMENT expression %prec PREFIX_INCREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_PREFIX_INCREMENT, $2); }
 	| DECREMENT expression %prec PREFIX_DECREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_PREFIX_DECREMENT, $2); }
 	| expression INCREMENT %prec POSTFIX_INCREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, $1); }
 	| expression DECREMENT %prec POSTFIX_DECREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_DECREMENT, $1); }
+	| expression OPEN_BRACKET expression CLOSE_BRACKET %prec ARRAY_INDEX	{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ARRAY_INDEX, $3); }
 	;
 
 type:
@@ -581,6 +615,20 @@ type:
 	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
 	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
 	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
+	/* TODO: compound forms like `int*[3]`, `int[3][4]`, `int[]*` parse via these
+	 * recursive rules but their AST shape is not yet a defined contract. Pin
+	 * desired semantics and add accept/reject fixtures before relying on them. */
+	| type MULTIPLY %prec UNARY_DEREFERENCE					{ $$ = PointerTypeSemanticAction($1); }
+	| type OPEN_BRACKET expression CLOSE_BRACKET			{ $$ = ArrayTypeSemanticAction($1, $3); }
+	| type OPEN_BRACKET CLOSE_BRACKET						{ $$ = ArrayTypeSemanticAction($1, NULL); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER bareTypeList ARROW type CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction($3, $5); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER ARROW type CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction(NULL, $4); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER bareTypeList CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)); }
+	| OPEN_PARENTHESIS FUNCTION_POINTER CLOSE_PARENTHESIS
+		{ $$ = FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)); }
 	;
 
 %%

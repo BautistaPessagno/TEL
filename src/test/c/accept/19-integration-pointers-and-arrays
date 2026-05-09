@@ -1,0 +1,17 @@
+typedef Comparator:(fn* int int -> int)
+
+fn ascending a:int b:int -> int
+    a - b
+
+fn first arr:int[] size:int cmp:(fn* int int -> int) -> int*
+    p:int*
+    p = &arr[0]
+    *p
+
+fn run -> int
+    nums:int[3] = {3 1 2}
+    cb:(fn* int int -> int)
+    cb = ascending
+    p:int*
+    p = first(nums 3 cb)
+    *p

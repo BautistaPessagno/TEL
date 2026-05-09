@@ -1,0 +1,5 @@
+fn use arr:int[] -> int
+    x = arr[0]
+    y = arr[1 + 1]
+    z = arr[index_of(arr)]
+    z

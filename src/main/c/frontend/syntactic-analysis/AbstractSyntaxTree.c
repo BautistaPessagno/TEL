@@ -27,6 +27,14 @@ void destroyType(Type * type) {
 			free(type->name);
 			type->name = NULL;
 		}
+		destroyType(type->pointee);
+		type->pointee = NULL;
+		destroyExpression(type->arraySize);
+		type->arraySize = NULL;
+		destroyParameterList(type->functionParams);
+		type->functionParams = NULL;
+		destroyType(type->returnType);
+		type->returnType = NULL;
 		free(type);
 	}
 }
@@ -211,6 +219,8 @@ void destroyExpression(Expression * expression) {
 		expression->left = NULL;
 		destroyExpression(expression->right);
 		expression->right = NULL;
+		destroyExpressionList(expression->elements);
+		expression->elements = NULL;
 		free(expression);
 	}
 }

@@ -67,7 +67,10 @@ enum TypeKind {
 	TYPE_NAMED_KIND,
 	TYPE_STRUCT_KIND,
 	TYPE_ENUM_KIND,
-	TYPE_UNION_KIND
+	TYPE_UNION_KIND,
+	TYPE_POINTER_KIND,
+	TYPE_ARRAY_KIND,
+	TYPE_FUNCTION_POINTER_KIND
 };
 
 enum AggregateKind {
@@ -110,7 +113,9 @@ enum ExpressionKind {
 	EXPRESSION_STRING_LITERAL,
 	EXPRESSION_FUNCTION_CALL,
 	EXPRESSION_BINARY_OPERATION,
-	EXPRESSION_UNARY_OPERATION
+	EXPRESSION_UNARY_OPERATION,
+	EXPRESSION_NULL_LITERAL,
+	EXPRESSION_ARRAY_LITERAL
 };
 
 enum ExpressionOperator {
@@ -147,6 +152,9 @@ enum ExpressionOperator {
 	EXPRESSION_OPERATOR_UNARY_MINUS,
 	EXPRESSION_OPERATOR_LOGICAL_NOT,
 	EXPRESSION_OPERATOR_BITWISE_NOT,
+	EXPRESSION_OPERATOR_DEREFERENCE,
+	EXPRESSION_OPERATOR_ADDRESS_OF,
+	EXPRESSION_OPERATOR_ARRAY_INDEX,
 	EXPRESSION_OPERATOR_PREFIX_INCREMENT,
 	EXPRESSION_OPERATOR_PREFIX_DECREMENT,
 	EXPRESSION_OPERATOR_POSTFIX_INCREMENT,
@@ -156,6 +164,10 @@ enum ExpressionOperator {
 struct Type {
 	TypeKind kind;
 	char * name;
+	Type * pointee;                  /* TYPE_POINTER_KIND: pointed-to type. TYPE_ARRAY_KIND: element type. */
+	Expression * arraySize;
+	ParameterList * functionParams;
+	Type * returnType;
 };
 
 struct VariableDeclaration {
@@ -235,6 +247,7 @@ struct Expression {
 	Expression * operand;
 	Expression * left;
 	Expression * right;
+	ExpressionList * elements;
 };
 
 struct ExpressionList {

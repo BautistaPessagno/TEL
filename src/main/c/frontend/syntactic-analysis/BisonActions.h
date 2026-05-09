@@ -19,6 +19,11 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
 
 Type * TypeSemanticAction(TypeKind kind);
 Type * NamedTypeSemanticAction(TypeKind kind, char * name);
+Type * PointerTypeSemanticAction(Type * pointee);
+Type * ArrayTypeSemanticAction(Type * element, Expression * size);
+Type * FunctionPointerTypeSemanticAction(ParameterList * params, Type * returnType);
+ParameterList * SingletonBareParameterListSemanticAction(Type * type);
+ParameterList * AppendBareParameterListSemanticAction(ParameterList * list, Type * type);
 bool IsKnownTypedefName(const char * name);
 VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer);
 VariableDeclarationList * SingletonVariableDeclarationListSemanticAction(VariableDeclaration * declaration);
@@ -39,6 +44,8 @@ FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * argument
 Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
 Expression * StringLiteralExpressionSemanticAction(char * value);
+Expression * NullLiteralExpressionSemanticAction(void);
+Expression * ArrayLiteralExpressionSemanticAction(ExpressionList * elements);
 Expression * FunctionCallExpressionSemanticAction(FunctionCall * functionCall);
 Expression * BinaryExpressionSemanticAction(Expression * left, ExpressionOperator operator, Expression * right);
 Expression * UnaryExpressionSemanticAction(ExpressionOperator operator, Expression * operand);

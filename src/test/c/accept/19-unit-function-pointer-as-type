@@ -1,0 +1,4 @@
+cb:(fn* int -> int)
+fn outer cb:(fn* int -> int) x:int -> int
+    x
+typedef Comparator:(fn* int int -> int)

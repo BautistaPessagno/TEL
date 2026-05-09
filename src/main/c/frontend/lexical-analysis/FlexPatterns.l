@@ -64,6 +64,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 
 {includeDirective}					{ return PreprocessorDirectiveLexemeAction(INCLUDE_DIRECTIVE, "#include"); }
 {defineDirective}					{ return PreprocessorDirectiveLexemeAction(DEFINE_DIRECTIVE, "#define"); }
+"fn*"								{ return KeywordLexemeAction(FUNCTION_POINTER); }
 "fn"								{ return KeywordLexemeAction(FUNCTION); }
 "ret"								{ return KeywordLexemeAction(RETURN); }
 "if"								{ return KeywordLexemeAction(IF); }
@@ -89,6 +90,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "uint"								{ return KeywordLexemeAction(TYPE_UINT); }
 "uli"								{ return KeywordLexemeAction(TYPE_ULI); }
 "long"								{ return KeywordLexemeAction(TYPE_LONG); }
+"null"								{ return KeywordLexemeAction(NULL_LITERAL); }
 {integer}							{ return StringLexemeAction(INTEGER_LITERAL); }
 {string}							{ return StringLexemeAction(STRING_LITERAL); }
 {identifier}				        { return IdentifierLexemeAction(); }
@@ -132,6 +134,10 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
 "("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }
 ")"									{ return PunctuationLexemeAction(CLOSE_PARENTHESIS); }
+"["									{ return PunctuationLexemeAction(OPEN_BRACKET); }
+"]"									{ return PunctuationLexemeAction(CLOSE_BRACKET); }
+"{"									{ return PunctuationLexemeAction(OPEN_BRACE); }
+"}"									{ return PunctuationLexemeAction(CLOSE_BRACE); }
 
 {whitespace}						{ return IgnoredLexemeAction(); }
 .									{ return UnknownLexemeAction(); }

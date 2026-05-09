@@ -83,6 +83,60 @@ Type * NamedTypeSemanticAction(TypeKind kind, char * name) {
 	return type;
 }
 
+Type * PointerTypeSemanticAction(Type * pointee) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Type * type = calloc(1, sizeof(Type));
+	type->kind = TYPE_POINTER_KIND;
+	type->pointee = pointee;
+	return type;
+}
+
+Type * ArrayTypeSemanticAction(Type * element, Expression * size) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Type * type = calloc(1, sizeof(Type));
+	type->kind = TYPE_ARRAY_KIND;
+	type->pointee = element;
+	type->arraySize = size;
+	return type;
+}
+
+Type * FunctionPointerTypeSemanticAction(ParameterList * params, Type * returnType) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Type * type = calloc(1, sizeof(Type));
+	type->kind = TYPE_FUNCTION_POINTER_KIND;
+	type->functionParams = params;
+	type->returnType = returnType;
+	return type;
+}
+
+ParameterList * SingletonBareParameterListSemanticAction(Type * type) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Parameter * parameter = calloc(1, sizeof(Parameter));
+	parameter->name = NULL;
+	parameter->type = type;
+	ParameterList * list = calloc(1, sizeof(ParameterList));
+	list->parameter = parameter;
+	list->next = NULL;
+	return list;
+}
+
+ParameterList * AppendBareParameterListSemanticAction(ParameterList * list, Type * type) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (list == NULL) {
+		return SingletonBareParameterListSemanticAction(type);
+	}
+	Parameter * parameter = calloc(1, sizeof(Parameter));
+	parameter->name = NULL;
+	parameter->type = type;
+	ParameterList * tail = calloc(1, sizeof(ParameterList));
+	tail->parameter = parameter;
+	tail->next = NULL;
+	ParameterList * cursor = list;
+	while (cursor->next != NULL) cursor = cursor->next;
+	cursor->next = tail;
+	return list;
+}
+
 bool IsKnownTypedefName(const char * name) {
 	for (TypedefNameNode * node = _typedefNames; node != NULL; node = node->next) {
 		if (strcmp(node->name, name) == 0) {
@@ -257,6 +311,21 @@ Expression * StringLiteralExpressionSemanticAction(char * value) {
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->kind = EXPRESSION_STRING_LITERAL;
 	expression->value = value;
+	return expression;
+}
+
+Expression * NullLiteralExpressionSemanticAction(void) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_NULL_LITERAL;
+	return expression;
+}
+
+Expression * ArrayLiteralExpressionSemanticAction(ExpressionList * elements) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_ARRAY_LITERAL;
+	expression->elements = elements;
 	return expression;
 }
 
