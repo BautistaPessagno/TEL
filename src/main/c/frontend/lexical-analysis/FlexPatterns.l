@@ -83,6 +83,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "switch"							{ return KeywordLexemeAction(SWITCH); }
 "default"							{ return KeywordLexemeAction(DEFAULT); }
 "break"								{ return KeywordLexemeAction(BREAK); }
+"cnt"								{ return KeywordLexemeAction(CONTINUE); }
 "main"								{ return KeywordLexemeAction(MAIN); }
 "struct"							{ return KeywordLexemeAction(STRUCT); }
 "enum"								{ return KeywordLexemeAction(ENUM); }

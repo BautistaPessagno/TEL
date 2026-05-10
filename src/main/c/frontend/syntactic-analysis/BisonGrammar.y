@@ -131,6 +131,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> SWITCH
 %token <token> DEFAULT
 %token <token> BREAK
+%token <token> CONTINUE
 %token <token> FUNCTION
 %token <token> FUNCTION_POINTER
 %token <token> MAIN
