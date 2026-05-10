@@ -1,0 +1,3 @@
+value:const const int
+fn read input:const const int -> const const int
+    input

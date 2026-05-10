@@ -148,6 +148,9 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_UINT
 %token <token> TYPE_ULI
 %token <token> TYPE_LONG
+%token <token> TYPE_SHORT
+%token <token> CONST
+%token <token> STATIC
 %token <token> NULL_LITERAL
 %token <token> ADD_ASSIGN
 %token <token> SUBTRACT_ASSIGN
@@ -209,10 +212,13 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <token> terminator
 %type <token> arrow
 %type <type> type
+%type <type> baseType
+%type <type> unqualifiedBaseType
 %type <type> optionalReturnType
 %type <expression> optionalInitializer
 %type <declaration> declaration
-%type <declarationList> variableDeclarationList
+%type <declaration> aggregateField
+%type <declarationList> aggregateFieldList
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
@@ -246,7 +252,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <statement> forStatement
 %type <statement> whileStatement
 %type <statement> doWhileStatement
-%type <statement> switchStatement
+%type <switchStatement> switchStatement
 %type <statement> switchInlineStatement
 %type <statement> breakStatement
 %type <statement> continueStatement
@@ -305,7 +311,8 @@ programItem:
 	;
 
 declaration:
-	 identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
+	 identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($1, $3, $4, false); }
+	| STATIC identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($2, $4, $5, true); }
 	;
 
 optionalInitializer:
@@ -313,14 +320,19 @@ optionalInitializer:
 	| ASSIGN expression										{ $$ = $2; }
 	;
 
-variableDeclarationList:
-	 declaration											{ $$ = SingletonVariableDeclarationListSemanticAction($1); }
-	| variableDeclarationList declaration					{ $$ = AppendVariableDeclarationListSemanticAction($1, $2); }
-	| variableDeclarationList terminator						{ $$ = $1; }
+aggregateField:
+	 identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($1, $3, $4, false); }
+	;
+
+aggregateFieldList:
+	 aggregateField											{ $$ = SingletonVariableDeclarationListSemanticAction($1); }
+	| aggregateFieldList aggregateField						{ $$ = AppendVariableDeclarationListSemanticAction($1, $2); }
+	| aggregateFieldList terminator							{ $$ = $1; }
 	;
 
 functionDeclaration:
-	 FUNCTION identifier optionalParameterList optionalReturnType terminator optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
+	 FUNCTION identifier optionalParameterList optionalReturnType terminator optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6, false); }
+	| STATIC FUNCTION identifier optionalParameterList optionalReturnType terminator optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($3, $4, $5, $7, true); }
 	;
 
 optionalFunctionBody:
@@ -351,7 +363,7 @@ statement:
 	| forStatement											{ $$ = $1; }
 	| whileStatement										{ $$ = $1; }
 	| doWhileStatement										{ $$ = $1; }
-	| switchStatement										{ $$ = $1; }
+	| switchStatement										{ $$ = SwitchStatementSemanticActionWrapper($1); }
 	| breakStatement										{ $$ = $1; }
 	| INLINE_C_BLOCK										{ $$ = InlineCStatementSemanticAction($1); }
 	| continueStatement										{ $$ = $1; }
@@ -438,7 +450,7 @@ doWhileLoop:
 	;
 
 switchStatement:
-	 SWITCH expression terminator INDENT switchCaseList DEDENT	{ $$ = SwitchStatementSemanticActionWrapper(SwitchStatementSemanticAction($2, $5)); }
+	 SWITCH expression terminator INDENT switchCaseList DEDENT	{ $$ = SwitchStatementSemanticAction($2, $5); }
 	;
 
 switchCaseList:
@@ -466,7 +478,7 @@ switchInlineStatementList:
 	;
 
 switchInlineStatement:
-	 identifier COLON type optionalInitializer				{ $$ = VariableDeclarationStatementSemanticAction(VariableDeclarationSemanticAction($1, $3, $4)); }
+	 identifier COLON type optionalInitializer				{ $$ = VariableDeclarationStatementSemanticAction(VariableDeclarationSemanticAction($1, $3, $4, false)); }
 	| RETURN optionalReturnExpression						{ $$ = ReturnStatementSemanticAction($2); }
 	| expression											{ $$ = ExpressionStatementSemanticAction($1); }
 	| BREAK													{ $$ = BreakStatementSemanticAction(); }
@@ -507,13 +519,13 @@ bareTypeList:
 
 functionPointerDeclaration:
 	 FUNCTION_POINTER identifier bareTypeList arrow type terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, $5), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, $5), NULL, false); }
 	| FUNCTION_POINTER identifier arrow type terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, $4), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, $4), NULL, false); }
 	| FUNCTION_POINTER identifier bareTypeList terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)), NULL, false); }
 	| FUNCTION_POINTER identifier terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)), NULL, false); }
 	;
 
 optionalReturnType:
@@ -527,8 +539,8 @@ arrow:
 	;
 
 aggregateDeclaration:
-	 STRUCT identifier terminator INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
-	| UNION identifier terminator INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
+	 STRUCT identifier terminator INDENT aggregateFieldList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
+	| UNION identifier terminator INDENT aggregateFieldList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
 	;
 
 enumDeclaration:
@@ -638,18 +650,7 @@ expression:
 	;
 
 type:
-	 TYPE_INT												{ $$ = TypeSemanticAction(TYPE_INT_KIND); }
-	| TYPE_CHAR												{ $$ = TypeSemanticAction(TYPE_CHAR_KIND); }
-	| TYPE_FLOAT											{ $$ = TypeSemanticAction(TYPE_FLOAT_KIND); }
-	| TYPE_DOUBLE											{ $$ = TypeSemanticAction(TYPE_DOUBLE_KIND); }
-	| TYPE_VOID												{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
-	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
-	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
-	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
-	| TYPEDEF_NAME											{ $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
-	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
-	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
-	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
+	 baseType												{ $$ = $1; }
 	/* TODO: compound forms like `int*[3]`, `int[3][4]`, `int[]*` parse via these
 	 * recursive rules but their AST shape is not yet a defined contract. Pin
 	 * desired semantics and add accept/reject fixtures before relying on them. */
@@ -664,6 +665,27 @@ type:
 		{ $$ = FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)); }
 	| OPEN_PARENTHESIS FUNCTION_POINTER CLOSE_PARENTHESIS
 		{ $$ = FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)); }
+	;
+
+baseType:
+	 unqualifiedBaseType									{ $$ = $1; }
+	| CONST unqualifiedBaseType								{ $$ = ConstQualifiedTypeSemanticAction($2); }
+	;
+
+unqualifiedBaseType:
+	 TYPE_INT												{ $$ = TypeSemanticAction(TYPE_INT_KIND); }
+	| TYPE_CHAR												{ $$ = TypeSemanticAction(TYPE_CHAR_KIND); }
+	| TYPE_FLOAT											{ $$ = TypeSemanticAction(TYPE_FLOAT_KIND); }
+	| TYPE_DOUBLE											{ $$ = TypeSemanticAction(TYPE_DOUBLE_KIND); }
+	| TYPE_VOID												{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
+	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
+	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
+	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
+	| TYPE_SHORT											{ $$ = TypeSemanticAction(TYPE_SHORT_KIND); }
+	| TYPEDEF_NAME											{ $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
+	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
+	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
+	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
 	;
 
 %%

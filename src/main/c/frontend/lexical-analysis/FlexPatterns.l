@@ -118,6 +118,9 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "uint"								{ return KeywordLexemeAction(TYPE_UINT); }
 "uli"								{ return KeywordLexemeAction(TYPE_ULI); }
 "long"								{ return KeywordLexemeAction(TYPE_LONG); }
+"short"								{ return KeywordLexemeAction(TYPE_SHORT); }
+"const"								{ return KeywordLexemeAction(CONST); }
+"stc"								{ return KeywordLexemeAction(STATIC); }
 "null"								{ return KeywordLexemeAction(NULL_LITERAL); }
 {hexInteger}						{ return StringLexemeAction(INTEGER_LITERAL); }
 {octalInteger}						{ return StringLexemeAction(INTEGER_LITERAL); }
