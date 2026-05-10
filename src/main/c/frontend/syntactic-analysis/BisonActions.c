@@ -448,6 +448,14 @@ ProgramItem * PreprocessorDirectiveProgramItemSemanticAction(PreprocessorDirecti
 	return item;
 }
 
+ProgramItem * InlineCProgramItemSemanticAction(char * code) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	ProgramItem * item = calloc(1, sizeof(ProgramItem));
+	item->kind = PROGRAM_ITEM_INLINE_C;
+	item->inlineC = code;
+	return item;
+}
+
 ProgramItem * EmptyProgramItemSemanticAction() {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	ProgramItem * item = calloc(1, sizeof(ProgramItem));
@@ -681,6 +689,14 @@ Statement * BreakStatementSemanticAction() {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->kind = STATEMENT_BREAK;
+	return statement;
+}
+
+Statement * InlineCStatementSemanticAction(char * code) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_INLINE_C;
+	statement->inlineC = code;
 	return statement;
 }
 

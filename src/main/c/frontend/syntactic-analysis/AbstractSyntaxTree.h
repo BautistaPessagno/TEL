@@ -91,6 +91,7 @@ enum ProgramItemKind {
 	PROGRAM_ITEM_ENUM_DECLARATION,
 	PROGRAM_ITEM_TYPEDEF_DECLARATION,
 	PROGRAM_ITEM_PREPROCESSOR_DIRECTIVE,
+	PROGRAM_ITEM_INLINE_C,
 	PROGRAM_ITEM_EMPTY
 };
 
@@ -104,6 +105,7 @@ enum StatementKind {
 	STATEMENT_DO_WHILE,
 	STATEMENT_SWITCH,
 	STATEMENT_BREAK,
+	STATEMENT_INLINE_C,
 	STATEMENT_CONTINUE,
 	STATEMENT_EMPTY
 };
@@ -269,6 +271,7 @@ struct ProgramItem {
 	EnumDeclaration * enumDeclaration;
 	TypedefDeclaration * typedefDeclaration;
 	PreprocessorDirective * preprocessorDirective;
+	char * inlineC;
 };
 
 struct ProgramItemList {
@@ -324,6 +327,7 @@ struct Statement {
 	WhileStatement * whileStatement;
 	DoWhileStatement * doWhileStatement;
 	SwitchStatement * switchStatement;
+	char * inlineC;
 };
 
 struct StatementList {

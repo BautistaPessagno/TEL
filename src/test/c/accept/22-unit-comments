@@ -1,0 +1,26 @@
+// top-level line comment
+/* top-level block comment */
+
+value:int /* inline block comment */;
+
+main
+    // full-line body comment
+    text:char = "not // a comment"
+    marker:char = "not /* a comment */"
+    value = 1 // trailing assignment comment
+    /* multiline block comment
+       with TEL-looking code:
+       fn ignored x:int -> int
+    */
+    if value == 1 /* trailing header block */
+        // full-line nested comment
+        value++
+    x:int /*
+        this shuld not make any problems
+    */
+    y:int
+
+    `
+    // inline C comment should stay raw
+    const char *s = "/* inline C string */";
+    `

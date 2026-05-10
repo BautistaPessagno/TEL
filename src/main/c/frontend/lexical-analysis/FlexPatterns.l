@@ -5,6 +5,7 @@
 #include "../../support/type/TokenLabel.h"
 #include "../syntactic-analysis/AbstractSyntaxTree.h"
 #include "../syntactic-analysis/BisonParser.h"
+#include <stdbool.h>
 
 }
 
@@ -17,6 +18,10 @@
 extern CompilationStatus EOFLexemeAction();
 extern CompilationStatus IdentifierLexemeAction();
 extern CompilationStatus IgnoredLexemeAction();
+extern CompilationStatus InlineCBlockEndLexemeAction();
+extern CompilationStatus InlineCBlockStartLexemeAction();
+extern CompilationStatus InlineCContentLexemeAction();
+extern bool IsInlineCClosingLine();
 extern CompilationStatus IndentationLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
 extern CompilationStatus LineBreakLexemeAction();
@@ -50,7 +55,7 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 includeDirective	"#include"{whitespace}+{identifier}
 defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 
-%x BOL AFTER_POSTFIX
+%x BOL AFTER_POSTFIX INLINE_C BLOCK_COMMENT
 
 %%
 
@@ -68,9 +73,21 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 
 <AFTER_POSTFIX>"->"/{identifier}	{ BEGIN(INITIAL); return PunctuationLexemeAction(PTR_ARROW); }
 <AFTER_POSTFIX>{whitespace}			{ BEGIN(INITIAL); return IgnoredLexemeAction(); }
+<AFTER_POSTFIX>"//"[^\n]*			{ BEGIN(INITIAL); return IgnoredLexemeAction(); }
+<AFTER_POSTFIX>"/*"					{ BEGIN(BLOCK_COMMENT); return IgnoredLexemeAction(); }
 <AFTER_POSTFIX>{linebreak}			{ BEGIN(INITIAL); yyless(0); }
 <AFTER_POSTFIX><<EOF>>				{ BEGIN(INITIAL); return EOFLexemeAction(); }
 <AFTER_POSTFIX>.					{ BEGIN(INITIAL); yyless(0); }
+
+<BLOCK_COMMENT>"*/"					{ BEGIN(INITIAL); return IgnoredLexemeAction(); }
+<BLOCK_COMMENT>{linebreak}			{ return LineBreakLexemeAction(); }
+<BLOCK_COMMENT>[^*\n]+				{ return IgnoredLexemeAction(); }
+<BLOCK_COMMENT>"*"					{ return IgnoredLexemeAction(); }
+<BLOCK_COMMENT><<EOF>>				{ return UnknownLexemeAction(); }
+
+<INLINE_C>.*{linebreak}				{ if (IsInlineCClosingLine()) { BEGIN(BOL); return InlineCBlockEndLexemeAction(); } return InlineCContentLexemeAction(); }
+<INLINE_C>.+						{ if (IsInlineCClosingLine()) { BEGIN(BOL); return InlineCBlockEndLexemeAction(); } return InlineCContentLexemeAction(); }
+<INLINE_C><<EOF>>					{ return UnknownLexemeAction(); }
 
 {includeDirective}					{ return PreprocessorDirectiveLexemeAction(INCLUDE_DIRECTIVE, "#include"); }
 {defineDirective}					{ return PreprocessorDirectiveLexemeAction(DEFINE_DIRECTIVE, "#define"); }
@@ -109,6 +126,8 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 {charLiteral}						{ return StringLexemeAction(CHAR_LITERAL); }
 {string}							{ return StringLexemeAction(STRING_LITERAL); }
 {identifier}				        { BEGIN(AFTER_POSTFIX); return IdentifierLexemeAction(); }
+"//"[^\n]*							{ return IgnoredLexemeAction(); }
+"/*"								{ BEGIN(BLOCK_COMMENT); return IgnoredLexemeAction(); }
 "->"								{ return PunctuationLexemeAction(ARROW); }
 ">>="								{ return PunctuationLexemeAction(SHIFT_RIGHT_ASSIGN); }
 "<<="								{ return PunctuationLexemeAction(SHIFT_LEFT_ASSIGN); }
@@ -148,6 +167,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 ","									{ return PunctuationLexemeAction(COMMA); }
 {terminator}						{ return TerminatorLexemeAction(); }
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
+"`"[ \t\r]*{linebreak}				{ BEGIN(INLINE_C); return InlineCBlockStartLexemeAction(); }
 "("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }
 ")"									{ BEGIN(AFTER_POSTFIX); return PunctuationLexemeAction(CLOSE_PARENTHESIS); }
 "["									{ return PunctuationLexemeAction(OPEN_BRACKET); }

@@ -8,6 +8,9 @@
 #define INDENTATION_STACK_CAPACITY 128
 
 static StackADT * _indentationStack = NULL;
+static char * _inlineCBuffer = NULL;
+static size_t _inlineCBufferLength = 0;
+static size_t _inlineCBufferCapacity = 0;
 static bool _logIgnoredLexemes = true;
 static LexicalAnalyzer * _lexicalAnalyzer = NULL;
 static Logger * _logger = NULL;
@@ -21,6 +24,10 @@ void _shutdownFlexActionsModule() {
 	}
 	destroyStackADT(_indentationStack);
 	_indentationStack = NULL;
+	free(_inlineCBuffer);
+	_inlineCBuffer = NULL;
+	_inlineCBufferLength = 0;
+	_inlineCBufferCapacity = 0;
 	_lexicalAnalyzer = NULL;
 }
 
@@ -41,6 +48,8 @@ static void _logTokenAction(const char * actionName, Token * token);
 static CompilationStatus _pushToken(TokenLabel label, const char * actionName);
 static CompilationStatus _pushDedentsUntil(unsigned int indentation);
 static char * _copyDirectiveValue(const char * lexeme, const char * keyword);
+static bool _ensureInlineCBufferCapacity(size_t additionalLength);
+static void _resetInlineCBuffer();
 
 /**
  * Logs a lexical-analyzer action over a token in DEBUGGING level.
@@ -103,6 +112,33 @@ static char * _copyDirectiveValue(const char * lexeme, const char * keyword) {
 	char * value = calloc(length + 1, sizeof(char));
 	strncpy(value, start, length);
 	return value;
+}
+
+static bool _ensureInlineCBufferCapacity(size_t additionalLength) {
+	size_t requiredCapacity = _inlineCBufferLength + additionalLength + 1;
+	if (requiredCapacity <= _inlineCBufferCapacity) {
+		return true;
+	}
+
+	size_t nextCapacity = _inlineCBufferCapacity == 0 ? 128 : _inlineCBufferCapacity;
+	while (nextCapacity < requiredCapacity) {
+		nextCapacity *= 2;
+	}
+
+	char * nextBuffer = realloc(_inlineCBuffer, nextCapacity);
+	if (nextBuffer == NULL) {
+		return false;
+	}
+	_inlineCBuffer = nextBuffer;
+	_inlineCBufferCapacity = nextCapacity;
+	return true;
+}
+
+static void _resetInlineCBuffer() {
+	_inlineCBufferLength = 0;
+	if (_inlineCBuffer != NULL) {
+		_inlineCBuffer[0] = '\0';
+	}
 }
 
 /* PUBLIC FUNCTIONS */
@@ -182,6 +218,51 @@ CompilationStatus LineBreakLexemeAction() {
 
 CompilationStatus TerminatorLexemeAction() {
 	return _pushToken(SEMICOLON, __FUNCTION__);
+}
+
+CompilationStatus InlineCBlockStartLexemeAction() {
+	_resetInlineCBuffer();
+	return IN_PROGRESS;
+}
+
+bool IsInlineCClosingLine() {
+	const char * cursor = yyget_text(_lexicalAnalyzer->scanner);
+	while (*cursor == ' ' || *cursor == '\t') {
+		cursor++;
+	}
+	if (*cursor != '`') {
+		return false;
+	}
+	cursor++;
+	while (*cursor == ' ' || *cursor == '\t' || *cursor == '\r') {
+		cursor++;
+	}
+	return *cursor == '\n' || *cursor == '\0';
+}
+
+CompilationStatus InlineCContentLexemeAction() {
+	Token * token = createToken(_lexicalAnalyzer, IGNORED);
+	_logTokenAction(__FUNCTION__, token);
+	size_t length = token->length;
+	if (!_ensureInlineCBufferCapacity(length)) {
+		destroyToken(token);
+		return OUT_OF_MEMORY;
+	}
+	memcpy(_inlineCBuffer + _inlineCBufferLength, token->lexeme, length);
+	_inlineCBufferLength += length;
+	_inlineCBuffer[_inlineCBufferLength] = '\0';
+	destroyToken(token);
+	return IN_PROGRESS;
+}
+
+CompilationStatus InlineCBlockEndLexemeAction() {
+	Token * token = createToken(_lexicalAnalyzer, INLINE_C_BLOCK);
+	token->semanticValue->string = strdup(_inlineCBuffer != NULL ? _inlineCBuffer : "");
+	_logTokenAction(__FUNCTION__, token);
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
+	destroyToken(token);
+	_resetInlineCBuffer();
+	return status;
 }
 
 CompilationStatus EOFLexemeAction() {

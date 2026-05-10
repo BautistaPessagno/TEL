@@ -55,7 +55,6 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 	WhileStatement * whileStatement;
 	DoWhileStatement * doWhileStatement;
 	SwitchCase * switchCase;
-	SwitchStatement * switchStatement;
 	Statement * statement;
 	StatementList * statementList;
 	Program * program;
@@ -93,7 +92,6 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyWhileStatement($$); } <whileStatement>
 %destructor { destroyDoWhileStatement($$); } <doWhileStatement>
 %destructor { destroySwitchCase($$); } <switchCase>
-%destructor { destroySwitchStatement($$); } <switchStatement>
 %destructor { destroyStatement($$); } <statement>
 %destructor { destroyStatementList($$); } <statementList>
 
@@ -106,6 +104,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> STRING_LITERAL
 %token <string> INCLUDE_DIRECTIVE
 %token <string> DEFINE_DIRECTIVE
+%token <string> INLINE_C_BLOCK
 %token <token> COLON
 %token <token> COMMA
 %token <token> ASSIGN
@@ -301,6 +300,7 @@ programItem:
 	| enumDeclaration										{ $$ = EnumDeclarationProgramItemSemanticAction($1); }
 	| typedefDeclaration									{ $$ = TypedefDeclarationProgramItemSemanticAction($1); }
 	| preprocessorDirective									{ $$ = PreprocessorDirectiveProgramItemSemanticAction($1); }
+	| INLINE_C_BLOCK										{ $$ = InlineCProgramItemSemanticAction($1); }
 	| terminator											{ $$ = EmptyProgramItemSemanticAction(); }
 	;
 
@@ -353,6 +353,7 @@ statement:
 	| doWhileStatement										{ $$ = $1; }
 	| switchStatement										{ $$ = $1; }
 	| breakStatement										{ $$ = $1; }
+	| INLINE_C_BLOCK										{ $$ = InlineCStatementSemanticAction($1); }
 	| continueStatement										{ $$ = $1; }
 	| terminator											{ $$ = EmptyStatementSemanticAction(); }
 	;

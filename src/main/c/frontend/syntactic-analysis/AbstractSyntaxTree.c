@@ -253,6 +253,10 @@ void destroyProgramItem(ProgramItem * programItem) {
 		programItem->typedefDeclaration = NULL;
 		destroyPreprocessorDirective(programItem->preprocessorDirective);
 		programItem->preprocessorDirective = NULL;
+		if (programItem->inlineC != NULL) {
+			free(programItem->inlineC);
+			programItem->inlineC = NULL;
+		}
 		free(programItem);
 	}
 }
@@ -370,6 +374,10 @@ void destroyStatement(Statement * statement) {
 		statement->doWhileStatement = NULL;
 		destroySwitchStatement(statement->switchStatement);
 		statement->switchStatement = NULL;
+		if (statement->inlineC != NULL) {
+			free(statement->inlineC);
+			statement->inlineC = NULL;
+		}
 		free(statement);
 	}
 }
