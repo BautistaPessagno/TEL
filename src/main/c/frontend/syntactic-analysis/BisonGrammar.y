@@ -101,6 +101,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <string> IDENTIFIER
 %token <string> TYPEDEF_NAME
 %token <string> INTEGER_LITERAL
+%token <string> FLOAT_LITERAL
+%token <string> CHAR_LITERAL
 %token <string> STRING_LITERAL
 %token <string> INCLUDE_DIRECTIVE
 %token <string> DEFINE_DIRECTIVE
@@ -563,6 +565,8 @@ argumentList:
 expression:
 	 identifier %prec ARGUMENT_BOUNDARY						{ $$ = IdentifierExpressionSemanticAction($1); }
 	| INTEGER_LITERAL										{ $$ = IntegerLiteralExpressionSemanticAction($1); }
+	| FLOAT_LITERAL											{ $$ = FloatLiteralExpressionSemanticAction($1); }
+	| CHAR_LITERAL											{ $$ = CharLiteralExpressionSemanticAction($1); }
 	| STRING_LITERAL										{ $$ = StringLiteralExpressionSemanticAction($1); }
 	| NULL_LITERAL											{ $$ = NullLiteralExpressionSemanticAction(); }
 	| OPEN_BRACE optionalArgumentList CLOSE_BRACE			{ $$ = ArrayLiteralExpressionSemanticAction($2); }

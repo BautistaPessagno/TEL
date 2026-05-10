@@ -38,6 +38,10 @@ extern CompilationStatus UnknownLexemeAction();
  */
 /* whitespace			[ \t\r\n]+ */
 integer				[0-9]+
+hexInteger			0[xX][0-9a-fA-F]+
+octalInteger		0[oO][0-7]+
+float				([0-9]+\.[0-9]*([eE][+-]?[0-9]+)?|\.[0-9]+([eE][+-]?[0-9]+)?|[0-9]+[eE][+-]?[0-9]+)
+charLiteral			'([^\\'\n]|\\(.|x[0-9a-fA-F]{1,2}))'
 string				\"([^\\\n\"]|\\.)*\"
 whitespace			[ \t\r]+
 terminator			[;]+
@@ -97,7 +101,11 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "uli"								{ return KeywordLexemeAction(TYPE_ULI); }
 "long"								{ return KeywordLexemeAction(TYPE_LONG); }
 "null"								{ return KeywordLexemeAction(NULL_LITERAL); }
+{hexInteger}						{ return StringLexemeAction(INTEGER_LITERAL); }
+{octalInteger}						{ return StringLexemeAction(INTEGER_LITERAL); }
+{float}								{ return StringLexemeAction(FLOAT_LITERAL); }
 {integer}							{ return StringLexemeAction(INTEGER_LITERAL); }
+{charLiteral}						{ return StringLexemeAction(CHAR_LITERAL); }
 {string}							{ return StringLexemeAction(STRING_LITERAL); }
 {identifier}				        { BEGIN(AFTER_POSTFIX); return IdentifierLexemeAction(); }
 "->"								{ return PunctuationLexemeAction(ARROW); }

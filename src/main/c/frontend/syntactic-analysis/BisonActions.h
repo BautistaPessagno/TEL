@@ -43,6 +43,8 @@ PreprocessorDirective * PreprocessorDirectiveSemanticAction(PreprocessorDirectiv
 FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * arguments);
 Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
+Expression * FloatLiteralExpressionSemanticAction(char * value);
+Expression * CharLiteralExpressionSemanticAction(char * value);
 Expression * StringLiteralExpressionSemanticAction(char * value);
 Expression * NullLiteralExpressionSemanticAction(void);
 Expression * ArrayLiteralExpressionSemanticAction(ExpressionList * elements);
