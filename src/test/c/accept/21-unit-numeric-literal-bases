@@ -1,0 +1,10 @@
+dec:int = 42
+hex:int = 0xFF
+hexUpperPrefix:int = 0X1a
+oct:int = 0o17
+octUpperPrefix:int = 0O7
+main
+    ford i 0 0xA
+        i
+    ford j 0o0 0o10
+        j

@@ -1,0 +1,5 @@
+newline:char = '\n'
+tab:char = '\t'
+backslash:char = '\\'
+quote:char = '\''
+nul:char = '\0'

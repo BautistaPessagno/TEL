@@ -306,6 +306,22 @@ Expression * IntegerLiteralExpressionSemanticAction(char * value) {
 	return expression;
 }
 
+Expression * FloatLiteralExpressionSemanticAction(char * value) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_FLOAT_LITERAL;
+	expression->value = value;
+	return expression;
+}
+
+Expression * CharLiteralExpressionSemanticAction(char * value) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->kind = EXPRESSION_CHAR_LITERAL;
+	expression->value = value;
+	return expression;
+}
+
 Expression * StringLiteralExpressionSemanticAction(char * value) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
@@ -681,6 +697,12 @@ Statement * InlineCStatementSemanticAction(char * code) {
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->kind = STATEMENT_INLINE_C;
 	statement->inlineC = code;
+}
+
+Statement * ContinueStatementSemanticAction() {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_CONTINUE;
 	return statement;
 }
 

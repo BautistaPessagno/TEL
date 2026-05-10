@@ -1,0 +1,6 @@
+main
+    n:int = 0
+    switch n
+        1 -> cnt
+        default -> n++
+    ret n

@@ -43,6 +43,8 @@ PreprocessorDirective * PreprocessorDirectiveSemanticAction(PreprocessorDirectiv
 FunctionCall * FunctionCallSemanticAction(char * name, ExpressionList * arguments);
 Expression * IdentifierExpressionSemanticAction(char * value);
 Expression * IntegerLiteralExpressionSemanticAction(char * value);
+Expression * FloatLiteralExpressionSemanticAction(char * value);
+Expression * CharLiteralExpressionSemanticAction(char * value);
 Expression * StringLiteralExpressionSemanticAction(char * value);
 Expression * NullLiteralExpressionSemanticAction(void);
 Expression * ArrayLiteralExpressionSemanticAction(ExpressionList * elements);
@@ -83,6 +85,7 @@ Statement * DoWhileStatementSemanticActionWrapper(DoWhileStatement * doWhileStat
 Statement * SwitchStatementSemanticActionWrapper(SwitchStatement * switchStatement);
 Statement * BreakStatementSemanticAction();
 Statement * InlineCStatementSemanticAction(char * code);
+Statement * ContinueStatementSemanticAction();
 Statement * EmptyStatementSemanticAction();
 StatementList * SingletonStatementListSemanticAction(Statement * statement);
 StatementList * AppendStatementListSemanticAction(StatementList * statementList, Statement * statement);
