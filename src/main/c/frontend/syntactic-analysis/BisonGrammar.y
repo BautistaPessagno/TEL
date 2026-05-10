@@ -211,6 +211,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <token> arrow
 %type <type> type
 %type <type> baseType
+%type <type> unqualifiedBaseType
 %type <type> optionalReturnType
 %type <expression> optionalInitializer
 %type <declaration> declaration
@@ -247,7 +248,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <statement> forStatement
 %type <statement> whileStatement
 %type <statement> doWhileStatement
-%type <statement> switchStatement
+%type <switchStatement> switchStatement
 %type <statement> switchInlineStatement
 %type <statement> breakStatement
 %type <ifBranch> ifBranch
@@ -356,7 +357,7 @@ statement:
 	| forStatement											{ $$ = $1; }
 	| whileStatement										{ $$ = $1; }
 	| doWhileStatement										{ $$ = $1; }
-	| switchStatement										{ $$ = $1; }
+	| switchStatement										{ $$ = SwitchStatementSemanticActionWrapper($1); }
 	| breakStatement										{ $$ = $1; }
 	| terminator											{ $$ = EmptyStatementSemanticAction(); }
 	;
@@ -441,7 +442,7 @@ doWhileLoop:
 	;
 
 switchStatement:
-	 SWITCH expression terminator INDENT switchCaseList DEDENT	{ $$ = SwitchStatementSemanticActionWrapper(SwitchStatementSemanticAction($2, $5)); }
+	 SWITCH expression terminator INDENT switchCaseList DEDENT	{ $$ = SwitchStatementSemanticAction($2, $5); }
 	;
 
 switchCaseList:
@@ -642,6 +643,11 @@ type:
 	;
 
 baseType:
+	 unqualifiedBaseType									{ $$ = $1; }
+	| CONST unqualifiedBaseType								{ $$ = ConstQualifiedTypeSemanticAction($2); }
+	;
+
+unqualifiedBaseType:
 	 TYPE_INT												{ $$ = TypeSemanticAction(TYPE_INT_KIND); }
 	| TYPE_CHAR												{ $$ = TypeSemanticAction(TYPE_CHAR_KIND); }
 	| TYPE_FLOAT											{ $$ = TypeSemanticAction(TYPE_FLOAT_KIND); }
@@ -655,7 +661,6 @@ baseType:
 	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
 	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
 	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
-	| CONST baseType										{ $$ = ConstQualifiedTypeSemanticAction($2); }
 	;
 
 %%

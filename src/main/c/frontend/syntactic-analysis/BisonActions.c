@@ -111,8 +111,6 @@ Type * FunctionPointerTypeSemanticAction(ParameterList * params, Type * returnTy
 
 Type * ConstQualifiedTypeSemanticAction(Type * inner) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	// Idempotent: stacked qualifiers like `const const T` collapse to a single
-	// const here. Diagnosing redundant qualifiers is left to semantic analysis.
 	inner->isConst = true;
 	return inner;
 }
