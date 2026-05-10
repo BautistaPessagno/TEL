@@ -1,0 +1,9 @@
+main
+    total:int = 0
+    while total < 10
+        ford i 0 3
+            total += i
+            cnt
+        total += 1
+        cnt
+    ret total

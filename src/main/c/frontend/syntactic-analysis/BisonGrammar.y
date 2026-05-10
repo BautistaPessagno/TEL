@@ -131,6 +131,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> SWITCH
 %token <token> DEFAULT
 %token <token> BREAK
+%token <token> CONTINUE
 %token <token> FUNCTION
 %token <token> FUNCTION_POINTER
 %token <token> MAIN
@@ -245,6 +246,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <statement> switchStatement
 %type <statement> switchInlineStatement
 %type <statement> breakStatement
+%type <statement> continueStatement
 %type <ifBranch> ifBranch
 %type <ifBranch> elifBranch
 %type <ifBranch> optionalElifBranchList
@@ -347,6 +349,7 @@ statement:
 	| doWhileStatement										{ $$ = $1; }
 	| switchStatement										{ $$ = $1; }
 	| breakStatement										{ $$ = $1; }
+	| continueStatement										{ $$ = $1; }
 	| terminator											{ $$ = EmptyStatementSemanticAction(); }
 	;
 
@@ -462,10 +465,15 @@ switchInlineStatement:
 	| RETURN optionalReturnExpression						{ $$ = ReturnStatementSemanticAction($2); }
 	| expression											{ $$ = ExpressionStatementSemanticAction($1); }
 	| BREAK													{ $$ = BreakStatementSemanticAction(); }
+	| CONTINUE												{ $$ = ContinueStatementSemanticAction(); }
 	;
 
 breakStatement:
 	 BREAK terminator										{ $$ = BreakStatementSemanticAction(); }
+	;
+
+continueStatement:
+	 CONTINUE terminator									{ $$ = ContinueStatementSemanticAction(); }
 	;
 
 terminator:

@@ -668,6 +668,13 @@ Statement * BreakStatementSemanticAction() {
 	return statement;
 }
 
+Statement * ContinueStatementSemanticAction() {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->kind = STATEMENT_CONTINUE;
+	return statement;
+}
+
 Statement * EmptyStatementSemanticAction() {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Statement * statement = calloc(1, sizeof(Statement));
