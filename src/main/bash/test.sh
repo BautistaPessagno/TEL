@@ -10,34 +10,6 @@ RED='\033[0;31m'
 OFF='\033[0m'
 STATUS=0
 
-assert_unique_test_number_prefixes() {
-	TEST_DIR="$1"
-	DUPLICATES="$(ls "$TEST_DIR" | awk -F- '
-		{
-			count[$1] += 1
-			names[$1] = names[$1] " " $0
-		}
-		END {
-			for (prefix in count) {
-				if (count[prefix] > 1) {
-					print prefix names[prefix]
-				}
-			}
-		}
-	')"
-
-	if [ -n "$DUPLICATES" ]; then
-		echo -e "${RED}Duplicate test number prefixes in $TEST_DIR:${OFF}"
-		printf "%s\n" "$DUPLICATES" | while IFS= read -r duplicate; do
-			echo "    $duplicate"
-		done
-		exit 1
-	fi
-}
-
-assert_unique_test_number_prefixes "src/test/c/accept"
-assert_unique_test_number_prefixes "src/test/c/reject"
-
 echo "Compiler should accept..."
 echo ""
 

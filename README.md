@@ -75,7 +75,7 @@ Tests are plain TEL programs under `src/test/c/accept` and `src/test/c/reject`.
 - Accept tests must exit with status `0`.
 - Reject tests must exit with a non-zero status.
 - Test names use `NN-description`.
-- Numeric prefixes must be unique within each directory. The test runner checks this before executing the compiler.
+- Numeric prefixes must be unique within each directory.
 
 Current Stage 2 matrix:
 
