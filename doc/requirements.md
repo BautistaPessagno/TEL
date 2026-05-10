@@ -54,6 +54,18 @@ fn bar x:int
 
 Semicolons are optional at the end of a line. To place multiple statements on the same line, separate them with `;`.
 
+## Function calls
+
+Function call arguments are comma-separated.
+
+```
+add(x, 2)
+add(x + 1, 2 * 3)
+pair(x, (y + 1))
+```
+
+Whitespace alone does not separate function arguments, so `add(x 2)` is invalid.
+
 ## Indentation
 
 Instead of using `{}` for code blocks, we use indentation, like Python.
@@ -128,6 +140,15 @@ Same as in C, but using indentation instead of `{}`.
 ## Pointers and arrays
 
 `arr:int[10]` -> `int arr[10]`
+
+Array literal elements are space-separated:
+
+```
+arr:int[3] = {1 2 3}
+empty:int[10] = {}
+```
+
+Commas are not used inside array literals.
 
 ## Variables and constants
 
