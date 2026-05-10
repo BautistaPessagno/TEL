@@ -152,12 +152,13 @@ bool IsKnownTypedefName(const char * name) {
 	return false;
 }
 
-VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer) {
+VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer, bool isStatic) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	VariableDeclaration * declaration = calloc(1, sizeof(VariableDeclaration));
 	declaration->name = name;
 	declaration->type = type;
 	declaration->initializer = initializer;
+	declaration->isStatic = isStatic;
 	return declaration;
 }
 
@@ -209,13 +210,14 @@ ParameterList * AppendParameterListSemanticAction(ParameterList * parameterList,
 	return parameterList;
 }
 
-FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType, StatementList * body) {
+FunctionDeclaration * FunctionDeclarationSemanticAction(char * name, ParameterList * parameters, Type * returnType, StatementList * body, bool isStatic) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	FunctionDeclaration * declaration = calloc(1, sizeof(FunctionDeclaration));
 	declaration->name = name;
 	declaration->parameters = parameters;
 	declaration->returnType = returnType;
 	declaration->body = body;
+	declaration->isStatic = isStatic;
 	return declaration;
 }
 

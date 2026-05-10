@@ -179,6 +179,7 @@ struct VariableDeclaration {
 	char * name;
 	Type * type;
 	Expression * initializer;
+	bool isStatic;
 };
 
 struct VariableDeclarationList {
@@ -201,6 +202,7 @@ struct FunctionDeclaration {
 	ParameterList * parameters;
 	Type * returnType;
 	StatementList * body;
+	bool isStatic;
 };
 
 struct MainDeclaration {

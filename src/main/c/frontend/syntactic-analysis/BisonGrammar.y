@@ -148,6 +148,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_LONG
 %token <token> TYPE_SHORT
 %token <token> CONST
+%token <token> STATIC
 %token <token> NULL_LITERAL
 %token <token> ADD_ASSIGN
 %token <token> SUBTRACT_ASSIGN
@@ -302,7 +303,8 @@ programItem:
 	;
 
 declaration:
-	 identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($1, $3, $4); }
+	 identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($1, $3, $4, false); }
+	| STATIC identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($2, $4, $5, true); }
 	;
 
 optionalInitializer:
@@ -317,7 +319,8 @@ variableDeclarationList:
 	;
 
 functionDeclaration:
-	 FUNCTION identifier optionalParameterList optionalReturnType terminator optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6); }
+	 FUNCTION identifier optionalParameterList optionalReturnType terminator optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($2, $3, $4, $6, false); }
+	| STATIC FUNCTION identifier optionalParameterList optionalReturnType terminator optionalFunctionBody	{ $$ = FunctionDeclarationSemanticAction($3, $4, $5, $7, true); }
 	;
 
 optionalFunctionBody:
@@ -461,7 +464,7 @@ switchInlineStatementList:
 	;
 
 switchInlineStatement:
-	 identifier COLON type optionalInitializer				{ $$ = VariableDeclarationStatementSemanticAction(VariableDeclarationSemanticAction($1, $3, $4)); }
+	 identifier COLON type optionalInitializer				{ $$ = VariableDeclarationStatementSemanticAction(VariableDeclarationSemanticAction($1, $3, $4, false)); }
 	| RETURN optionalReturnExpression						{ $$ = ReturnStatementSemanticAction($2); }
 	| expression											{ $$ = ExpressionStatementSemanticAction($1); }
 	| BREAK													{ $$ = BreakStatementSemanticAction(); }
@@ -497,13 +500,13 @@ bareTypeList:
 
 functionPointerDeclaration:
 	 FUNCTION_POINTER identifier bareTypeList arrow type terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, $5), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, $5), NULL, false); }
 	| FUNCTION_POINTER identifier arrow type terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, $4), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, $4), NULL, false); }
 	| FUNCTION_POINTER identifier bareTypeList terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)), NULL, false); }
 	| FUNCTION_POINTER identifier terminator
-		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
+		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)), NULL, false); }
 	;
 
 optionalReturnType:
