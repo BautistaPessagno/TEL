@@ -1,0 +1,2 @@
+fn bad value:int
+    add(value -1 2)

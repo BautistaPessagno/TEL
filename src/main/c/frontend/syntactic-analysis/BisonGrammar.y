@@ -234,6 +234,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <expression> expression
 %type <expression> fordBound
 %type <expression> optionalReturnExpression
+%type <expressionList> callArgumentList
+%type <expressionList> optionalCallArgumentList
 %type <expressionList> argumentList
 %type <expressionList> optionalArgumentList
 %type <programItem> programItem
@@ -557,7 +559,17 @@ preprocessorDirective:
 	;
 
 functionCall:
-	 identifier OPEN_PARENTHESIS optionalArgumentList CLOSE_PARENTHESIS	{ $$ = FunctionCallSemanticAction($1, $3); }
+	 identifier OPEN_PARENTHESIS optionalCallArgumentList CLOSE_PARENTHESIS	{ $$ = FunctionCallSemanticAction($1, $3); }
+	;
+
+optionalCallArgumentList:
+	 %empty													{ $$ = NULL; }
+	| callArgumentList										{ $$ = $1; }
+	;
+
+callArgumentList:
+	 expression												{ $$ = SingletonExpressionListSemanticAction($1); }
+	| callArgumentList COMMA expression						{ $$ = AppendExpressionListSemanticAction($1, $3); }
 	;
 
 optionalArgumentList:
