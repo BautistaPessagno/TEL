@@ -3,6 +3,7 @@
 
 #include "../../support/logging/Logger.h"
 #include "../../support/type/ModuleDestructor.h"
+#include <stdbool.h>
 #include <stdlib.h>
 
 /** Initialize module's internal state. */
@@ -64,6 +65,7 @@ enum TypeKind {
 	TYPE_UINT_KIND,
 	TYPE_ULI_KIND,
 	TYPE_LONG_KIND,
+	TYPE_SHORT_KIND,
 	TYPE_NAMED_KIND,
 	TYPE_STRUCT_KIND,
 	TYPE_ENUM_KIND,
@@ -175,12 +177,14 @@ struct Type {
 	Expression * arraySize;
 	ParameterList * functionParams;
 	Type * returnType;
+	bool isConst;
 };
 
 struct VariableDeclaration {
 	char * name;
 	Type * type;
 	Expression * initializer;
+	bool isStatic;
 };
 
 struct VariableDeclarationList {
@@ -203,6 +207,7 @@ struct FunctionDeclaration {
 	ParameterList * parameters;
 	Type * returnType;
 	StatementList * body;
+	bool isStatic;
 };
 
 struct MainDeclaration {

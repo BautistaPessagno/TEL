@@ -1,0 +1,8 @@
+small:short
+fn shorten value:int -> short
+    0
+fn use s:short -> short
+    s
+struct Tiny
+    width:short
+    height:short

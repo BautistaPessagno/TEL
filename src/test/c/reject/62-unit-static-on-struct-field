@@ -1,0 +1,2 @@
+struct Foo
+    stc field:int

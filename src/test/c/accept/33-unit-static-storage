@@ -1,0 +1,7 @@
+stc counter:int = 0
+stc fn tick -> int
+    counter = counter + 1
+    counter
+fn use
+    stc local:int = 7
+    local

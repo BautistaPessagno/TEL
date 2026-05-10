@@ -1,0 +1,4 @@
+stc maxItems:const int = 100
+stc fn process input:const char* count:const int -> int
+    width:short = 0
+    width
