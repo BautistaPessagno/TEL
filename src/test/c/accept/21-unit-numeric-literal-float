@@ -1,0 +1,11 @@
+a:float = 3.14
+b:float = .5
+c:float = 5.
+d:float = 1e10
+e:float = 1E+3
+f:float = 1e-3
+g:float = 3.14e10
+main
+    x:float = 2.5
+    y:float = x + 1.0e-2
+    ret 0
