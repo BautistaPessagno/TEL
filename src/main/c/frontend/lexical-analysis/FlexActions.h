@@ -11,6 +11,7 @@
 #include "../../support/type/Token.h"
 #include "../../support/type/TokenLabel.h"
 #include "../Frontend.h"
+#include <stdbool.h>
 
 /** Initialize module's internal state. */
 ModuleDestructor initializeFlexActionsModule(LexicalAnalyzer * lexicalAnalyzer);
@@ -23,6 +24,10 @@ CompilationStatus PunctuationLexemeAction(TokenLabel label);
 CompilationStatus IndentationLexemeAction();
 CompilationStatus LineBreakLexemeAction();
 CompilationStatus TerminatorLexemeAction();
+CompilationStatus InlineCBlockStartLexemeAction();
+bool IsInlineCClosingLine();
+CompilationStatus InlineCContentLexemeAction();
+CompilationStatus InlineCBlockEndLexemeAction();
 CompilationStatus EOFLexemeAction();
 CompilationStatus IgnoredLexemeAction();
 CompilationStatus UnknownLexemeAction();

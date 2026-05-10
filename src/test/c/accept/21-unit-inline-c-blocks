@@ -1,0 +1,36 @@
+`
+#include <stdio.h>
+static int raw_helper(void) {
+    return 1;
+}
+`
+
+main
+    `
+    int x = raw_helper();
+    const char *marker = "` is not a fence here";
+    printf("%s %d\n", marker, x);
+    `
+    if x == 1
+        `
+        x++;
+        // ` is not a fence here either
+        `
+    for x = 0, x < 3, x++
+        `
+        x += 2;
+        `
+    while x < 10
+        `
+        x++;
+        `
+    switch x
+        1:
+            `
+            x += 1;
+            break;
+            `
+        default:
+            `
+            x = 0;
+            `

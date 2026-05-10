@@ -58,6 +58,7 @@ ProgramItem * AggregateDeclarationProgramItemSemanticAction(AggregateDeclaration
 ProgramItem * EnumDeclarationProgramItemSemanticAction(EnumDeclaration * declaration);
 ProgramItem * TypedefDeclarationProgramItemSemanticAction(TypedefDeclaration * declaration);
 ProgramItem * PreprocessorDirectiveProgramItemSemanticAction(PreprocessorDirective * directive);
+ProgramItem * InlineCProgramItemSemanticAction(char * code);
 ProgramItem * EmptyProgramItemSemanticAction();
 ProgramItemList * SingletonProgramItemListSemanticAction(ProgramItem * item);
 ProgramItemList * AppendProgramItemListSemanticAction(ProgramItemList * itemList, ProgramItem * item);
@@ -81,6 +82,7 @@ Statement * WhileStatementSemanticActionWrapper(WhileStatement * whileStatement)
 Statement * DoWhileStatementSemanticActionWrapper(DoWhileStatement * doWhileStatement);
 Statement * SwitchStatementSemanticActionWrapper(SwitchStatement * switchStatement);
 Statement * BreakStatementSemanticAction();
+Statement * InlineCStatementSemanticAction(char * code);
 Statement * EmptyStatementSemanticAction();
 StatementList * SingletonStatementListSemanticAction(Statement * statement);
 StatementList * AppendStatementListSemanticAction(StatementList * statementList, Statement * statement);

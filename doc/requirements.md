@@ -152,9 +152,9 @@ The `main` function is the entry point and is translated as:
 We allow embedding C code in blocks like this:
 
 ```text
-\`
-// some c code
-\`
+`
+some c code
+`
 ```
 
 ## Type inference
