@@ -74,7 +74,7 @@ ret 0
 ret
 ```
 
-If the last statement in a function body is a standalone expression consisting only of comparison or logical operators (e.g. `a > b`, `x == y`, `!flag`), it is automatically treated as a `ret` statement. Explicit `ret` is still required for other expressions.
+If the last statement in a function body is a standalone identifier (e.g. `x`) or a standalone expression consisting only of comparison or logical operators (e.g. `a > b`, `x == y`, `!flag`), it is automatically treated as a `ret` statement. Explicit `ret` is still required for other expressions.
 
 ## Function calls
 
