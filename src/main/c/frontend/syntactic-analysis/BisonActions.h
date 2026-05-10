@@ -81,6 +81,7 @@ Statement * WhileStatementSemanticActionWrapper(WhileStatement * whileStatement)
 Statement * DoWhileStatementSemanticActionWrapper(DoWhileStatement * doWhileStatement);
 Statement * SwitchStatementSemanticActionWrapper(SwitchStatement * switchStatement);
 Statement * BreakStatementSemanticAction();
+Statement * ContinueStatementSemanticAction();
 Statement * EmptyStatementSemanticAction();
 StatementList * SingletonStatementListSemanticAction(Statement * statement);
 StatementList * AppendStatementListSemanticAction(StatementList * statementList, Statement * statement);
