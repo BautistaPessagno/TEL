@@ -41,7 +41,7 @@ integer				[0-9]+
 hexInteger			0[xX][0-9a-fA-F]+
 octalInteger		0[oO][0-7]+
 float				([0-9]+\.[0-9]*([eE][+-]?[0-9]+)?|\.[0-9]+([eE][+-]?[0-9]+)?|[0-9]+[eE][+-]?[0-9]+)
-charLiteral			'([^\\'\n]|\\(.|x[0-9a-fA-F]{1,2}))'
+charLiteral			'([^\\'\n]|\\(['"?\\abfnrtv0]|x[0-9a-fA-F]{1,2}))'
 string				\"([^\\\n\"]|\\.)*\"
 whitespace			[ \t\r]+
 terminator			[;]+
