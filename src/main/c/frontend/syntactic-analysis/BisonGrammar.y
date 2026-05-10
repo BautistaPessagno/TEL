@@ -55,6 +55,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 	WhileStatement * whileStatement;
 	DoWhileStatement * doWhileStatement;
 	SwitchCase * switchCase;
+	SwitchStatement * switchStatement;
 	Statement * statement;
 	StatementList * statementList;
 	Program * program;
@@ -92,6 +93,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyWhileStatement($$); } <whileStatement>
 %destructor { destroyDoWhileStatement($$); } <doWhileStatement>
 %destructor { destroySwitchCase($$); } <switchCase>
+%destructor { destroySwitchStatement($$); } <switchStatement>
 %destructor { destroyStatement($$); } <statement>
 %destructor { destroyStatementList($$); } <statementList>
 

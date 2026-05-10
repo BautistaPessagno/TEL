@@ -1,0 +1,16 @@
+fn matchesPair nums:int[] left:int right:int target:int -> int
+    ret nums[left] + nums[right] == target
+
+fn twoSum nums:int[] size:int target:int -> int
+    ford i 0 size
+        ford j (i + 1) size
+            if matchesPair(nums, i, j, target)
+                ret i * 10 + j
+    ret -1
+
+main
+    values:int[4] = {2 7 11 15}
+    result:int = twoSum(values, 4, 9)
+    if result == 1
+        ret result
+    ret -1
