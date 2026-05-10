@@ -1,3 +1,0 @@
-fn use arr:int[] -> int
-    x = arr[i j]
-    x

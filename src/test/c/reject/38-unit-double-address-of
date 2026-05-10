@@ -1,3 +1,0 @@
-fn f x:int -> int
-    y = &&x
-    y

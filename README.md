@@ -1,110 +1,109 @@
-[![✗](https://img.shields.io/badge/Release-v2.0.0-ffb600.svg?style=for-the-badge)](https://github.com/agustin-golmar/Flex-Bison-Compiler/releases)
+[![Pipeline](https://github.com/BautistaPessagno/TEL/actions/workflows/pipeline.yaml/badge.svg?branch=development)](https://github.com/BautistaPessagno/TEL/actions/workflows/pipeline.yaml)
 
-[![✗](https://github.com/agustin-golmar/Flex-Bison-Compiler/actions/workflows/pipeline.yaml/badge.svg?branch=production)](https://github.com/agustin-golmar/Flex-Bison-Compiler/actions/workflows/pipeline.yaml)
+# TEL
 
-# Flex-Bison-Compiler
+TEL is a Flex/Bison compiler frontend for a Python-like language that targets C in later stages.
 
-A base compiler example, developed with Flex and Bison.
-
-- [Flex-Bison-Compiler](#flex-bison-compiler)
-  - [Requirements](#requirements)
-  - [Configuration](#configuration)
-  - [Commands](#commands)
-    - [Start](#start)
-    - [Build](#build)
-    - [Run](#run)
-    - [Test](#test)
-    - [Stop](#stop)
-    - [Docker](#docker)
-  - [CI/CD](#cicd)
-  - [Recommended Extensions](#recommended-extensions)
+This repository is prepared for the Stage 2 handoff: the executable reads TEL source from standard input, tokenizes it with Flex, parses it with Bison, builds an AST, and exits with success or failure. C code generation, complete semantic validation, type checking, and automatic include insertion are Stage 3 work.
 
 ## Requirements
 
-* [Docker v28.3.2](https://www.docker.com/)
+- Docker v28 or newer
 
-## Configuration
-
-Set the following environment variables to control and configure the behaviour of the application:
-
-| Name                  | Default | Description                                                                                                                                                           |
-| :-------------------- | :-----: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ENVIRONMENT`         | `Local` | The active environment name. The available environments are: `Local`, `Development` and `Production`.                                                                 |
-| `LOG_IGNORED_LEXEMES` | `true`  | When `true`, logs all of the ignored lexemes found with Flex at `DEBUGGING` level. To remove those logs from the console output set it to `false`.                    |
-| `LOGGING_LEVEL`       | `ALL`   | The minimum level to log in the console output. From lower to higher, the available levels are: `ALL`, `DEBUGGING`, `INFORMATION`, `WARNING`, `ERROR` and `CRITICAL`. |
-
-_Docker Compose_ can read the variables from an `.env` file too (see `compose.yaml` file).
+All normal build and test commands should run inside the Docker Compose service so generated Linux artifacts match the grading environment.
 
 ## Commands
 
-### Start
-
-Rises an ephemeral container, ready to start development:
+Start an interactive development container:
 
 ```bash
 docker compose run --rm compiler
-
 ```
 
-### Build
-
-Builds or rebuilds the entire compiler:
+Build inside the container:
 
 ```bash
 src/main/bash/build.sh
 ```
 
-### Run
-
-Compiles a program:
+Run a TEL program inside the container:
 
 ```bash
-src/main/bash/run.sh <program>
+src/main/bash/run.sh program.tel
 ```
 
-where `<program>` is the path to the file that represents its entry-point.
-
-### Test
-
-Executes every available unit-test under `src/test/c` folder:
+Run the Stage 2 test suite inside the container:
 
 ```bash
 src/main/bash/test.sh
 ```
 
-### Stop
-
-Logout, destroy the ephemeral containers and shutdowns the cluster:
+From the host, the same commands can be run through Docker:
 
 ```bash
-exit
-docker compose down
+docker compose run --rm compiler src/main/bash/build.sh
+docker compose run --rm compiler src/main/bash/test.sh
 ```
 
-### Docker
+Do not use the host shell as the final verification signal on macOS. `.build/Flex-Bison-Compiler` is a Linux binary produced for the container.
 
-| Command                                 | Description                                             |
-| :-------------------------------------- | :------------------------------------------------------ |
-| `docker builder prune --all`            | Removes all builds and complete build cache.            |
-| `docker compose --progress=plain build` | Forces a build or rebuild of the images in the cluster. |
-| `docker image prune`                    | Removes all of the dangling images from Docker.         |
-| `docker network prune`                  | Removes unused networks from Docker.                    |
-| `docker volume prune`                   | Removes unused volumes from Docker.                     |
+## Stage 2 Scope
 
-## CI/CD
+Implemented for this handoff:
 
-To trigger an automatic integration on every push or PR (_Pull Request_), you must activate _GitHub Actions_ in the _Settings_ tab. Use the following configuration:
+- top-level variable declarations, function declarations, `main`, structs, unions, enums, typedefs, preprocessor directives, comments, and inline C blocks
+- indentation-based bodies using `INDENT` and `DEDENT`
+- statements for declarations, returns, expressions, conditionals, loops, switches, `break`, and `cnt`
+- primitive, named aggregate, typedef, pointer, array, and function-pointer types
+- integer, floating-point, character, string, array, and `null` literals
+- C-like unary, binary, assignment, bitwise, logical, member-access, and array-index expressions
+- comma-separated function-call arguments
+- AST allocation and recursive cleanup
 
-| Key                                                        | Value                                               |
-| :--------------------------------------------------------- | :-------------------------------------------------- |
-| `Actions permissions`                                      | `Allow all actions and reusable workflows`          |
-| `Allow GitHub Actions to create and approve pull requests` | `false`                                             |
-| `Artifact and log retention`                               | `30 days`                                           |
-| `Fork pull request workflows from outside collaborators`   | `Require approval for all outside collaborators`    |
-| `Workflow permissions`                                     | `Read repository contents and packages permissions` |
+Deferred to Stage 3:
 
-## Recommended Extensions
+- C code generation and runtime output
+- complete type checking and semantic validation
+- automatic `stdio` includes for I/O usage
+- type inference beyond syntax accepted by the frontend
+- semantic rejection of otherwise parseable programs
 
-* [C/C++](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
-* [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)
-* [Yash](https://marketplace.visualstudio.com/items?itemName=daohong-emilio.yash)
+## Tests
+
+Tests are plain TEL programs under `src/test/c/accept` and `src/test/c/reject`.
+
+- Accept tests must exit with status `0`.
+- Reject tests must exit with a non-zero status.
+- Test names use `NN-description`.
+- Numeric prefixes must be unique within each directory. The test runner checks this before executing the compiler.
+
+Current Stage 2 matrix:
+
+| Requirement group | Accept tests | Reject tests |
+| :-- | :-- | :-- |
+| Declarations, types, initializers, terminators | `01`-`03` | `01`-`04` |
+| Functions, `main`, returns, implicit returns | `04`-`07` | `05`-`08` |
+| Calls, expressions, operators | `08`-`10` | `09`-`12` |
+| Indentation, blocks, program shape | `11`-`12` | `13`-`16` |
+| Control flow | `13`-`16` | `17`-`20` |
+| Aggregates, typedefs, named types | `17`-`19` | `21`-`24` |
+| Preprocessor, comments, inline C | `20`-`22` | `25`-`28` |
+| Literals | `23`-`25` | `29`-`31` |
+| Pointers, arrays, function pointers, member access | `26`-`29` | `32`-`35` |
+| Integration programs | `30`-`32` | `36`-`38` |
+
+The runner also checks selected implicit-return conversions through debug logs:
+
+- `05-unit-implicit-return`
+- `06-unit-main-implicit-return`
+- `07-unit-implicit-return-non-final`
+
+## Configuration
+
+The Docker service reads these optional environment variables:
+
+| Name | Default | Description |
+| :-- | :-- | :-- |
+| `ENVIRONMENT` | `Local` | Active environment name. |
+| `LOG_IGNORED_LEXEMES` | `true` | Logs ignored Flex lexemes at `DEBUGGING` level when enabled. |
+| `LOGGING_LEVEL` | `ALL` | Minimum console log level. |

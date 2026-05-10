@@ -1,5 +1,0 @@
-main
-    ret 1
-
-main
-    ret 2

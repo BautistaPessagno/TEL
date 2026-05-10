@@ -1,6 +1,0 @@
-fn identity value:int -> int
-    ret value
-fn nothing
-    ret
-fn explicitNothing -> void
-    ret

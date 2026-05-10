@@ -1,6 +1,0 @@
-main
-    n:int = 5
-    while n > 0
-        n--
-        cnt
-    ret n
