@@ -5,3 +5,6 @@ fn use value:const int -> const int
 struct Config
     name:const char*
     maxSize:const int
+typedef Count:uint
+total:const Count
+ref:const struct Config*

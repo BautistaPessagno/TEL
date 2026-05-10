@@ -111,9 +111,7 @@ Type * FunctionPointerTypeSemanticAction(ParameterList * params, Type * returnTy
 
 Type * ConstQualifiedTypeSemanticAction(Type * inner) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	if (inner != NULL) {
-		inner->isConst = true;
-	}
+	inner->isConst = true;
 	return inner;
 }
 
