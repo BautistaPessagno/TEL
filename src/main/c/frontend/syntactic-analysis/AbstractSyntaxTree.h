@@ -3,6 +3,7 @@
 
 #include "../../support/logging/Logger.h"
 #include "../../support/type/ModuleDestructor.h"
+#include <stdbool.h>
 #include <stdlib.h>
 
 /** Initialize module's internal state. */
@@ -171,6 +172,7 @@ struct Type {
 	Expression * arraySize;
 	ParameterList * functionParams;
 	Type * returnType;
+	bool isConst;
 };
 
 struct VariableDeclaration {

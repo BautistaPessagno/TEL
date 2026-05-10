@@ -1,0 +1,7 @@
+limit:const int
+greeting:const char*
+fn use value:const int -> const int
+    value
+struct Config
+    name:const char*
+    maxSize:const int

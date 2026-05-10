@@ -22,6 +22,7 @@ Type * NamedTypeSemanticAction(TypeKind kind, char * name);
 Type * PointerTypeSemanticAction(Type * pointee);
 Type * ArrayTypeSemanticAction(Type * element, Expression * size);
 Type * FunctionPointerTypeSemanticAction(ParameterList * params, Type * returnType);
+Type * ConstQualifiedTypeSemanticAction(Type * inner);
 ParameterList * SingletonBareParameterListSemanticAction(Type * type);
 ParameterList * AppendBareParameterListSemanticAction(ParameterList * list, Type * type);
 bool IsKnownTypedefName(const char * name);

@@ -109,6 +109,14 @@ Type * FunctionPointerTypeSemanticAction(ParameterList * params, Type * returnTy
 	return type;
 }
 
+Type * ConstQualifiedTypeSemanticAction(Type * inner) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (inner != NULL) {
+		inner->isConst = true;
+	}
+	return inner;
+}
+
 ParameterList * SingletonBareParameterListSemanticAction(Type * type) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Parameter * parameter = calloc(1, sizeof(Parameter));
