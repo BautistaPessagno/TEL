@@ -146,6 +146,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> TYPE_UINT
 %token <token> TYPE_ULI
 %token <token> TYPE_LONG
+%token <token> TYPE_SHORT
 %token <token> NULL_LITERAL
 %token <token> ADD_ASSIGN
 %token <token> SUBTRACT_ASSIGN
@@ -621,6 +622,7 @@ type:
 	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
 	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
 	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
+	| TYPE_SHORT											{ $$ = TypeSemanticAction(TYPE_SHORT_KIND); }
 	| TYPEDEF_NAME											{ $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
 	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
 	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
