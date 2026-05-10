@@ -208,6 +208,7 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <token> terminator
 %type <token> arrow
 %type <type> type
+%type <type> baseType
 %type <type> optionalReturnType
 %type <expression> optionalInitializer
 %type <declaration> declaration
@@ -614,19 +615,7 @@ expression:
 	;
 
 type:
-	 TYPE_INT												{ $$ = TypeSemanticAction(TYPE_INT_KIND); }
-	| TYPE_CHAR												{ $$ = TypeSemanticAction(TYPE_CHAR_KIND); }
-	| TYPE_FLOAT											{ $$ = TypeSemanticAction(TYPE_FLOAT_KIND); }
-	| TYPE_DOUBLE											{ $$ = TypeSemanticAction(TYPE_DOUBLE_KIND); }
-	| TYPE_VOID												{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
-	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
-	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
-	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
-	| TYPE_SHORT											{ $$ = TypeSemanticAction(TYPE_SHORT_KIND); }
-	| TYPEDEF_NAME											{ $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
-	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
-	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
-	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
+	 baseType												{ $$ = $1; }
 	/* TODO: compound forms like `int*[3]`, `int[3][4]`, `int[]*` parse via these
 	 * recursive rules but their AST shape is not yet a defined contract. Pin
 	 * desired semantics and add accept/reject fixtures before relying on them. */
@@ -641,6 +630,22 @@ type:
 		{ $$ = FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)); }
 	| OPEN_PARENTHESIS FUNCTION_POINTER CLOSE_PARENTHESIS
 		{ $$ = FunctionPointerTypeSemanticAction(NULL, TypeSemanticAction(TYPE_VOID_KIND)); }
+	;
+
+baseType:
+	 TYPE_INT												{ $$ = TypeSemanticAction(TYPE_INT_KIND); }
+	| TYPE_CHAR												{ $$ = TypeSemanticAction(TYPE_CHAR_KIND); }
+	| TYPE_FLOAT											{ $$ = TypeSemanticAction(TYPE_FLOAT_KIND); }
+	| TYPE_DOUBLE											{ $$ = TypeSemanticAction(TYPE_DOUBLE_KIND); }
+	| TYPE_VOID												{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
+	| TYPE_UINT												{ $$ = TypeSemanticAction(TYPE_UINT_KIND); }
+	| TYPE_ULI												{ $$ = TypeSemanticAction(TYPE_ULI_KIND); }
+	| TYPE_LONG												{ $$ = TypeSemanticAction(TYPE_LONG_KIND); }
+	| TYPE_SHORT											{ $$ = TypeSemanticAction(TYPE_SHORT_KIND); }
+	| TYPEDEF_NAME											{ $$ = NamedTypeSemanticAction(TYPE_NAMED_KIND, $1); }
+	| STRUCT identifier										{ $$ = NamedTypeSemanticAction(TYPE_STRUCT_KIND, $2); }
+	| ENUM identifier										{ $$ = NamedTypeSemanticAction(TYPE_ENUM_KIND, $2); }
+	| UNION identifier										{ $$ = NamedTypeSemanticAction(TYPE_UNION_KIND, $2); }
 	;
 
 %%
