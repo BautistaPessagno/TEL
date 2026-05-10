@@ -1,0 +1,3 @@
+upperA:char = '\x41'
+oneDigit:char = '\x9'
+twoDigits:char = '\xff'

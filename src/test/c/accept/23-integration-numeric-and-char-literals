@@ -1,0 +1,6 @@
+fn demo
+    i:int = 0xFF
+    o:int = 0o17
+    f:float = 3.14e-2
+    c:char = '\n'
+    ret i
