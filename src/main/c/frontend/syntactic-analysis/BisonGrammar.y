@@ -214,7 +214,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %type <type> optionalReturnType
 %type <expression> optionalInitializer
 %type <declaration> declaration
-%type <declarationList> variableDeclarationList
+%type <declaration> aggregateField
+%type <declarationList> aggregateFieldList
 %type <parameter> parameter
 %type <parameterList> parameterList
 %type <parameterList> optionalParameterList
@@ -312,10 +313,14 @@ optionalInitializer:
 	| ASSIGN expression										{ $$ = $2; }
 	;
 
-variableDeclarationList:
-	 declaration											{ $$ = SingletonVariableDeclarationListSemanticAction($1); }
-	| variableDeclarationList declaration					{ $$ = AppendVariableDeclarationListSemanticAction($1, $2); }
-	| variableDeclarationList terminator						{ $$ = $1; }
+aggregateField:
+	 identifier COLON type optionalInitializer terminator	{ $$ = VariableDeclarationSemanticAction($1, $3, $4, false); }
+	;
+
+aggregateFieldList:
+	 aggregateField											{ $$ = SingletonVariableDeclarationListSemanticAction($1); }
+	| aggregateFieldList aggregateField						{ $$ = AppendVariableDeclarationListSemanticAction($1, $2); }
+	| aggregateFieldList terminator							{ $$ = $1; }
 	;
 
 functionDeclaration:
@@ -520,8 +525,8 @@ arrow:
 	;
 
 aggregateDeclaration:
-	 STRUCT identifier terminator INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
-	| UNION identifier terminator INDENT variableDeclarationList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
+	 STRUCT identifier terminator INDENT aggregateFieldList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_STRUCT_KIND, $2, $5); }
+	| UNION identifier terminator INDENT aggregateFieldList DEDENT		{ $$ = AggregateDeclarationSemanticAction(AGGREGATE_UNION_KIND, $2, $5); }
 	;
 
 enumDeclaration:
