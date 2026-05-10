@@ -46,7 +46,7 @@ identifier          [_A-Za-z][_A-Za-z0-9]*
 includeDirective	"#include"{whitespace}+{identifier}
 defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 
-%x BOL
+%x BOL AFTER_POSTFIX
 
 %%
 
@@ -61,6 +61,12 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 <BOL>[ \t]*{linebreak}				{ return LineBreakLexemeAction(); }
 <BOL>[ \t]*[^ \t\n]					{ CompilationStatus status = IndentationLexemeAction(); yyless(0); BEGIN(INITIAL); return status; }
 <BOL><<EOF>>						{ return EOFLexemeAction(); }
+
+<AFTER_POSTFIX>"->"/{identifier}	{ BEGIN(INITIAL); return PunctuationLexemeAction(PTR_ARROW); }
+<AFTER_POSTFIX>{whitespace}			{ BEGIN(INITIAL); return IgnoredLexemeAction(); }
+<AFTER_POSTFIX>{linebreak}			{ BEGIN(INITIAL); yyless(0); }
+<AFTER_POSTFIX><<EOF>>				{ BEGIN(INITIAL); return EOFLexemeAction(); }
+<AFTER_POSTFIX>.					{ BEGIN(INITIAL); yyless(0); }
 
 {includeDirective}					{ return PreprocessorDirectiveLexemeAction(INCLUDE_DIRECTIVE, "#include"); }
 {defineDirective}					{ return PreprocessorDirectiveLexemeAction(DEFINE_DIRECTIVE, "#define"); }
@@ -93,7 +99,7 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "null"								{ return KeywordLexemeAction(NULL_LITERAL); }
 {integer}							{ return StringLexemeAction(INTEGER_LITERAL); }
 {string}							{ return StringLexemeAction(STRING_LITERAL); }
-{identifier}				        { return IdentifierLexemeAction(); }
+{identifier}				        { BEGIN(AFTER_POSTFIX); return IdentifierLexemeAction(); }
 "->"								{ return PunctuationLexemeAction(ARROW); }
 ">>="								{ return PunctuationLexemeAction(SHIFT_RIGHT_ASSIGN); }
 "<<="								{ return PunctuationLexemeAction(SHIFT_LEFT_ASSIGN); }
@@ -128,14 +134,15 @@ defineDirective		"#define"{whitespace}+[^ \t\r\n;][^;\n]*
 "^"									{ return PunctuationLexemeAction(BITWISE_XOR); }
 "<"									{ return PunctuationLexemeAction(LESS_THAN); }
 ">"									{ return PunctuationLexemeAction(GREATER_THAN); }
+"."									{ return PunctuationLexemeAction(DOT); }
 ":"									{ return PunctuationLexemeAction(COLON); }
 ","									{ return PunctuationLexemeAction(COMMA); }
 {terminator}						{ return TerminatorLexemeAction(); }
 {linebreak}							{ BEGIN(BOL); return LineBreakLexemeAction(); }
 "("									{ return PunctuationLexemeAction(OPEN_PARENTHESIS); }
-")"									{ return PunctuationLexemeAction(CLOSE_PARENTHESIS); }
+")"									{ BEGIN(AFTER_POSTFIX); return PunctuationLexemeAction(CLOSE_PARENTHESIS); }
 "["									{ return PunctuationLexemeAction(OPEN_BRACKET); }
-"]"									{ return PunctuationLexemeAction(CLOSE_BRACKET); }
+"]"									{ BEGIN(AFTER_POSTFIX); return PunctuationLexemeAction(CLOSE_BRACKET); }
 "{"									{ return PunctuationLexemeAction(OPEN_BRACE); }
 "}"									{ return PunctuationLexemeAction(CLOSE_BRACE); }
 

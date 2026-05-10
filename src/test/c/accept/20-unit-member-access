@@ -1,0 +1,20 @@
+struct Point
+    x:int
+    y:int
+
+struct Node
+    value:int
+    next:struct Node*
+
+fn getPoint -> struct Point*
+    null
+
+fn read p:struct Point ptr:struct Point* points:struct Point[] node:struct Node* -> int
+    a:int = p.x
+    b:int = ptr->x
+    c:int = points[0].y
+    d:int = node->next->value
+    e:int = getPoint()->x
+    p.x = a
+    ptr->y += b
+    c

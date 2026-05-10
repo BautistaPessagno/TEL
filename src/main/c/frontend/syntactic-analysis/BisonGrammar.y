@@ -118,6 +118,8 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> OPEN_BRACE
 %token <token> CLOSE_BRACE
 %token <token> ARROW
+%token <token> PTR_ARROW
+%token <token> DOT
 %token <token> RETURN
 %token <token> IF
 %token <token> ELIF
@@ -198,11 +200,12 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 /* OPEN_BRACKET sits at postfix precedence so `type OPEN_BRACKET ...` and
  * `expression OPEN_BRACKET expression CLOSE_BRACKET %prec ARRAY_INDEX` resolve
  * by default-shift; removing it reintroduces shift/reduce conflicts on `[`. */
-%left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT ARRAY_INDEX OPEN_BRACKET
+%left INCREMENT DECREMENT POSTFIX_INCREMENT POSTFIX_DECREMENT ARRAY_INDEX MEMBER_ACCESS POINTER_MEMBER_ACCESS OPEN_BRACKET DOT PTR_ARROW
 
 /** Non-terminals. */
 %type <string> identifier
 %type <token> terminator
+%type <token> arrow
 %type <type> type
 %type <type> optionalReturnType
 %type <expression> optionalInitializer
@@ -490,9 +493,9 @@ bareTypeList:
 	;
 
 functionPointerDeclaration:
-	 FUNCTION_POINTER identifier bareTypeList ARROW type terminator
+	 FUNCTION_POINTER identifier bareTypeList arrow type terminator
 		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, $5), NULL); }
-	| FUNCTION_POINTER identifier ARROW type terminator
+	| FUNCTION_POINTER identifier arrow type terminator
 		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction(NULL, $4), NULL); }
 	| FUNCTION_POINTER identifier bareTypeList terminator
 		{ $$ = VariableDeclarationSemanticAction($2, FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)), NULL); }
@@ -502,7 +505,12 @@ functionPointerDeclaration:
 
 optionalReturnType:
 	 %empty													{ $$ = TypeSemanticAction(TYPE_VOID_KIND); }
-	| ARROW type											{ $$ = $2; }
+	| arrow type											{ $$ = $2; }
+	;
+
+arrow:
+	 ARROW													{ $$ = $1; }
+	| PTR_ARROW												{ $$ = $1; }
 	;
 
 aggregateDeclaration:
@@ -600,6 +608,8 @@ expression:
 	| expression INCREMENT %prec POSTFIX_INCREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, $1); }
 	| expression DECREMENT %prec POSTFIX_DECREMENT			{ $$ = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_DECREMENT, $1); }
 	| expression OPEN_BRACKET expression CLOSE_BRACKET %prec ARRAY_INDEX	{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_ARRAY_INDEX, $3); }
+	| expression DOT identifier %prec MEMBER_ACCESS			{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_MEMBER_ACCESS, IdentifierExpressionSemanticAction($3)); }
+	| expression PTR_ARROW identifier %prec POINTER_MEMBER_ACCESS	{ $$ = BinaryExpressionSemanticAction($1, EXPRESSION_OPERATOR_POINTER_MEMBER_ACCESS, IdentifierExpressionSemanticAction($3)); }
 	;
 
 type:
@@ -621,9 +631,9 @@ type:
 	| type MULTIPLY %prec UNARY_DEREFERENCE					{ $$ = PointerTypeSemanticAction($1); }
 	| type OPEN_BRACKET expression CLOSE_BRACKET			{ $$ = ArrayTypeSemanticAction($1, $3); }
 	| type OPEN_BRACKET CLOSE_BRACKET						{ $$ = ArrayTypeSemanticAction($1, NULL); }
-	| OPEN_PARENTHESIS FUNCTION_POINTER bareTypeList ARROW type CLOSE_PARENTHESIS
+	| OPEN_PARENTHESIS FUNCTION_POINTER bareTypeList arrow type CLOSE_PARENTHESIS
 		{ $$ = FunctionPointerTypeSemanticAction($3, $5); }
-	| OPEN_PARENTHESIS FUNCTION_POINTER ARROW type CLOSE_PARENTHESIS
+	| OPEN_PARENTHESIS FUNCTION_POINTER arrow type CLOSE_PARENTHESIS
 		{ $$ = FunctionPointerTypeSemanticAction(NULL, $4); }
 	| OPEN_PARENTHESIS FUNCTION_POINTER bareTypeList CLOSE_PARENTHESIS
 		{ $$ = FunctionPointerTypeSemanticAction($3, TypeSemanticAction(TYPE_VOID_KIND)); }
