@@ -50,9 +50,31 @@ becomes:
 fn bar x:int
 ```
 
+### Function pointers
+
+Function pointer types use `fn*`:
+
+```
+fn* int -> int        // pointer to a function taking int, returning int
+fn* int int -> void   // pointer to a function taking two ints, returning void
+fn*                   // pointer to a function taking no args, returning void
+```
+
 ## Statement termination
 
 Semicolons are optional at the end of a line. To place multiple statements on the same line, separate them with `;`.
+
+## Return statements
+
+Use `ret` to return a value from a function:
+
+```
+ret x + 1
+ret 0
+ret
+```
+
+If the last statement in a function body is a standalone expression consisting only of comparison or logical operators (e.g. `a > b`, `x == y`, `!flag`), it is automatically treated as a `ret` statement. Explicit `ret` is still required for other expressions.
 
 ## Function calls
 
@@ -129,10 +151,6 @@ Same as in C:
 `#define A 3` stays the same, but `#include` directives change:
 `#include stdio` -> `#include <stdio.h>`
 
-### Implicit I/O
-
-If the program uses I/O functions, `stdio` is automatically included.
-
 ## Structs, enums, and unions
 
 Same as in C, but using indentation instead of `{}`.
@@ -156,7 +174,15 @@ Same as in C.
 
 ## Literals
 
-Same as in C.
+Same as in C, with one difference: octal literals use the `0o` prefix (Python-style) instead of C's bare `0` prefix.
+
+- Decimal: `42`
+- Hexadecimal: `0xFF`
+- Octal: `0o77`
+- Float: `3.14`, `1.0e-3`
+- Character: `'a'`, `'\n'`
+- String: `"hello"`
+- Null: `null`
 
 ## Comments
 
@@ -180,6 +206,6 @@ some c code
 
 ## Type inference
 
-Where possible, types are inferred:
+Where possible, types are inferred (Stage 3 / code generation):
 
 `x = 5` -> `int x = 5`

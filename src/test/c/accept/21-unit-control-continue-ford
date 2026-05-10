@@ -1,6 +1,0 @@
-main
-    n:int = 0
-    ford i 0 5
-        n += i
-        cnt
-    ret n

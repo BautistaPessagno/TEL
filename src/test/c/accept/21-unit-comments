@@ -16,7 +16,7 @@ main
         // full-line nested comment
         value++
     x:int /*
-        this shuld not make any problems
+        this should not make any problems
     */
     y:int
 

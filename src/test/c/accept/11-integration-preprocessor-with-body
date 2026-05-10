@@ -1,6 +1,0 @@
-#include stdio; #define MAX_COUNT 10
-
-count:int
-
-fn setup
-    value:int

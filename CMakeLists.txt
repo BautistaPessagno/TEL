@@ -1,9 +1,9 @@
-# Minimum required version fo CMake. Can be modified at your own risk.
+# Minimum required version for CMake. Can be modified at your own risk.
 # @see https://cmake.org/download/
 cmake_minimum_required(VERSION 3.28.3)
 
 # Name of the project and language to use (C, in this case).
-project(Flex-Bison-Compiler C)
+project(TEL C)
 
 # Selects the best strategy according to the available compiler in the system.
 # @see https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html

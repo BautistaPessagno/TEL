@@ -1,0 +1,31 @@
+fn demo -> int
+    dec:int = 42
+    hex:int = 0xFF
+    hexUpperPrefix:int = 0X1a
+    oct:int = 0o17
+    octUpperPrefix:int = 0O7
+    a:float = 3.14
+    b:float = .5
+    c:float = 5.
+    d:float = 1e10
+    e:float = 1E+3
+    f:float = 1e-3
+    g:float = 3.14e10
+    newline:char = '\n'
+    upperA:char = '\x41'
+    oneDigit:char = '\x9'
+    twoDigits:char = '\xff'
+    arr:int[3] = {1 2 3}
+    empty:int[10] = {}
+    weights:int[2] = {7 100}
+    ford i 0 0xA
+        dec += i
+    ford j 0o0 0o10
+        dec += j
+    ret arr[0] + weights[1] + hex + hexUpperPrefix + oct + octUpperPrefix + dec
+
+main
+    result:int = demo()
+    if result > 0
+        ret result
+    ret 0

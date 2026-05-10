@@ -1,3 +1,0 @@
-arr:int[3] = {1 2 3}
-empty:int[10] = {}
-weights:int[2] = {7 100}
