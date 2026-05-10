@@ -697,6 +697,7 @@ Statement * InlineCStatementSemanticAction(char * code) {
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->kind = STATEMENT_INLINE_C;
 	statement->inlineC = code;
+	return statement;
 }
 
 Statement * ContinueStatementSemanticAction() {
