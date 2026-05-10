@@ -92,12 +92,6 @@ Current Stage 2 matrix:
 | Pointers, arrays, function pointers, member access | `26`-`29` | `32`-`35` |
 | Integration programs | `30`-`32` | `36`-`38` |
 
-The runner also checks selected implicit-return conversions through debug logs:
-
-- `05-unit-implicit-return`
-- `06-unit-main-implicit-return`
-- `07-unit-implicit-return-non-final`
-
 ## Configuration
 
 The Docker service reads these optional environment variables:
