@@ -1,0 +1,5 @@
+fn dup -> int
+    ret 1
+
+fn dup -> int
+    ret 2

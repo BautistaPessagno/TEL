@@ -1,3 +1,5 @@
+fn log text:char -> void;
+
 fn id v:int -> int
     v
 fn cmp a:int b:int -> int

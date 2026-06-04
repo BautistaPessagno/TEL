@@ -1,3 +1,5 @@
+fn log text:char -> void;
+
 fn setup
     value:int
     log("ready")

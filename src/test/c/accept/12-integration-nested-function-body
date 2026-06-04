@@ -1,3 +1,5 @@
+fn ping;
+
 fn inner
     value:int
     ping()

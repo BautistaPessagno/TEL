@@ -1,0 +1,2 @@
+fn bad value:int value:int -> int
+    ret value

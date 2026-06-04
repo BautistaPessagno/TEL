@@ -1,0 +1,7 @@
+value:int = 1
+
+fn use value:int -> int
+    if value > 0
+        value:int = 2
+        ret value
+    ret value
