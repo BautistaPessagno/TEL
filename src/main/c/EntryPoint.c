@@ -1,3 +1,5 @@
+#include "backend/code-generation/CodeGenerator.h"
+#include "backend/semantic-analysis/SemanticAnalyzer.h"
 #include "frontend/Frontend.h"
 #include "frontend/lexical-analysis/FlexActions.h"
 #include "frontend/syntactic-analysis/BisonActions.h"
@@ -20,6 +22,8 @@ const int main(const int length, const char **arguments) {
   CompilerState compilerState = {.abstractSyntaxtTree = NULL, .value = 0};
   ModuleDestructor moduleDestructors[] = {
       initializeAbstractSyntaxTreeModule(),
+      initializeSemanticAnalyzerModule(),
+      initializeCodeGeneratorModule(),
       initializeFlexActionsModule(lexicalAnalyzer),
       initializeBisonActionsModule(&compilerState),
       initializeFrontendModule(lexicalAnalyzer)};
@@ -29,15 +33,10 @@ const int main(const int length, const char **arguments) {
     // ----------------------------------------------------------------------------------------
     // Beginning of the Backend...
     // ------------------------------------------------------------
-    // logDebugging(logger, "Computing expression value...");
-    // ComputationResult computationResult = executeCalculator(&compilerState);
-    // if (computationResult.succeeded) {
-    //   compilerState.value = computationResult.value;
-    //   executeGenerator(&compilerState);
-    // } else {
-    //   logError(logger, "The computation phase rejects the input program.");
-    //   compilationStatus = FAILED;
-    // }
+    compilationStatus = executeSemanticAnalysis(&compilerState);
+    if (compilationStatus == SUCCEEDED) {
+      compilationStatus = executeCodeGeneration(&compilerState);
+    }
     // ...end of the Backend.
     // -----------------------------------------------------------------
     // ----------------------------------------------------------------------------------------
