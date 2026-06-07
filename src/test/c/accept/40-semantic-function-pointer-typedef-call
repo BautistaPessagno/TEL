@@ -1,0 +1,4 @@
+typedef Callback:(fn* int -> int)
+
+fn apply cb:Callback value:int -> int
+    ret cb(value)

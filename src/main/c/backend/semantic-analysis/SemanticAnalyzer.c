@@ -50,11 +50,13 @@ static void _validateType(SemanticAnalysisContext * context, Type * type);
 static void _validateParameterTypes(SemanticAnalysisContext * context, ParameterList * parameters);
 static void _validateExpression(SemanticAnalysisContext * context, Expression * expression);
 static void _validateExpressionList(SemanticAnalysisContext * context, ExpressionList * expressionList);
-static bool _functionSignaturesEqual(SemanticSymbol * symbol, FunctionDeclaration * declaration);
-static bool _parameterTypesEqual(ParameterList * left, ParameterList * right);
-static bool _typesEqual(Type * left, Type * right);
+static bool _functionSignaturesEqual(SemanticAnalysisContext * context, SemanticSymbol * symbol, FunctionDeclaration * declaration);
+static bool _parameterTypesEqual(SemanticAnalysisContext * context, ParameterList * left, ParameterList * right);
+static bool _typesEqual(SemanticAnalysisContext * context, Type * left, Type * right);
+static Type * _resolveTypedef(SemanticAnalysisContext * context, Type * type);
+static bool _effectiveConst(SemanticAnalysisContext * context, Type * type);
 static bool _expressionsEqual(Expression * left, Expression * right);
-static bool _isCallableSymbol(SemanticSymbol * symbol);
+static bool _isCallableSymbol(SemanticAnalysisContext * context, SemanticSymbol * symbol);
 static const char * _implicitLoopIteratorName(ForStatement * statement);
 
 static void _reportSemanticError(SemanticAnalysisContext * context, const char * message, const char * name) {
@@ -154,7 +156,7 @@ static void _declareGlobalFunction(SemanticAnalysisContext * context, FunctionDe
 		_reportSemanticError(context, "Duplicate global symbol", declaration->name);
 		return;
 	}
-	if (!_functionSignaturesEqual(existing, declaration)) {
+	if (!_functionSignaturesEqual(context, existing, declaration)) {
 		_reportSemanticError(context, "Incompatible function redeclaration", declaration->name);
 		return;
 	}
@@ -412,7 +414,7 @@ static void _validateExpression(SemanticAnalysisContext * context, Expression * 
 			break;
 		case EXPRESSION_FUNCTION_CALL: {
 			SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, expression->functionCall->name);
-			if (!_isCallableSymbol(symbol)) {
+			if (!_isCallableSymbol(context, symbol)) {
 				_reportSemanticError(context, "Unknown function", expression->functionCall->name);
 			}
 			_validateExpressionList(context, expression->functionCall->arguments);
@@ -447,14 +449,14 @@ static void _validateExpressionList(SemanticAnalysisContext * context, Expressio
 	}
 }
 
-static bool _functionSignaturesEqual(SemanticSymbol * symbol, FunctionDeclaration * declaration) {
-	return _typesEqual(symbol->returnType, declaration->returnType)
-		&& _parameterTypesEqual(symbol->parameters, declaration->parameters);
+static bool _functionSignaturesEqual(SemanticAnalysisContext * context, SemanticSymbol * symbol, FunctionDeclaration * declaration) {
+	return _typesEqual(context, symbol->returnType, declaration->returnType)
+		&& _parameterTypesEqual(context, symbol->parameters, declaration->parameters);
 }
 
-static bool _parameterTypesEqual(ParameterList * left, ParameterList * right) {
+static bool _parameterTypesEqual(SemanticAnalysisContext * context, ParameterList * left, ParameterList * right) {
 	while (left != NULL && right != NULL) {
-		if (!_typesEqual(left->parameter->type, right->parameter->type)) {
+		if (!_typesEqual(context, left->parameter->type, right->parameter->type)) {
 			return false;
 		}
 		left = left->next;
@@ -463,32 +465,66 @@ static bool _parameterTypesEqual(ParameterList * left, ParameterList * right) {
 	return left == NULL && right == NULL;
 }
 
-static bool _typesEqual(Type * left, Type * right) {
+static bool _typesEqual(SemanticAnalysisContext * context, Type * left, Type * right) {
 	if (left == NULL || right == NULL) {
 		return left == right;
 	}
-	if (left->kind != right->kind || left->isConst != right->isConst) {
+	Type * resolvedLeft = _resolveTypedef(context, left);
+	Type * resolvedRight = _resolveTypedef(context, right);
+	if (resolvedLeft == NULL || resolvedRight == NULL) {
+		return resolvedLeft == resolvedRight;
+	}
+	if (resolvedLeft->kind != resolvedRight->kind
+		|| _effectiveConst(context, left) != _effectiveConst(context, right)) {
 		return false;
 	}
-	switch (left->kind) {
+	switch (resolvedLeft->kind) {
 		case TYPE_NAMED_KIND:
 		case TYPE_STRUCT_KIND:
 		case TYPE_ENUM_KIND:
 		case TYPE_UNION_KIND:
-			if (left->name == NULL || right->name == NULL) {
-				return left->name == right->name;
+			if (resolvedLeft->name == NULL || resolvedRight->name == NULL) {
+				return resolvedLeft->name == resolvedRight->name;
 			}
-			return strcmp(left->name, right->name) == 0;
+			return strcmp(resolvedLeft->name, resolvedRight->name) == 0;
 		case TYPE_POINTER_KIND:
 		case TYPE_ARRAY_KIND:
-			return _typesEqual(left->pointee, right->pointee)
-				&& _expressionsEqual(left->arraySize, right->arraySize);
+			return _typesEqual(context, resolvedLeft->pointee, resolvedRight->pointee)
+				&& _expressionsEqual(resolvedLeft->arraySize, resolvedRight->arraySize);
 		case TYPE_FUNCTION_POINTER_KIND:
-			return _parameterTypesEqual(left->functionParams, right->functionParams)
-				&& _typesEqual(left->returnType, right->returnType);
+			return _parameterTypesEqual(context, resolvedLeft->functionParams, resolvedRight->functionParams)
+				&& _typesEqual(context, resolvedLeft->returnType, resolvedRight->returnType);
 		default:
 			return true;
 	}
+}
+
+static Type * _resolveTypedef(SemanticAnalysisContext * context, Type * type) {
+	Type * resolved = type;
+	while (resolved != NULL && resolved->kind == TYPE_NAMED_KIND) {
+		SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, resolved->name);
+		if (symbol == NULL || symbol->kind != SEMANTIC_SYMBOL_TYPEDEF || symbol->type == NULL) {
+			return resolved;
+		}
+		resolved = symbol->type;
+	}
+	return resolved;
+}
+
+static bool _effectiveConst(SemanticAnalysisContext * context, Type * type) {
+	bool isConst = false;
+	while (type != NULL) {
+		isConst = isConst || type->isConst;
+		if (type->kind != TYPE_NAMED_KIND) {
+			return isConst;
+		}
+		SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, type->name);
+		if (symbol == NULL || symbol->kind != SEMANTIC_SYMBOL_TYPEDEF || symbol->type == NULL) {
+			return isConst;
+		}
+		type = symbol->type;
+	}
+	return isConst;
 }
 
 static bool _expressionsEqual(Expression * left, Expression * right) {
@@ -522,10 +558,18 @@ static bool _expressionsEqual(Expression * left, Expression * right) {
 	}
 }
 
-static bool _isCallableSymbol(SemanticSymbol * symbol) {
-	return symbol != NULL
-		&& (symbol->kind == SEMANTIC_SYMBOL_FUNCTION
-			|| (symbol->type != NULL && symbol->type->kind == TYPE_FUNCTION_POINTER_KIND));
+static bool _isCallableSymbol(SemanticAnalysisContext * context, SemanticSymbol * symbol) {
+	if (symbol == NULL) {
+		return false;
+	}
+	if (symbol->kind == SEMANTIC_SYMBOL_FUNCTION) {
+		return true;
+	}
+	if (symbol->kind != SEMANTIC_SYMBOL_VARIABLE) {
+		return false;
+	}
+	Type * type = _resolveTypedef(context, symbol->type);
+	return type != NULL && type->kind == TYPE_FUNCTION_POINTER_KIND;
 }
 
 static const char * _implicitLoopIteratorName(ForStatement * statement) {
