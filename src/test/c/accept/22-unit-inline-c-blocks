@@ -6,8 +6,9 @@ static int raw_helper(void) {
 `
 
 main
+    x:int = 0
     `
-    int x = raw_helper();
+    x = raw_helper();
     const char *marker = "` is not a fence here";
     printf("%s %d\n", marker, x);
     `

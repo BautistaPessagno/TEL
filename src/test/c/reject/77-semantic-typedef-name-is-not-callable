@@ -1,0 +1,4 @@
+typedef Callback:(fn* int -> int)
+
+fn bad -> int
+    ret Callback(1)

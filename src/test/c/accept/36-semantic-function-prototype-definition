@@ -1,0 +1,4 @@
+fn add left:int right:int -> int;
+
+fn add left:int right:int -> int
+    ret left + right

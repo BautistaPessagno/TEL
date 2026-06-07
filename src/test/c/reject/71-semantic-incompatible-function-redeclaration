@@ -1,0 +1,2 @@
+fn calc value:int -> int;
+fn calc value:char -> int;

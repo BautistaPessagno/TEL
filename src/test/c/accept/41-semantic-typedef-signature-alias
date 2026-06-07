@@ -1,0 +1,6 @@
+typedef Number:int
+
+fn same value:Number -> int;
+
+fn same value:int -> int
+    ret value

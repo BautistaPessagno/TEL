@@ -1,0 +1,5 @@
+fn caller value:int -> int
+    ret callee(value)
+
+fn callee value:int -> int
+    ret value
