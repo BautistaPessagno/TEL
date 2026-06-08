@@ -155,7 +155,11 @@ bool semanticSymbolTableDeclareOrdinary(
 	return true;
 }
 
-bool semanticSymbolTableDeclareTag(SemanticSymbolTable * table, const char * name, SemanticTagKind kind) {
+bool semanticSymbolTableDeclareTag(
+	SemanticSymbolTable * table,
+	const char * name,
+	SemanticTagKind kind,
+	AggregateDeclaration * declaration) {
 	if (table == NULL || table->currentScope == NULL || name == NULL) {
 		return false;
 	}
@@ -165,6 +169,7 @@ bool semanticSymbolTableDeclareTag(SemanticSymbolTable * table, const char * nam
 	SemanticTag * tag = calloc(1, sizeof(SemanticTag));
 	tag->name = strdup(name);
 	tag->kind = kind;
+	tag->declaration = declaration;
 	tag->next = table->currentScope->tags;
 	table->currentScope->tags = tag;
 	return true;

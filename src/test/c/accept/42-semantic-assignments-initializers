@@ -3,12 +3,15 @@ fn id value:int -> int
 
 fn valid -> int
     value:int = 1
+    fixed:const int = value
     label:char = "x"
     marker:char = 'a'
     amount:float = 1.5
     small:short = 2
     ptr:int* = null
+    wasNull:int = ptr == null
     ptr = &value
+    notNull:int = ptr != null
     cb:(fn* int -> int)
     cb = id
     values:int[3] = {1 2 3}
