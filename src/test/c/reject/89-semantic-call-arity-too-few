@@ -1,0 +1,5 @@
+fn add left:int right:int -> int
+    ret left + right
+
+fn bad -> int
+    ret add(1)

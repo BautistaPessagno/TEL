@@ -1,12 +1,12 @@
 typedef Comparator:(fn* int int -> int)
 
 fn ascending a:int b:int -> int
-    a - b
+    ret a - b
 
 fn first arr:int[] size:int cmp:(fn* int int -> int) -> int*
     p:int*
     p = &arr[0]
-    *p
+    ret p
 
 fn run -> int
     nums:int[3] = {3 1 2}
@@ -14,4 +14,4 @@ fn run -> int
     cb = ascending
     p:int*
     p = first(nums, 3, cb)
-    *p
+    ret *p

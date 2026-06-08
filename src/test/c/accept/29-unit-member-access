@@ -7,7 +7,7 @@ struct Node
     next:struct Node*
 
 fn getPoint -> struct Point*
-    null
+    ret null
 
 fn read p:struct Point ptr:struct Point* points:struct Point[] node:struct Node* -> int
     a:int = p.x
@@ -17,4 +17,4 @@ fn read p:struct Point ptr:struct Point* points:struct Point[] node:struct Node*
     e:int = getPoint()->x
     p.x = a
     ptr->y += b
-    c
+    ret c

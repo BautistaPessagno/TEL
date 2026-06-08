@@ -1,4 +1,4 @@
 fn use a:int -> int
     p:int*
     p = &a
-    *p
+    ret *p
