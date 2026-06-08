@@ -11,6 +11,7 @@ fn valid -> int
     ptr:int* = null
     wasNull:int = ptr == null
     ptr = &value
+    sameAddress:int = ptr == &value
     notNull:int = ptr != null
     cb:(fn* int -> int)
     cb = id

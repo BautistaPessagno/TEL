@@ -1,0 +1,6 @@
+struct Point
+    x:int
+
+fn bad p:const struct Point -> int
+    p.x = 1
+    ret p.x

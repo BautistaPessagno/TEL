@@ -1,5 +1,7 @@
 #include "SemanticAnalyzer.h"
 #include "SemanticSymbolTable.h"
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,8 +9,16 @@
 
 static Logger * _logger = NULL;
 
+typedef struct SemanticTemporaryType SemanticTemporaryType;
+
+struct SemanticTemporaryType {
+	Type type;
+	SemanticTemporaryType * next;
+};
+
 typedef struct {
 	SemanticSymbolTable * symbols;
+	SemanticTemporaryType * temporaryTypes;
 	bool hasErrors;
 } SemanticAnalysisContext;
 
@@ -16,6 +26,7 @@ typedef struct {
 	Type * type;
 	SemanticSymbol * symbol;
 	bool isLvalue;
+	bool isReadonlyLvalue;
 	bool isFunctionDesignator;
 } SemanticExpressionInfo;
 
@@ -63,6 +74,8 @@ static void _validateType(SemanticAnalysisContext * context, Type * type);
 static void _validateParameterTypes(SemanticAnalysisContext * context, ParameterList * parameters);
 static void _validateExpression(SemanticAnalysisContext * context, Expression * expression);
 static void _validateExpressionList(SemanticAnalysisContext * context, ExpressionList * expressionList);
+static Type * _createTemporaryType(SemanticAnalysisContext * context, TypeKind kind);
+static void _destroyTemporaryTypes(SemanticTemporaryType * type);
 static SemanticExpressionInfo _expressionInfo(SemanticAnalysisContext * context, Expression * expression);
 static SemanticExpressionInfo _expressionInfoForIdentifier(SemanticAnalysisContext * context, Expression * expression);
 static SemanticExpressionInfo _expressionInfoForFunctionCall(SemanticAnalysisContext * context, FunctionCall * functionCall);
@@ -87,6 +100,7 @@ static bool _isEqualityComparable(SemanticAnalysisContext * context, Expression 
 static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType);
 static size_t _expressionListLength(ExpressionList * expressionList);
 static bool _fixedArrayBound(Expression * expression, size_t * bound);
+static bool _parseArrayBoundLiteral(const char * literal, size_t * bound);
 static bool _isAssignmentOperator(ExpressionOperator operator);
 static bool _isCompoundAssignmentOperator(ExpressionOperator operator);
 static bool _isNumericBinaryOperator(ExpressionOperator operator);
@@ -138,33 +152,33 @@ static void _collectGlobalItem(SemanticAnalysisContext * context, ProgramItem * 
 				_reportSemanticError(context, "Duplicate global symbol", item->variableDeclaration->name);
 			}
 			break;
-			case PROGRAM_ITEM_FUNCTION_DECLARATION:
-				_declareGlobalFunction(context, item->functionDeclaration);
-				break;
-			case PROGRAM_ITEM_AGGREGATE_DECLARATION: {
-				SemanticTagKind kind = item->aggregateDeclaration->kind == AGGREGATE_STRUCT_KIND
-					? SEMANTIC_TAG_STRUCT
-					: SEMANTIC_TAG_UNION;
-				if (!semanticSymbolTableDeclareTag(
-						context->symbols,
-						item->aggregateDeclaration->name,
-						kind,
-						item->aggregateDeclaration)) {
-					_reportSemanticError(context, "Duplicate tag", item->aggregateDeclaration->name);
-				}
-				break;
+		case PROGRAM_ITEM_FUNCTION_DECLARATION:
+			_declareGlobalFunction(context, item->functionDeclaration);
+			break;
+		case PROGRAM_ITEM_AGGREGATE_DECLARATION: {
+			SemanticTagKind kind = item->aggregateDeclaration->kind == AGGREGATE_STRUCT_KIND
+				? SEMANTIC_TAG_STRUCT
+				: SEMANTIC_TAG_UNION;
+			if (!semanticSymbolTableDeclareTag(
+					context->symbols,
+					item->aggregateDeclaration->name,
+					kind,
+					item->aggregateDeclaration)) {
+				_reportSemanticError(context, "Duplicate tag", item->aggregateDeclaration->name);
 			}
-			case PROGRAM_ITEM_ENUM_DECLARATION:
-				if (!semanticSymbolTableDeclareTag(
+			break;
+		}
+		case PROGRAM_ITEM_ENUM_DECLARATION:
+			if (!semanticSymbolTableDeclareTag(
+					context->symbols,
+					item->enumDeclaration->name,
+					SEMANTIC_TAG_ENUM,
+					NULL)) {
+				_reportSemanticError(context, "Duplicate tag", item->enumDeclaration->name);
+			}
+			for (EnumMemberList * member = item->enumDeclaration->members; member != NULL; member = member->next) {
+				if (!semanticSymbolTableDeclareOrdinary(
 						context->symbols,
-						item->enumDeclaration->name,
-						SEMANTIC_TAG_ENUM,
-						NULL)) {
-					_reportSemanticError(context, "Duplicate tag", item->enumDeclaration->name);
-				}
-				for (EnumMemberList * member = item->enumDeclaration->members; member != NULL; member = member->next) {
-					if (!semanticSymbolTableDeclareOrdinary(
-							context->symbols,
 						member->member->name,
 						SEMANTIC_SYMBOL_ENUM_CONSTANT,
 						NULL,
@@ -466,6 +480,29 @@ static void _validateExpressionList(SemanticAnalysisContext * context, Expressio
 	}
 }
 
+static Type * _createTemporaryType(SemanticAnalysisContext * context, TypeKind kind) {
+	if (context == NULL) {
+		return NULL;
+	}
+	SemanticTemporaryType * temporary = calloc(1, sizeof(SemanticTemporaryType));
+	if (temporary == NULL) {
+		_reportSemanticError(context, "Out of memory", NULL);
+		return NULL;
+	}
+	temporary->type.kind = kind;
+	temporary->next = context->temporaryTypes;
+	context->temporaryTypes = temporary;
+	return &temporary->type;
+}
+
+static void _destroyTemporaryTypes(SemanticTemporaryType * type) {
+	while (type != NULL) {
+		SemanticTemporaryType * next = type->next;
+		free(type);
+		type = next;
+	}
+}
+
 static SemanticExpressionInfo _expressionInfo(SemanticAnalysisContext * context, Expression * expression) {
 	SemanticExpressionInfo info = { 0 };
 	if (expression == NULL) {
@@ -563,6 +600,7 @@ static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysis
 		}
 		info.type = _arrayIndexElementType(context, leftInfo.type);
 		info.isLvalue = info.type != NULL;
+		info.isReadonlyLvalue = leftInfo.isReadonlyLvalue;
 		return info;
 	}
 	if (expression->operator == EXPRESSION_OPERATOR_MEMBER_ACCESS
@@ -572,6 +610,8 @@ static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysis
 		if (expression->operator == EXPRESSION_OPERATOR_MEMBER_ACCESS) {
 			info.type = _memberAccessType(context, leftInfo.type, fieldName);
 			info.isLvalue = leftInfo.isLvalue && info.type != NULL;
+			info.isReadonlyLvalue = info.isLvalue
+				&& (leftInfo.isReadonlyLvalue || _effectiveConst(context, leftInfo.type));
 		}
 		else {
 			Type * receiverType = _resolveTypedef(context, leftInfo.type);
@@ -581,6 +621,8 @@ static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysis
 			else {
 				info.type = _memberAccessType(context, receiverType->pointee, fieldName);
 				info.isLvalue = info.type != NULL;
+				info.isReadonlyLvalue = info.isLvalue
+					&& (leftInfo.isReadonlyLvalue || _effectiveConst(context, receiverType->pointee));
 			}
 		}
 		return info;
@@ -632,6 +674,14 @@ static SemanticExpressionInfo _expressionInfoForUnaryOperation(SemanticAnalysisC
 		case EXPRESSION_OPERATOR_ADDRESS_OF:
 			if (!operandInfo.isLvalue) {
 				_reportSemanticError(context, "Address-of requires lvalue operand", NULL);
+				return info;
+			}
+			if (operandInfo.type != NULL) {
+				Type * pointerType = _createTemporaryType(context, TYPE_POINTER_KIND);
+				if (pointerType != NULL) {
+					pointerType->pointee = operandInfo.type;
+					info.type = pointerType;
+				}
 			}
 			return info;
 		case EXPRESSION_OPERATOR_PREFIX_INCREMENT:
@@ -687,7 +737,7 @@ static Type * _assignmentTargetType(SemanticAnalysisContext * context, Expressio
 		_reportSemanticError(context, "Cannot assign to array variable", NULL);
 		return NULL;
 	}
-	if (_effectiveConst(context, info.type)) {
+	if (info.isReadonlyLvalue || _effectiveConst(context, info.type)) {
 		_reportSemanticError(context, "Cannot assign to const variable", NULL);
 		return NULL;
 	}
@@ -950,9 +1000,30 @@ static bool _fixedArrayBound(Expression * expression, size_t * bound) {
 		|| bound == NULL) {
 		return false;
 	}
+	return _parseArrayBoundLiteral(expression->value, bound);
+}
+
+static bool _parseArrayBoundLiteral(const char * literal, size_t * bound) {
+	if (literal == NULL || bound == NULL) {
+		return false;
+	}
+	int base = 10;
+	const char * digits = literal;
+	if (literal[0] == '0' && (literal[1] == 'x' || literal[1] == 'X')) {
+		base = 16;
+		digits = literal + 2;
+	}
+	else if (literal[0] == '0' && (literal[1] == 'o' || literal[1] == 'O')) {
+		base = 8;
+		digits = literal + 2;
+	}
+	if (*digits == '\0') {
+		return false;
+	}
 	char * end = NULL;
-	long value = strtol(expression->value, &end, 10);
-	if (end == expression->value || *end != '\0' || value < 0) {
+	errno = 0;
+	unsigned long long value = strtoull(digits, &end, base);
+	if (end == digits || *end != '\0' || errno == ERANGE || value > (unsigned long long) SIZE_MAX) {
 		return false;
 	}
 	*bound = (size_t) value;
@@ -1190,6 +1261,7 @@ CompilationStatus executeSemanticAnalysis(CompilerState * compilerState) {
 
 	SemanticAnalysisContext context = {
 		.symbols = createSemanticSymbolTable(),
+		.temporaryTypes = NULL,
 		.hasErrors = false
 	};
 	semanticSymbolTablePushScope(context.symbols);
@@ -1198,6 +1270,8 @@ CompilationStatus executeSemanticAnalysis(CompilerState * compilerState) {
 	_collectGlobalSymbols(&context, program);
 	_validateProgram(&context, program);
 
+	bool hasErrors = context.hasErrors;
 	destroySemanticSymbolTable(context.symbols);
-	return context.hasErrors ? FAILED : SUCCEEDED;
+	_destroyTemporaryTypes(context.temporaryTypes);
+	return hasErrors ? FAILED : SUCCEEDED;
 }
