@@ -34,6 +34,7 @@ struct SemanticSymbol {
 struct SemanticTag {
 	char * name;
 	SemanticTagKind kind;
+	AggregateDeclaration * declaration;
 	SemanticTag * next;
 };
 
@@ -57,6 +58,10 @@ bool semanticSymbolTableDeclareOrdinary(
 	Type * returnType,
 	bool hasDefinition);
 
-bool semanticSymbolTableDeclareTag(SemanticSymbolTable * table, const char * name, SemanticTagKind kind);
+bool semanticSymbolTableDeclareTag(
+	SemanticSymbolTable * table,
+	const char * name,
+	SemanticTagKind kind,
+	AggregateDeclaration * declaration);
 
 #endif
