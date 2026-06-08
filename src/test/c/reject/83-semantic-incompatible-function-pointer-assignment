@@ -1,0 +1,10 @@
+fn one value:int -> int
+    ret value
+
+fn two left:int right:int -> int
+    ret left
+
+fn bad -> int
+    cb:(fn* int -> int)
+    cb = two
+    ret cb(1)

@@ -8,8 +8,20 @@ static Logger * _logger = NULL;
 
 typedef struct {
 	SemanticSymbolTable * symbols;
+	Program * program;
 	bool hasErrors;
 } SemanticAnalysisContext;
+
+typedef struct {
+	Type * type;
+	SemanticSymbol * symbol;
+	bool isLvalue;
+	bool isFunctionDesignator;
+} SemanticExpressionInfo;
+
+static Type _semanticIntType = { .kind = TYPE_INT_KIND };
+static Type _semanticFloatType = { .kind = TYPE_FLOAT_KIND };
+static Type _semanticCharType = { .kind = TYPE_CHAR_KIND };
 
 /** Shutdown module's internal state. */
 void _shutdownSemanticAnalyzerModule() {
@@ -50,6 +62,31 @@ static void _validateType(SemanticAnalysisContext * context, Type * type);
 static void _validateParameterTypes(SemanticAnalysisContext * context, ParameterList * parameters);
 static void _validateExpression(SemanticAnalysisContext * context, Expression * expression);
 static void _validateExpressionList(SemanticAnalysisContext * context, ExpressionList * expressionList);
+static SemanticExpressionInfo _expressionInfo(SemanticAnalysisContext * context, Expression * expression);
+static SemanticExpressionInfo _expressionInfoForIdentifier(SemanticAnalysisContext * context, Expression * expression);
+static SemanticExpressionInfo _expressionInfoForFunctionCall(SemanticAnalysisContext * context, FunctionCall * functionCall);
+static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysisContext * context, Expression * expression);
+static SemanticExpressionInfo _expressionInfoForUnaryOperation(SemanticAnalysisContext * context, Expression * expression);
+static SemanticExpressionInfo _expressionInfoWithType(Type * type, bool isLvalue);
+static Type * _assignmentTargetType(SemanticAnalysisContext * context, Expression * expression);
+static Type * _arrayIndexElementType(SemanticAnalysisContext * context, Type * indexedType);
+static Type * _memberAccessType(SemanticAnalysisContext * context, Type * receiverType, const char * fieldName);
+static AggregateDeclaration * _findAggregateDeclaration(SemanticAnalysisContext * context, TypeKind kind, const char * name);
+static VariableDeclaration * _findAggregateField(AggregateDeclaration * declaration, const char * fieldName);
+static bool _validateInitializer(SemanticAnalysisContext * context, VariableDeclaration * declaration);
+static bool _isExpressionAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression);
+static bool _isArrayLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression);
+static bool _isAddressExpressionAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression);
+static bool _isFunctionDesignatorAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression);
+static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType);
+static bool _isNumericLiteral(Expression * expression);
+static bool _isNumericScalarType(SemanticAnalysisContext * context, Type * type);
+static bool _isPointerLikeType(SemanticAnalysisContext * context, Type * type);
+static bool _isAssignmentOperator(ExpressionOperator operator);
+static bool _isCompoundAssignmentOperator(ExpressionOperator operator);
+static bool _isNumericBinaryOperator(ExpressionOperator operator);
+static bool _isComparisonOperator(ExpressionOperator operator);
+static bool _isLogicalOperator(ExpressionOperator operator);
 static bool _functionSignaturesEqual(SemanticAnalysisContext * context, SemanticSymbol * symbol, FunctionDeclaration * declaration);
 static bool _parameterTypesEqual(SemanticAnalysisContext * context, ParameterList * left, ParameterList * right);
 static bool _typesEqual(SemanticAnalysisContext * context, Type * left, Type * right);
@@ -272,7 +309,7 @@ static void _validateStatement(SemanticAnalysisContext * context, Statement * st
 
 static void _validateVariableDeclaration(SemanticAnalysisContext * context, VariableDeclaration * declaration, bool declareSymbol) {
 	_validateType(context, declaration->type);
-	_validateExpression(context, declaration->initializer);
+	_validateInitializer(context, declaration);
 	if (declareSymbol
 		&& !semanticSymbolTableDeclareOrdinary(
 			context->symbols,
@@ -319,7 +356,7 @@ static void _validateForStatement(SemanticAnalysisContext * context, ForStatemen
 			context->symbols,
 			iteratorName,
 			SEMANTIC_SYMBOL_VARIABLE,
-			NULL,
+			&_semanticIntType,
 			NULL,
 			NULL,
 			false);
@@ -403,50 +440,485 @@ static void _validateParameterTypes(SemanticAnalysisContext * context, Parameter
 }
 
 static void _validateExpression(SemanticAnalysisContext * context, Expression * expression) {
-	if (expression == NULL) {
-		return;
-	}
-	switch (expression->kind) {
-		case EXPRESSION_IDENTIFIER:
-			if (semanticSymbolTableLookupOrdinary(context->symbols, expression->value) == NULL) {
-				_reportSemanticError(context, "Unknown identifier", expression->value);
-			}
-			break;
-		case EXPRESSION_FUNCTION_CALL: {
-			SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, expression->functionCall->name);
-			if (!_isCallableSymbol(context, symbol)) {
-				_reportSemanticError(context, "Unknown function", expression->functionCall->name);
-			}
-			_validateExpressionList(context, expression->functionCall->arguments);
-			break;
-		}
-		case EXPRESSION_BINARY_OPERATION:
-			switch (expression->operator) {
-				case EXPRESSION_OPERATOR_MEMBER_ACCESS:
-				case EXPRESSION_OPERATOR_POINTER_MEMBER_ACCESS:
-					_validateExpression(context, expression->left);
-					break;
-				default:
-					_validateExpression(context, expression->left);
-					_validateExpression(context, expression->right);
-					break;
-			}
-			break;
-		case EXPRESSION_UNARY_OPERATION:
-			_validateExpression(context, expression->operand);
-			break;
-		case EXPRESSION_ARRAY_LITERAL:
-			_validateExpressionList(context, expression->elements);
-			break;
-		default:
-			break;
-	}
+	(void) _expressionInfo(context, expression);
 }
 
 static void _validateExpressionList(SemanticAnalysisContext * context, ExpressionList * expressionList) {
 	for (ExpressionList * item = expressionList; item != NULL; item = item->next) {
 		_validateExpression(context, item->expression);
 	}
+}
+
+static SemanticExpressionInfo _expressionInfo(SemanticAnalysisContext * context, Expression * expression) {
+	SemanticExpressionInfo info = { 0 };
+	if (expression == NULL) {
+		return info;
+	}
+	switch (expression->kind) {
+		case EXPRESSION_IDENTIFIER:
+			return _expressionInfoForIdentifier(context, expression);
+		case EXPRESSION_INTEGER_LITERAL:
+			return _expressionInfoWithType(&_semanticIntType, false);
+		case EXPRESSION_FLOAT_LITERAL:
+			return _expressionInfoWithType(&_semanticFloatType, false);
+		case EXPRESSION_CHAR_LITERAL:
+			return _expressionInfoWithType(&_semanticCharType, false);
+		case EXPRESSION_FUNCTION_CALL:
+			return _expressionInfoForFunctionCall(context, expression->functionCall);
+		case EXPRESSION_BINARY_OPERATION:
+			return _expressionInfoForBinaryOperation(context, expression);
+		case EXPRESSION_UNARY_OPERATION:
+			return _expressionInfoForUnaryOperation(context, expression);
+		case EXPRESSION_ARRAY_LITERAL:
+			_validateExpressionList(context, expression->elements);
+			return info;
+		case EXPRESSION_STRING_LITERAL:
+		case EXPRESSION_NULL_LITERAL:
+		default:
+			return info;
+	}
+}
+
+static SemanticExpressionInfo _expressionInfoForIdentifier(SemanticAnalysisContext * context, Expression * expression) {
+	SemanticExpressionInfo info = { 0 };
+	SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, expression->value);
+	if (symbol == NULL) {
+		_reportSemanticError(context, "Unknown identifier", expression->value);
+		return info;
+	}
+	info.symbol = symbol;
+	switch (symbol->kind) {
+		case SEMANTIC_SYMBOL_VARIABLE:
+			info.type = symbol->type;
+			info.isLvalue = true;
+			break;
+		case SEMANTIC_SYMBOL_ENUM_CONSTANT:
+			info.type = &_semanticIntType;
+			break;
+		case SEMANTIC_SYMBOL_FUNCTION:
+			info.isFunctionDesignator = true;
+			break;
+		default:
+			break;
+	}
+	return info;
+}
+
+static SemanticExpressionInfo _expressionInfoForFunctionCall(SemanticAnalysisContext * context, FunctionCall * functionCall) {
+	SemanticExpressionInfo info = { 0 };
+	if (functionCall == NULL) {
+		return info;
+	}
+	SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, functionCall->name);
+	if (!_isCallableSymbol(context, symbol)) {
+		_reportSemanticError(context, "Unknown function", functionCall->name);
+		_validateExpressionList(context, functionCall->arguments);
+		return info;
+	}
+	_validateExpressionList(context, functionCall->arguments);
+	if (symbol->kind == SEMANTIC_SYMBOL_FUNCTION) {
+		info.type = symbol->returnType;
+	}
+	else if (symbol->kind == SEMANTIC_SYMBOL_VARIABLE) {
+		Type * functionPointerType = _resolveTypedef(context, symbol->type);
+		if (functionPointerType != NULL && functionPointerType->kind == TYPE_FUNCTION_POINTER_KIND) {
+			info.type = functionPointerType->returnType;
+		}
+	}
+	return info;
+}
+
+static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysisContext * context, Expression * expression) {
+	SemanticExpressionInfo info = { 0 };
+	if (_isAssignmentOperator(expression->operator)) {
+		Type * targetType = _assignmentTargetType(context, expression->left);
+		if (_isCompoundAssignmentOperator(expression->operator)) {
+			SemanticExpressionInfo rightInfo = _expressionInfo(context, expression->right);
+			if (targetType != NULL
+				&& (!_isNumericScalarType(context, targetType)
+					|| !_isNumericScalarType(context, rightInfo.type))) {
+				_reportSemanticError(context, "Compound assignment requires numeric operands", NULL);
+			}
+		}
+		else if (targetType != NULL && !_isExpressionAssignableToType(context, targetType, expression->right)) {
+			_reportSemanticError(context, "Incompatible assignment", NULL);
+		}
+		info.type = targetType;
+		return info;
+	}
+	if (expression->operator == EXPRESSION_OPERATOR_ARRAY_INDEX) {
+		SemanticExpressionInfo leftInfo = _expressionInfo(context, expression->left);
+		SemanticExpressionInfo rightInfo = _expressionInfo(context, expression->right);
+		if (!_isNumericScalarType(context, rightInfo.type)) {
+			_reportSemanticError(context, "Array index must be numeric", NULL);
+		}
+		info.type = _arrayIndexElementType(context, leftInfo.type);
+		info.isLvalue = info.type != NULL;
+		return info;
+	}
+	if (expression->operator == EXPRESSION_OPERATOR_MEMBER_ACCESS
+		|| expression->operator == EXPRESSION_OPERATOR_POINTER_MEMBER_ACCESS) {
+		SemanticExpressionInfo leftInfo = _expressionInfo(context, expression->left);
+		const char * fieldName = expression->right != NULL ? expression->right->value : NULL;
+		if (expression->operator == EXPRESSION_OPERATOR_MEMBER_ACCESS) {
+			info.type = _memberAccessType(context, leftInfo.type, fieldName);
+			info.isLvalue = leftInfo.isLvalue && info.type != NULL;
+		}
+		else {
+			Type * receiverType = _resolveTypedef(context, leftInfo.type);
+			if (receiverType == NULL || receiverType->kind != TYPE_POINTER_KIND) {
+				_reportSemanticError(context, "Pointer member access requires pointer receiver", fieldName);
+			}
+			else {
+				info.type = _memberAccessType(context, receiverType->pointee, fieldName);
+				info.isLvalue = info.type != NULL;
+			}
+		}
+		return info;
+	}
+
+	SemanticExpressionInfo leftInfo = _expressionInfo(context, expression->left);
+	SemanticExpressionInfo rightInfo = _expressionInfo(context, expression->right);
+	if (_isNumericBinaryOperator(expression->operator)) {
+		if (!_isNumericScalarType(context, leftInfo.type) || !_isNumericScalarType(context, rightInfo.type)) {
+			_reportSemanticError(context, "Numeric operator requires numeric operands", NULL);
+			return info;
+		}
+		info.type = leftInfo.type;
+		return info;
+	}
+	if (_isComparisonOperator(expression->operator) || _isLogicalOperator(expression->operator)) {
+		if (!_isNumericScalarType(context, leftInfo.type) || !_isNumericScalarType(context, rightInfo.type)) {
+			_reportSemanticError(context, "Comparison/logical operator requires numeric operands", NULL);
+			return info;
+		}
+		info.type = &_semanticIntType;
+		return info;
+	}
+	return info;
+}
+
+static SemanticExpressionInfo _expressionInfoForUnaryOperation(SemanticAnalysisContext * context, Expression * expression) {
+	SemanticExpressionInfo info = { 0 };
+	SemanticExpressionInfo operandInfo = _expressionInfo(context, expression->operand);
+	switch (expression->operator) {
+		case EXPRESSION_OPERATOR_DEREFERENCE: {
+			Type * operandType = _resolveTypedef(context, operandInfo.type);
+			if (operandType == NULL || operandType->kind != TYPE_POINTER_KIND) {
+				_reportSemanticError(context, "Dereference requires pointer operand", NULL);
+				return info;
+			}
+			info.type = operandType->pointee;
+			info.isLvalue = true;
+			return info;
+		}
+		case EXPRESSION_OPERATOR_ADDRESS_OF:
+			if (!operandInfo.isLvalue) {
+				_reportSemanticError(context, "Address-of requires lvalue operand", NULL);
+			}
+			return info;
+		case EXPRESSION_OPERATOR_PREFIX_INCREMENT:
+		case EXPRESSION_OPERATOR_PREFIX_DECREMENT:
+		case EXPRESSION_OPERATOR_POSTFIX_INCREMENT:
+		case EXPRESSION_OPERATOR_POSTFIX_DECREMENT:
+			if (_assignmentTargetType(context, expression->operand) != NULL
+				&& !_isNumericScalarType(context, operandInfo.type)) {
+				_reportSemanticError(context, "Increment/decrement requires numeric operand", NULL);
+			}
+			info.type = operandInfo.type;
+			return info;
+		case EXPRESSION_OPERATOR_UNARY_PLUS:
+		case EXPRESSION_OPERATOR_UNARY_MINUS:
+		case EXPRESSION_OPERATOR_BITWISE_NOT:
+			if (!_isNumericScalarType(context, operandInfo.type)) {
+				_reportSemanticError(context, "Unary operator requires numeric operand", NULL);
+				return info;
+			}
+			info.type = operandInfo.type;
+			return info;
+		case EXPRESSION_OPERATOR_LOGICAL_NOT:
+			if (!_isNumericScalarType(context, operandInfo.type)) {
+				_reportSemanticError(context, "Logical not requires numeric operand", NULL);
+				return info;
+			}
+			info.type = &_semanticIntType;
+			return info;
+		default:
+			return info;
+	}
+}
+
+static SemanticExpressionInfo _expressionInfoWithType(Type * type, bool isLvalue) {
+	SemanticExpressionInfo info = {
+		.type = type,
+		.isLvalue = isLvalue
+	};
+	return info;
+}
+
+static Type * _assignmentTargetType(SemanticAnalysisContext * context, Expression * expression) {
+	SemanticExpressionInfo info = _expressionInfo(context, expression);
+	if (!info.isLvalue) {
+		_reportSemanticError(context, "Invalid assignment target", NULL);
+		return NULL;
+	}
+	Type * targetType = _resolveTypedef(context, info.type);
+	if (targetType == NULL) {
+		return NULL;
+	}
+	if (targetType->kind == TYPE_ARRAY_KIND) {
+		_reportSemanticError(context, "Cannot assign to array variable", NULL);
+		return NULL;
+	}
+	if (_effectiveConst(context, info.type)) {
+		_reportSemanticError(context, "Cannot assign to const variable", NULL);
+		return NULL;
+	}
+	return info.type;
+}
+
+static Type * _arrayIndexElementType(SemanticAnalysisContext * context, Type * indexedType) {
+	Type * resolvedType = _resolveTypedef(context, indexedType);
+	if (resolvedType == NULL) {
+		return NULL;
+	}
+	if (resolvedType->kind == TYPE_ARRAY_KIND || resolvedType->kind == TYPE_POINTER_KIND) {
+		return resolvedType->pointee;
+	}
+	_reportSemanticError(context, "Array index requires array or pointer receiver", NULL);
+	return NULL;
+}
+
+static Type * _memberAccessType(SemanticAnalysisContext * context, Type * receiverType, const char * fieldName) {
+	Type * resolvedType = _resolveTypedef(context, receiverType);
+	if (resolvedType == NULL || fieldName == NULL) {
+		return NULL;
+	}
+	if (resolvedType->kind != TYPE_STRUCT_KIND && resolvedType->kind != TYPE_UNION_KIND) {
+		_reportSemanticError(context, "Member access requires aggregate receiver", fieldName);
+		return NULL;
+	}
+	AggregateDeclaration * aggregate = _findAggregateDeclaration(context, resolvedType->kind, resolvedType->name);
+	VariableDeclaration * field = _findAggregateField(aggregate, fieldName);
+	if (field == NULL) {
+		_reportSemanticError(context, "Unknown aggregate field", fieldName);
+		return NULL;
+	}
+	return field->type;
+}
+
+static AggregateDeclaration * _findAggregateDeclaration(SemanticAnalysisContext * context, TypeKind kind, const char * name) {
+	if (context == NULL || context->program == NULL || name == NULL) {
+		return NULL;
+	}
+	AggregateKind aggregateKind = kind == TYPE_STRUCT_KIND ? AGGREGATE_STRUCT_KIND : AGGREGATE_UNION_KIND;
+	for (ProgramItemList * item = context->program->items; item != NULL; item = item->next) {
+		if (item->item != NULL
+			&& item->item->kind == PROGRAM_ITEM_AGGREGATE_DECLARATION
+			&& item->item->aggregateDeclaration->kind == aggregateKind
+			&& strcmp(item->item->aggregateDeclaration->name, name) == 0) {
+			return item->item->aggregateDeclaration;
+		}
+	}
+	return NULL;
+}
+
+static VariableDeclaration * _findAggregateField(AggregateDeclaration * declaration, const char * fieldName) {
+	if (declaration == NULL || fieldName == NULL) {
+		return NULL;
+	}
+	for (VariableDeclarationList * field = declaration->fields; field != NULL; field = field->next) {
+		if (field->declaration != NULL && strcmp(field->declaration->name, fieldName) == 0) {
+			return field->declaration;
+		}
+	}
+	return NULL;
+}
+
+static bool _validateInitializer(SemanticAnalysisContext * context, VariableDeclaration * declaration) {
+	if (declaration == NULL || declaration->initializer == NULL) {
+		return true;
+	}
+	if (!_isExpressionAssignableToType(context, declaration->type, declaration->initializer)) {
+		_reportSemanticError(context, "Incompatible initializer", declaration->name);
+		return false;
+	}
+	return true;
+}
+
+static bool _isExpressionAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression) {
+	if (targetType == NULL || expression == NULL) {
+		return true;
+	}
+	Type * resolvedTargetType = _resolveTypedef(context, targetType);
+	if (resolvedTargetType == NULL) {
+		return true;
+	}
+	if (expression->kind == EXPRESSION_ARRAY_LITERAL) {
+		return _isArrayLiteralAssignableToType(context, resolvedTargetType, expression);
+	}
+	if (resolvedTargetType->kind == TYPE_ARRAY_KIND) {
+		return false;
+	}
+	if (_isNumericLiteral(expression)) {
+		return _isNumericScalarType(context, targetType);
+	}
+	if (expression->kind == EXPRESSION_STRING_LITERAL) {
+		return _isStringLiteralAssignableToType(context, targetType);
+	}
+	if (expression->kind == EXPRESSION_NULL_LITERAL) {
+		return _isPointerLikeType(context, targetType);
+	}
+	if (expression->kind == EXPRESSION_UNARY_OPERATION
+		&& expression->operator == EXPRESSION_OPERATOR_ADDRESS_OF) {
+		return _isAddressExpressionAssignableToType(context, targetType, expression);
+	}
+	if (expression->kind == EXPRESSION_IDENTIFIER) {
+		SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, expression->value);
+		if (symbol != NULL && symbol->kind == SEMANTIC_SYMBOL_FUNCTION) {
+			return _isFunctionDesignatorAssignableToType(context, targetType, expression);
+		}
+	}
+
+	SemanticExpressionInfo sourceInfo = _expressionInfo(context, expression);
+	if (sourceInfo.type == NULL) {
+		return true;
+	}
+	return _typesEqual(context, targetType, sourceInfo.type);
+}
+
+static bool _isArrayLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression) {
+	if (targetType == NULL || targetType->kind != TYPE_ARRAY_KIND) {
+		_validateExpressionList(context, expression->elements);
+		return false;
+	}
+	bool isAssignable = true;
+	for (ExpressionList * item = expression->elements; item != NULL; item = item->next) {
+		if (!_isExpressionAssignableToType(context, targetType->pointee, item->expression)) {
+			isAssignable = false;
+		}
+	}
+	return isAssignable;
+}
+
+static bool _isAddressExpressionAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression) {
+	Type * resolvedTargetType = _resolveTypedef(context, targetType);
+	if (resolvedTargetType == NULL || resolvedTargetType->kind != TYPE_POINTER_KIND) {
+		(void) _expressionInfo(context, expression->operand);
+		return false;
+	}
+	SemanticExpressionInfo operandInfo = _expressionInfo(context, expression->operand);
+	if (!operandInfo.isLvalue || operandInfo.type == NULL) {
+		return false;
+	}
+	return _typesEqual(context, resolvedTargetType->pointee, operandInfo.type);
+}
+
+static bool _isFunctionDesignatorAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression) {
+	Type * resolvedTargetType = _resolveTypedef(context, targetType);
+	if (resolvedTargetType == NULL || resolvedTargetType->kind != TYPE_FUNCTION_POINTER_KIND) {
+		return false;
+	}
+	SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, expression->value);
+	if (symbol == NULL || symbol->kind != SEMANTIC_SYMBOL_FUNCTION) {
+		return false;
+	}
+	return _typesEqual(context, resolvedTargetType->returnType, symbol->returnType)
+		&& _parameterTypesEqual(context, resolvedTargetType->functionParams, symbol->parameters);
+}
+
+static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType) {
+	Type * resolvedTargetType = _resolveTypedef(context, targetType);
+	if (resolvedTargetType == NULL) {
+		return true;
+	}
+	if (resolvedTargetType->kind == TYPE_CHAR_KIND) {
+		return true;
+	}
+	if (resolvedTargetType->kind != TYPE_POINTER_KIND) {
+		return false;
+	}
+	Type * pointee = _resolveTypedef(context, resolvedTargetType->pointee);
+	return pointee != NULL && pointee->kind == TYPE_CHAR_KIND;
+}
+
+static bool _isNumericLiteral(Expression * expression) {
+	return expression != NULL
+		&& (expression->kind == EXPRESSION_INTEGER_LITERAL
+			|| expression->kind == EXPRESSION_FLOAT_LITERAL
+			|| expression->kind == EXPRESSION_CHAR_LITERAL);
+}
+
+static bool _isNumericScalarType(SemanticAnalysisContext * context, Type * type) {
+	Type * resolvedType = _resolveTypedef(context, type);
+	if (resolvedType == NULL) {
+		return false;
+	}
+	switch (resolvedType->kind) {
+		case TYPE_INT_KIND:
+		case TYPE_CHAR_KIND:
+		case TYPE_FLOAT_KIND:
+		case TYPE_DOUBLE_KIND:
+		case TYPE_UINT_KIND:
+		case TYPE_ULI_KIND:
+		case TYPE_LONG_KIND:
+		case TYPE_SHORT_KIND:
+		case TYPE_ENUM_KIND:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool _isPointerLikeType(SemanticAnalysisContext * context, Type * type) {
+	Type * resolvedType = _resolveTypedef(context, type);
+	return resolvedType != NULL
+		&& (resolvedType->kind == TYPE_POINTER_KIND || resolvedType->kind == TYPE_FUNCTION_POINTER_KIND);
+}
+
+static bool _isAssignmentOperator(ExpressionOperator operator) {
+	return operator == EXPRESSION_OPERATOR_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_ADD_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_SUBTRACT_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_MULTIPLY_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_DIVIDE_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_MODULO_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_BITWISE_AND_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_BITWISE_OR_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_BITWISE_XOR_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_SHIFT_LEFT_ASSIGN
+		|| operator == EXPRESSION_OPERATOR_SHIFT_RIGHT_ASSIGN;
+}
+
+static bool _isCompoundAssignmentOperator(ExpressionOperator operator) {
+	return _isAssignmentOperator(operator) && operator != EXPRESSION_OPERATOR_ASSIGN;
+}
+
+static bool _isNumericBinaryOperator(ExpressionOperator operator) {
+	return operator == EXPRESSION_OPERATOR_BITWISE_OR
+		|| operator == EXPRESSION_OPERATOR_BITWISE_XOR
+		|| operator == EXPRESSION_OPERATOR_BITWISE_AND
+		|| operator == EXPRESSION_OPERATOR_SHIFT_LEFT
+		|| operator == EXPRESSION_OPERATOR_SHIFT_RIGHT
+		|| operator == EXPRESSION_OPERATOR_ADD
+		|| operator == EXPRESSION_OPERATOR_SUBTRACT
+		|| operator == EXPRESSION_OPERATOR_MULTIPLY
+		|| operator == EXPRESSION_OPERATOR_DIVIDE
+		|| operator == EXPRESSION_OPERATOR_MODULO;
+}
+
+static bool _isComparisonOperator(ExpressionOperator operator) {
+	return operator == EXPRESSION_OPERATOR_EQUAL
+		|| operator == EXPRESSION_OPERATOR_NOT_EQUAL
+		|| operator == EXPRESSION_OPERATOR_LESS_THAN
+		|| operator == EXPRESSION_OPERATOR_GREATER_THAN
+		|| operator == EXPRESSION_OPERATOR_LESS_EQUAL
+		|| operator == EXPRESSION_OPERATOR_GREATER_EQUAL;
+}
+
+static bool _isLogicalOperator(ExpressionOperator operator) {
+	return operator == EXPRESSION_OPERATOR_LOGICAL_OR
+		|| operator == EXPRESSION_OPERATOR_LOGICAL_AND;
 }
 
 static bool _functionSignaturesEqual(SemanticAnalysisContext * context, SemanticSymbol * symbol, FunctionDeclaration * declaration) {
@@ -595,11 +1067,12 @@ CompilationStatus executeSemanticAnalysis(CompilerState * compilerState) {
 
 	SemanticAnalysisContext context = {
 		.symbols = createSemanticSymbolTable(),
+		.program = (Program *) compilerState->abstractSyntaxtTree,
 		.hasErrors = false
 	};
 	semanticSymbolTablePushScope(context.symbols);
 
-	Program * program = (Program *) compilerState->abstractSyntaxtTree;
+	Program * program = context.program;
 	_collectGlobalSymbols(&context, program);
 	_validateProgram(&context, program);
 

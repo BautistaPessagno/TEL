@@ -1,0 +1,16 @@
+fn id value:int -> int
+    ret value
+
+fn valid -> int
+    value:int = 1
+    label:char = "x"
+    marker:char = 'a'
+    amount:float = 1.5
+    small:short = 2
+    ptr:int* = null
+    ptr = &value
+    cb:(fn* int -> int)
+    cb = id
+    values:int[3] = {1 2 3}
+    value += small
+    ret cb(values[0])
