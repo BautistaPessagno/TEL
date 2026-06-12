@@ -19,7 +19,7 @@ const int main(const int length, const char **arguments) {
   for (int k = 0; k < length; ++k) {
     logDebugging(logger, "Argument %d: \"%s\"", k, arguments[k]);
   }
-  CompilerState compilerState = {.abstractSyntaxtTree = NULL, .value = 0};
+  CompilerState compilerState = {.abstractSyntaxtTree = NULL};
   ModuleDestructor moduleDestructors[] = {
       initializeAbstractSyntaxTreeModule(),
       initializeSemanticAnalyzerModule(),

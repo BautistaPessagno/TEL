@@ -3,17 +3,23 @@
 #include "../../support/type/TokenLabel.h"
 #include "AbstractSyntaxTree.h"
 #include "BisonActions.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 /**
  * The error reporting function for Bison parser.
  *
- * @todo Add location to the grammar and "pushToken" API function.
- *
  * @see https://www.gnu.org/software/bison/manual/html_node/Error-Reporting-Function.html
  * @see https://www.gnu.org/software/bison/manual/html_node/Tracking-Locations.html
  */
-void yyerror(const YYLTYPE * location, const char * message) {}
+void yyerror(const YYLTYPE * location, const char * message) {
+	if (location != NULL && location->first_line > 0) {
+		fprintf(stderr, "%s (line %d)\n", message, location->first_line);
+	}
+	else {
+		fprintf(stderr, "%s\n", message);
+	}
+}
 
 %}
 
