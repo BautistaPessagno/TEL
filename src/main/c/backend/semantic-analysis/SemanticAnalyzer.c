@@ -79,10 +79,10 @@ static void _validateAggregateDeclaration(SemanticAnalysisContext * context, Agg
 static void _validateEnumDeclaration(SemanticAnalysisContext * context, EnumDeclaration * declaration);
 static void _validateTypedefDeclaration(SemanticAnalysisContext * context, TypedefDeclaration * declaration);
 static bool _validateIfStatement(SemanticAnalysisContext * context, IfStatement * statement);
-static void _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement);
-static void _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement);
-static void _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement);
-static void _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement);
+static bool _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement);
+static bool _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement);
+static bool _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement);
+static bool _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement);
 static void _validateType(SemanticAnalysisContext * context, Type * type, SemanticTypeContext typeContext);
 static void _validateTypeNode(
 	SemanticAnalysisContext * context,
@@ -147,6 +147,8 @@ static bool _effectiveConst(SemanticAnalysisContext * context, Type * type);
 static bool _expressionsEqual(Expression * left, Expression * right);
 static bool _isCallableSymbol(SemanticAnalysisContext * context, SemanticSymbol * symbol);
 static const char * _declaredLoopIteratorName(ForStatement * statement);
+static bool _isAlwaysTrueCondition(Expression * condition);
+static bool _loopBodyCanBreak(StatementList * statementList);
 
 static void _reportSemanticError(SemanticAnalysisContext * context, const char * message, const char * name) {
 	context->hasErrors = true;
@@ -364,17 +366,13 @@ static bool _validateStatement(SemanticAnalysisContext * context, Statement * st
 		case STATEMENT_IF:
 			return _validateIfStatement(context, statement->ifStatement);
 		case STATEMENT_FOR:
-			_validateForStatement(context, statement->forStatement);
-			break;
+			return _validateForStatement(context, statement->forStatement);
 		case STATEMENT_WHILE:
-			_validateWhileStatement(context, statement->whileStatement);
-			break;
+			return _validateWhileStatement(context, statement->whileStatement);
 		case STATEMENT_DO_WHILE:
-			_validateDoWhileStatement(context, statement->doWhileStatement);
-			break;
+			return _validateDoWhileStatement(context, statement->doWhileStatement);
 		case STATEMENT_SWITCH:
-			_validateSwitchStatement(context, statement->switchStatement);
-			break;
+			return _validateSwitchStatement(context, statement->switchStatement);
 		case STATEMENT_BREAK:
 			if (context->loopDepth == 0 && context->switchDepth == 0) {
 				_reportSemanticError(context, "Break outside loop or switch", NULL);
@@ -471,7 +469,7 @@ static bool _validateIfStatement(SemanticAnalysisContext * context, IfStatement 
 	return allBranchesReturn;
 }
 
-static void _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement) {
+static bool _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement) {
 	semanticSymbolTablePushScope(context->symbols);
 	const char * iteratorName = _declaredLoopIteratorName(statement);
 	if (iteratorName != NULL) {
@@ -491,30 +489,39 @@ static void _validateForStatement(SemanticAnalysisContext * context, ForStatemen
 	_validateStatementListInNewScope(context, statement->body);
 	context->loopDepth--;
 	semanticSymbolTablePopScope(context->symbols);
+	return _isAlwaysTrueCondition(statement->condition) && !_loopBodyCanBreak(statement->body);
 }
 
-static void _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement) {
+static bool _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement) {
 	_validateConditionExpression(context, statement->condition, "While condition must be numeric or pointer-like");
 	context->loopDepth++;
 	_validateStatementListInNewScope(context, statement->body);
 	context->loopDepth--;
+	return _isAlwaysTrueCondition(statement->condition) && !_loopBodyCanBreak(statement->body);
 }
 
-static void _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement) {
+static bool _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement) {
 	context->loopDepth++;
 	_validateStatementListInNewScope(context, statement->body);
 	context->loopDepth--;
 	_validateConditionExpression(context, statement->condition, "Do-while condition must be numeric or pointer-like");
+	return _isAlwaysTrueCondition(statement->condition) && !_loopBodyCanBreak(statement->body);
 }
 
-static void _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement) {
+static bool _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement) {
 	_validateSwitchExpression(context, statement->discriminant, "Switch discriminant must be numeric");
 	context->switchDepth++;
+	bool hasDefault = false;
+	bool allCasesReturn = true;
 	for (SwitchCase * switchCase = statement->cases; switchCase != NULL; switchCase = switchCase->next) {
+		if (switchCase->matchExpression == NULL) {
+			hasDefault = true;
+		}
 		_validateSwitchExpression(context, switchCase->matchExpression, "Switch case expression must be numeric");
-		_validateStatementListInNewScope(context, switchCase->body);
+		allCasesReturn = _validateStatementListInNewScope(context, switchCase->body) && allCasesReturn;
 	}
 	context->switchDepth--;
+	return hasDefault && allCasesReturn;
 }
 
 static void _validateType(SemanticAnalysisContext * context, Type * type, SemanticTypeContext typeContext) {
@@ -1567,6 +1574,46 @@ static const char * _declaredLoopIteratorName(ForStatement * statement) {
 		return NULL;
 	}
 	return statement->initializer->left->value;
+}
+
+static bool _isAlwaysTrueCondition(Expression * condition) {
+	if (condition == NULL) {
+		return true;
+	}
+	if (condition->kind != EXPRESSION_INTEGER_LITERAL) {
+		return false;
+	}
+	size_t value = 0;
+	return _parseArrayBoundLiteral(condition->value, &value) && value != 0;
+}
+
+static bool _loopBodyCanBreak(StatementList * statementList) {
+	for (StatementList * item = statementList; item != NULL; item = item->next) {
+		Statement * statement = item->statement;
+		if (statement == NULL) {
+			continue;
+		}
+		switch (statement->kind) {
+			case STATEMENT_BREAK:
+				return true;
+			case STATEMENT_IF:
+				if (statement->ifStatement != NULL) {
+					for (IfBranch * branch = statement->ifStatement->branches; branch != NULL; branch = branch->next) {
+						if (_loopBodyCanBreak(branch->body)) {
+							return true;
+						}
+					}
+					if (_loopBodyCanBreak(statement->ifStatement->elseBody)) {
+						return true;
+					}
+				}
+				break;
+			default:
+				/* Nested loops and switches capture their own break statements. */
+				break;
+		}
+	}
+	return false;
 }
 
 /** PUBLIC FUNCTIONS */
