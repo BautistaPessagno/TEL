@@ -51,7 +51,7 @@ docker compose run --rm compiler src/main/bash/build.sh
 docker compose run --rm compiler src/main/bash/test.sh
 ```
 
-Do not use the host shell as the final verification signal on macOS. `.build/Flex-Bison-Compiler` is a Linux binary produced for the container.
+Do not use the host shell as the final verification signal on macOS. `.build/tel` is a Linux binary produced for the container.
 
 
 
