@@ -1,8 +1,8 @@
 small:short
 fn shorten value:int -> short
-    0
+    ret 0
 fn use s:short -> short
-    s
+    ret s
 struct Tiny
     width:short
     height:short

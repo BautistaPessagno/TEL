@@ -1,0 +1,7 @@
+fn choose value:int -> int
+    if value > 0
+        ret value
+    elif value == 0
+        ret 0
+    else
+        ret -value

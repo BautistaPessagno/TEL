@@ -1,0 +1,8 @@
+struct Point
+    x:int
+
+fn bad p:struct Point -> int
+    if p
+        ret 1
+    else
+        ret 0

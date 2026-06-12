@@ -4,4 +4,4 @@ stc fn tick -> int
     counter
 fn use
     stc local:int = 7
-    local
+    ret

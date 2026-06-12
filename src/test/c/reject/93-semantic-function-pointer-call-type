@@ -1,0 +1,9 @@
+typedef Callback:(fn* int -> int)
+
+fn id value:int -> int
+    ret value
+
+fn bad -> int
+    cb:Callback
+    cb = id
+    ret cb("bad")

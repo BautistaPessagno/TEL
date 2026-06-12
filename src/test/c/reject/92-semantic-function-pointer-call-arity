@@ -1,0 +1,9 @@
+typedef Callback:(fn* int int -> int)
+
+fn add left:int right:int -> int
+    ret left + right
+
+fn bad -> int
+    cb:Callback
+    cb = add
+    ret cb(1)

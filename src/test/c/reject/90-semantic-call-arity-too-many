@@ -1,0 +1,5 @@
+fn zero -> int
+    ret 0
+
+fn bad -> int
+    ret zero(1)

@@ -1,0 +1,5 @@
+fn take value:int -> int
+    ret value
+
+fn bad -> int
+    ret take("bad")
