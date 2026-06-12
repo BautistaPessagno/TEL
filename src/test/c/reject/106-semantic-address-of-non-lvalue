@@ -1,0 +1,3 @@
+fn bad value:int -> int*
+    ret &(value + 1)
+

@@ -1,0 +1,4 @@
+enum Status
+    READY = 1
+    ACTIVE = 1
+

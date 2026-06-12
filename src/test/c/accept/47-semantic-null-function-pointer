@@ -1,0 +1,8 @@
+fn identity value:int -> int
+    ret value
+
+fn run -> int
+    callback:(fn* int -> int) = null
+    callback = identity
+    ret callback(1)
+

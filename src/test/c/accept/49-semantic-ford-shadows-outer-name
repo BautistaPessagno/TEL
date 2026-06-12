@@ -1,0 +1,6 @@
+fn count limit:int -> int
+    i:int = 100
+    ford i 0 limit
+        i += 1
+    ret i
+

@@ -1,0 +1,10 @@
+fn first values:int* -> int
+    ret values[0]
+
+fn use values:int[] -> int
+    pointer:int* = values
+    raw:void* = pointer
+    readonly:const int* = pointer
+    pointer = raw
+    ret first(values) + readonly[0]
+

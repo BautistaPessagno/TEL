@@ -605,7 +605,9 @@ ForStatement * ForStatementFromFordSemanticAction(char * iteratorName, Expressio
 	Expression * condition = BinaryExpressionSemanticAction(conditionIterator, EXPRESSION_OPERATOR_LESS_THAN, end);
 	Expression * update = UnaryExpressionSemanticAction(EXPRESSION_OPERATOR_POSTFIX_INCREMENT, updateIterator);
 	free(iteratorName);
-	return ForStatementSemanticAction(initializer, condition, update, body);
+	ForStatement * forStatement = ForStatementSemanticAction(initializer, condition, update, body);
+	forStatement->declaresIterator = true;
+	return forStatement;
 }
 
 WhileStatement * WhileStatementSemanticAction(Expression * condition, StatementList * body) {

@@ -1,0 +1,4 @@
+fn bad values:const int[] -> int
+    values[0] = 1
+    ret 0
+

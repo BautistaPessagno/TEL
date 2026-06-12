@@ -1,0 +1,5 @@
+fn bad source:char* -> int
+    target:int*
+    target = source
+    ret 0
+

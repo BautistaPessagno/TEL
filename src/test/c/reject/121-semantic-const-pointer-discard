@@ -1,0 +1,5 @@
+fn bad source:const int* -> int
+    target:int*
+    target = source
+    ret 0
+

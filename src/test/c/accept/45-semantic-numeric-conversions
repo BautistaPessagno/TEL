@@ -1,0 +1,13 @@
+fn widen value:int -> double
+    ret value
+
+fn narrow value:double -> int
+    result:int = value
+    ret result
+
+fn run -> int
+    small:short = 2
+    amount:float = small
+    total:long = amount
+    ret total
+
