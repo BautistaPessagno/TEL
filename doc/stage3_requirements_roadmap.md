@@ -45,7 +45,8 @@ documentacion final del proyecto.
   asignaciones, retornos, control flow, aggregates, arrays y punteros.
 - `EntryPoint.c` ejecuta parsing, semantica y luego `CodeGenerator`; el backend
   heredado de calculadora no esta activo.
-- `CodeGenerator.c` sigue siendo un scaffold y todavia no emite C.
+- `CodeGenerator.c` emite C deterministico por stdout para el subset TEL
+  documentado.
 - `CompilerState` todavia conserva campos heredados de la calculadora y debe
   limpiarse cuando el generador necesite configuracion de salida.
 

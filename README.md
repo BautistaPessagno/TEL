@@ -2,9 +2,10 @@
 
 # TEL
 
-TEL is a Python-like DSL that compiles to C. The idea is to use a syntax that reduces LLMs token usage
+TEL is a Python-like DSL that compiles to C. The idea is to use a syntax that reduces LLM token usage.
 
-This repository delivers the Stage 2 frontend: the executable reads TEL source from standard input, tokenizes it with Flex, parses it with Bison, builds an AST, and exits with success or failure.
+The compiler reads TEL from standard input, builds an AST with Flex/Bison,
+performs semantic validation, and emits C to standard output.
 
 ## Team
 
@@ -38,7 +39,14 @@ Run a TEL program inside the container:
 src/main/bash/run.sh program.tel
 ```
 
-Run the Stage 2 test suite inside the container:
+Generate and compile a C translation unit:
+
+```bash
+src/main/bash/run.sh program.tel > program.c
+gcc program.c -o program
+```
+
+Run the full test suite inside the container:
 
 ```bash
 src/main/bash/test.sh
@@ -56,9 +64,9 @@ Do not use the host shell as the final verification signal on macOS. `.build/Fle
 
 
 
-## Stage 2 Scope
+## Implemented Scope
 
-Implemented for this handoff:
+Implemented:
 
 - top-level variable declarations, function declarations, `main`, structs, unions, enums, typedefs, preprocessor directives, comments, and inline C blocks
 - indentation-based bodies using `INDENT` and `DEDENT`
@@ -68,6 +76,15 @@ Implemented for this handoff:
 - C-like unary, binary, assignment, bitwise, logical, member-access, and array-index expressions
 - comma-separated function-call arguments
 - AST allocation and recursive cleanup
+- symbol tables, nested scopes, type compatibility, declarations, calls,
+  assignments, returns, arrays, pointers, aggregates, and control-flow
+  validation
+- deterministic C generation for declarations, declarators, functions,
+  expressions, control flow, directives, inline C, and `main`
+
+
+TEL relies on the C standard library, user includes, inline C, and the C
+toolchain. It does not provide a separate runtime.
 
 For a complete description of TEL's syntax, keywords, and all changes from standard C and Stage 1, see [doc/requirements.md](doc/requirements.md).
 
