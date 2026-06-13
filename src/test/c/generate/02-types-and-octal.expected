@@ -11,9 +11,9 @@ struct Point {
     int y;
 };
 
-int mask = 017;
-
 int origin(void);
+
+int mask = 017;
 
 int origin(void) {
     struct Point p;

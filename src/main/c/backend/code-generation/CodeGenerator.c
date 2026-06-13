@@ -280,19 +280,19 @@ static const char * _unaryOperator(ExpressionOperator operator) {
 }
 
 static void _generateProgram(CodeGenerationContext * context, Program * program) {
-	/* Passes emitted before function prototypes: directives, inline C, and all
-	 * type and global-variable declarations a prototype's signature may depend
-	 * on. */
+	/* Passes emitted before function prototypes: directives, inline C, and the
+	 * type declarations a prototype's signature may depend on. */
 	ProgramItemPredicate beforePrototypes[] = {
 		_isDirective,
 		_isGlobalInlineC,
 		_isEnum,
 		_isAggregate,
-		_isTypedef,
-		_isGlobalVariable
+		_isTypedef
 	};
-	/* Passes emitted after function prototypes: function bodies and `main`. */
+	/* Passes emitted after function prototypes: globals (whose initializers may
+	 * reference a function designator), function bodies, and `main`. */
 	ProgramItemPredicate afterPrototypes[] = {
+		_isGlobalVariable,
 		_isFunctionDefinition,
 		_isMain
 	};

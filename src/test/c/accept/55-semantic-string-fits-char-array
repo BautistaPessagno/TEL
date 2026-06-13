@@ -1,0 +1,3 @@
+exact:char[3] = "abc"
+padded:char[8] = "abc"
+escaped:char[2] = "\n"

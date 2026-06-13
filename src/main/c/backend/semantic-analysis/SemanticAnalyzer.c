@@ -1,5 +1,6 @@
 #include "SemanticAnalyzer.h"
 #include "SemanticSymbolTable.h"
+#include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -111,7 +112,8 @@ static bool _isExpressionAssignableToType(SemanticAnalysisContext * context, Typ
 static bool _isArrayLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression);
 static bool _isAddressExpressionAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression);
 static bool _isFunctionDesignatorAssignableToType(SemanticAnalysisContext * context, Type * targetType, SemanticSymbol * symbol);
-static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType);
+static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression);
+static size_t _decodedStringLiteralLength(const char * value);
 static bool _isNumericLiteral(Expression * expression);
 static bool _isNumericScalarType(SemanticAnalysisContext * context, Type * type);
 static bool _isIntegerScalarType(SemanticAnalysisContext * context, Type * type);
@@ -974,6 +976,12 @@ static bool _isExpressionAssignableToType(SemanticAnalysisContext * context, Typ
 	if (expression->kind == EXPRESSION_ARRAY_LITERAL) {
 		return _isArrayLiteralAssignableToType(context, resolvedTargetType, expression);
 	}
+	/* String literals must be handled before the generic array branch below:
+	 * their _expressionInfo type is NULL, which that branch treats as assignable
+	 * and would skip both the char-target and array-bound checks. */
+	if (expression->kind == EXPRESSION_STRING_LITERAL) {
+		return _isStringLiteralAssignableToType(context, targetType, expression);
+	}
 	if (resolvedTargetType->kind == TYPE_ARRAY_KIND) {
 		SemanticExpressionInfo sourceInfo = _expressionInfo(context, expression);
 		if (sourceInfo.type == NULL) {
@@ -983,9 +991,6 @@ static bool _isExpressionAssignableToType(SemanticAnalysisContext * context, Typ
 	}
 	if (_isNumericLiteral(expression)) {
 		return _isNumericScalarType(context, targetType);
-	}
-	if (expression->kind == EXPRESSION_STRING_LITERAL) {
-		return _isStringLiteralAssignableToType(context, targetType);
 	}
 	if (expression->kind == EXPRESSION_NULL_LITERAL) {
 		return _isPointerLikeType(context, targetType);
@@ -1044,20 +1049,73 @@ static bool _isFunctionDesignatorAssignableToType(SemanticAnalysisContext * cont
 	return _callableSignatureMatches(context, symbol, resolvedTargetType->returnType, resolvedTargetType->functionParams);
 }
 
-static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType) {
+static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType, Expression * expression) {
 	Type * resolvedTargetType = _resolveTypedef(context, targetType);
 	if (resolvedTargetType == NULL) {
 		return true;
 	}
 	/* A string literal has type char[] and decays to char *. It is assignable
-	 * to a pointer-to-char (or array-of-char) target, but not to a bare char,
+	 * to a pointer-to-char or array-of-char target, but not to a bare char,
 	 * which would emit invalid C such as `char c = "x";`. */
-	Type * pointee = NULL;
-	if (resolvedTargetType->kind == TYPE_POINTER_KIND
-		|| resolvedTargetType->kind == TYPE_ARRAY_KIND) {
-		pointee = _resolveTypedef(context, resolvedTargetType->pointee);
+	if (resolvedTargetType->kind != TYPE_POINTER_KIND
+		&& resolvedTargetType->kind != TYPE_ARRAY_KIND) {
+		return false;
 	}
-	return pointee != NULL && pointee->kind == TYPE_CHAR_KIND;
+	Type * pointee = _resolveTypedef(context, resolvedTargetType->pointee);
+	if (pointee == NULL || pointee->kind != TYPE_CHAR_KIND) {
+		return false;
+	}
+	/* For a fixed-size char[N] target the literal must fit: C allows
+	 * `char s[3] = "abc"` (no room for the terminator) but rejects
+	 * `char s[2] = "abc"`, so the decoded length must not exceed N. */
+	size_t bound = 0;
+	if (resolvedTargetType->kind == TYPE_ARRAY_KIND
+		&& _fixedArrayBound(resolvedTargetType->arraySize, &bound)
+		&& _decodedStringLiteralLength(expression->value) > bound) {
+		_reportSemanticError(context, "String literal does not fit in char array", NULL);
+		return false;
+	}
+	return true;
+}
+
+/* Counts the characters a string literal contributes to an array, excluding
+ * the surrounding quotes and the implicit terminating null. Each escape
+ * sequence (\n, \xNN, \NNN, ...) counts as a single character. */
+static size_t _decodedStringLiteralLength(const char * value) {
+	if (value == NULL) {
+		return 0;
+	}
+	size_t rawLength = strlen(value);
+	if (rawLength < 2) {
+		return 0;
+	}
+	size_t length = 0;
+	/* Skip the opening quote at index 0 and stop before the closing quote. */
+	for (size_t index = 1; index + 1 < rawLength; index++) {
+		if (value[index] != '\\') {
+			length++;
+			continue;
+		}
+		length++;
+		index++;
+		if (index + 1 >= rawLength) {
+			break;
+		}
+		if (value[index] == 'x') {
+			while (index + 2 < rawLength && isxdigit((unsigned char) value[index + 1])) {
+				index++;
+			}
+		}
+		else if (value[index] >= '0' && value[index] <= '7') {
+			size_t digits = 1;
+			while (digits < 3 && index + 2 < rawLength
+				&& value[index + 1] >= '0' && value[index + 1] <= '7') {
+				index++;
+				digits++;
+			}
+		}
+	}
+	return length;
 }
 
 static bool _isNumericLiteral(Expression * expression) {
