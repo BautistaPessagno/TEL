@@ -1,0 +1,7 @@
+fn sum values:int[] -> int
+    ret values[0] + values[1]
+
+fn run -> int
+    numbers:int[2] = {1 2}
+    pointer:int* = numbers
+    ret sum(pointer)

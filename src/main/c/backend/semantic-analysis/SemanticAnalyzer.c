@@ -118,7 +118,6 @@ static bool _isIntegerScalarType(SemanticAnalysisContext * context, Type * type)
 static bool _isPointerLikeType(SemanticAnalysisContext * context, Type * type);
 static bool _isConditionType(SemanticAnalysisContext * context, Type * type);
 static bool _isVoidType(SemanticAnalysisContext * context, Type * type);
-static bool _isDirectVoidType(SemanticAnalysisContext * context, Type * type);
 static bool _isNullLiteral(Expression * expression);
 static bool _isEqualityComparable(SemanticAnalysisContext * context, Expression * left, Type * leftType, Expression * right, Type * rightType);
 static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType);
@@ -435,8 +434,7 @@ static void _validateAggregateDeclaration(SemanticAnalysisContext * context, Agg
 		for (VariableDeclarationList * previous = declaration->fields;
 			previous != field;
 			previous = previous->next) {
-			if (previous->declaration != NULL
-				&& strcmp(previous->declaration->name, current->name) == 0) {
+			if (strcmp(previous->declaration->name, current->name) == 0) {
 				_reportSemanticError(context, "Duplicate aggregate field", current->name);
 				break;
 			}
@@ -541,7 +539,7 @@ static void _validateTypeNode(
 		&& (typeContext == SEMANTIC_TYPE_VARIABLE
 			|| typeContext == SEMANTIC_TYPE_PARAMETER
 			|| typeContext == SEMANTIC_TYPE_FIELD)
-		&& _isDirectVoidType(context, type)) {
+		&& _isVoidType(context, type)) {
 		_reportSemanticError(context, "Variables, parameters, and fields cannot have void type", NULL);
 	}
 	if (!nestedUnderIndirection
@@ -584,7 +582,7 @@ static void _validateTypeNode(
 			break;
 		case TYPE_ARRAY_KIND:
 			_validateTypeNode(context, type->pointee, typeContext, true);
-			if (_isDirectVoidType(context, type->pointee)) {
+			if (_isVoidType(context, type->pointee)) {
 				_reportSemanticError(context, "Arrays cannot contain void elements", NULL);
 			}
 			if (type->arraySize == NULL) {
@@ -1123,10 +1121,6 @@ static bool _isVoidType(SemanticAnalysisContext * context, Type * type) {
 	return resolvedType != NULL && resolvedType->kind == TYPE_VOID_KIND;
 }
 
-static bool _isDirectVoidType(SemanticAnalysisContext * context, Type * type) {
-	return _isVoidType(context, type);
-}
-
 static bool _isNullLiteral(Expression * expression) {
 	return expression != NULL && expression->kind == EXPRESSION_NULL_LITERAL;
 }
@@ -1181,12 +1175,6 @@ static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetTyp
 		return false;
 	}
 	if (resolvedTargetType->kind == TYPE_ARRAY_KIND) {
-		if (resolvedSourceType->kind == TYPE_POINTER_KIND) {
-			return _pointeeTypesAssignable(
-				context,
-				resolvedTargetType->pointee,
-				resolvedSourceType->pointee);
-		}
 		if (resolvedSourceType->kind == TYPE_ARRAY_KIND) {
 			return _pointeeTypesAssignable(
 					context,
@@ -1277,11 +1265,31 @@ static bool _typesEqualIgnoringTopConst(SemanticAnalysisContext * context, Type 
 	}
 }
 
+/* Array parameter types decay to pointers (C semantics): `int[3]` and `int[]` are
+ * really `int *` in a parameter list. Decay here so a pointer or array argument is
+ * accepted, while non-parameter array targets (initializers) still reject pointers. */
+static Type * _decayArrayParameterType(SemanticAnalysisContext * context, Type * parameterType, Type * storage) {
+	Type * resolvedType = _resolveTypedef(context, parameterType);
+	if (resolvedType == NULL || resolvedType->kind != TYPE_ARRAY_KIND) {
+		return parameterType;
+	}
+	storage->kind = TYPE_POINTER_KIND;
+	storage->name = NULL;
+	storage->pointee = resolvedType->pointee;
+	storage->arraySize = NULL;
+	storage->functionParams = NULL;
+	storage->returnType = NULL;
+	storage->isConst = false;
+	return storage;
+}
+
 static void _validateCallArguments(SemanticAnalysisContext * context, FunctionCall * functionCall, SemanticSymbol * symbol) {
 	ParameterList * parameter = _callableParameters(context, symbol);
 	ExpressionList * argument = functionCall != NULL ? functionCall->arguments : NULL;
 	while (parameter != NULL && argument != NULL) {
-		if (!_isExpressionAssignableToType(context, parameter->parameter->type, argument->expression)) {
+		Type decayedStorage;
+		Type * parameterType = _decayArrayParameterType(context, parameter->parameter->type, &decayedStorage);
+		if (!_isExpressionAssignableToType(context, parameterType, argument->expression)) {
 			_reportSemanticError(context, "Incompatible function argument", functionCall->name);
 		}
 		parameter = parameter->next;
