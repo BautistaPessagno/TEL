@@ -1,3 +1,6 @@
+/* _GNU_SOURCE exposes open_memstream(), used to capture sub-expressions and
+ * parameter lists into strings. It is available on Linux (the documented
+ * container build target) and modern macOS/BSD libc. */
 #define _GNU_SOURCE
 #include "CodeGenerator.h"
 #include "../../frontend/syntactic-analysis/AbstractSyntaxTree.h"

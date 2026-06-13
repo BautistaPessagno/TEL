@@ -1,0 +1,3 @@
+fn bad -> int
+    while 1
+        break

@@ -1,0 +1,6 @@
+fn pick value:int -> int
+    switch value
+        1:
+            ret 1
+        2:
+            ret 2
