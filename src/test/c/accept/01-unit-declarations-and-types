@@ -2,6 +2,6 @@ x:int;
 _name:char
 ratio:float;
 precise:double
-empty:void;
+fn empty -> void;
 count:uint
 big:uli

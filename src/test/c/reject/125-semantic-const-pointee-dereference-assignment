@@ -1,0 +1,4 @@
+fn bad pointer:const int* -> int
+    *pointer = 1
+    ret 0
+

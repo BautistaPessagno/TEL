@@ -1,5 +1,7 @@
 fn count limit:int -> int
     total:int = 0
-    ford i 0 limit
+    i:int = 0
+    for i = 0, i < limit, i++
         total += i
     ret total
+

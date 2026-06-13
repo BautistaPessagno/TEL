@@ -1,0 +1,6 @@
+struct Point
+    x:int
+
+fn bad point:struct Point -> int
+    ret point.y
+

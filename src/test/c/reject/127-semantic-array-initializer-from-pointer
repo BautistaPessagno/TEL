@@ -1,0 +1,3 @@
+fn bad source:int* -> int
+    values:int[3] = source
+    ret 0

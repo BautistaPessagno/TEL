@@ -1,0 +1,2 @@
+callback:(fn* void -> int)
+

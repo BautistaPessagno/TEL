@@ -1,0 +1,4 @@
+struct Point
+    value:int
+    value:long
+

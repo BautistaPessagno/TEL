@@ -40,16 +40,14 @@ documentacion final del proyecto.
   function pointers, literales, llamadas, operadores y `cnt`.
 - El AST actual es la base correcta para Stage 3. No conviene redisenarlo salvo
   que una validacion o generacion concreta demuestre que falta informacion.
-- `CompilerState` todavia conserva campos heredados de la calculadora y solo
-  transporta la raiz del AST.
-- `src/main/c/backend/code-generation/Generator.c` y
-  `src/main/c/backend/domain-specific/Calculator.c` son backend heredado de la
-  calculadora. No son compatibles con el AST TEL actual.
-- `CMakeLists.txt` no compila los archivos de backend heredados.
-- El working tree actual tiene `EntryPoint.c` modificado para reactivar el
-  backend heredado. Esa modificacion debe tratarse como deuda de integracion:
-  Stage 3 no debe habilitar `executeCalculator`/`executeGenerator` tal como
-  estan, sino reemplazarlos por fases TEL reales.
+- `SemanticAnalyzer` y `SemanticSymbolTable` implementan la fase semantica TEL
+  con simbolos globales/locales, scopes, tipos, expresiones, llamadas,
+  asignaciones, retornos, control flow, aggregates, arrays y punteros.
+- `EntryPoint.c` ejecuta parsing, semantica y luego `CodeGenerator`; el backend
+  heredado de calculadora no esta activo.
+- `CodeGenerator.c` sigue siendo un scaffold y todavia no emite C.
+- `CompilerState` todavia conserva campos heredados de la calculadora y debe
+  limpiarse cuando el generador necesite configuracion de salida.
 
 ## Requirements de Stage 3
 
@@ -93,8 +91,9 @@ documentacion final del proyecto.
 - Validar control flow: `break` solo dentro de loops o switch; `cnt` solo dentro
   de loops; condiciones de `if`, `while`, `dw`, `for` y `switch` deben ser
   compatibles con el uso.
-- Validar `main`: debe existir exactamente un entry point y debe traducirse a
-  una firma C definida por el proyecto.
+- Validar `main`: puede haber cero o un entry point por translation unit. La
+  ausencia permite generar archivos de biblioteca/objeto; si existe, debe
+  traducirse a la firma C definida por el proyecto.
 - Tratar inline C como bloque opaco: se copia a salida pero no se type-checkea.
   Esta limitacion debe documentarse.
 
@@ -238,6 +237,8 @@ Objetivo: preparar la arquitectura sin implementar validaciones profundas.
 Criterio de salida: el compilador sigue parseando, la fase semantica inicial
 acepta programas triviales, y no se llama al backend heredado.
 
+Estado: completada.
+
 ### Fase 2. Tabla de simbolos, scopes y tipos
 
 Objetivo: construir la base para validar significado.
@@ -251,6 +252,8 @@ Objetivo: construir la base para validar significado.
 
 Criterio de salida: tests de duplicados, nombres inexistentes y tipos
 inexistentes pasan.
+
+Estado: completada.
 
 ### Fase 3. Validaciones semanticas por construccion
 
@@ -267,6 +270,8 @@ invalidos.
 
 Criterio de salida: suite de reject semantico pasa y los accept existentes no
 regresan salvo que el equipo decida endurecer semantica y actualice fixtures.
+
+Estado: completada para el subset documentado en `doc/requirements.md`.
 
 ### Fase 4. Generador C unitario
 

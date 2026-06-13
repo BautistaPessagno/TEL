@@ -1,0 +1,4 @@
+fn loop_forever -> int
+    x:int = 0
+    while 1
+        x += 1

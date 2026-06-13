@@ -155,6 +155,11 @@ Same as in C:
 
 Same as in C, but using indentation instead of `{}`.
 
+Struct and union field names must be unique. Fields cannot have type `void`,
+cannot be unsized arrays, and cannot declare default initializers. Enum members
+may have explicit integer values, and multiple members may share the same
+numeric value.
+
 ## Pointers and arrays
 
 `arr:int[10]` -> `int arr[10]`
@@ -168,9 +173,30 @@ empty:int[10] = {}
 
 Commas are not used inside array literals.
 
+Array bounds must have integer type and literal bounds must be greater than
+zero. Unsized arrays are only supported as parameter types. Compound pointer
+and array forms are represented recursively and may be used where they produce
+a valid C declarator.
+
 ## Variables and constants
 
 Same as in C.
+
+Variables and named parameters cannot have type `void`.
+
+## Semantic conversions
+
+- Numeric scalar types (`char`, `short`, `int`, `uint`, `long`, `uli`,
+  `float`, `double`, and enums) are mutually convertible for assignments,
+  initializers, arguments, and returns.
+- Arrays decay to compatible object pointers when assigned or passed as
+  arguments.
+- Object pointers may convert to and from `void *`.
+- `null` is compatible with object pointers and function pointers.
+- Pointer conversions may add pointee `const` but cannot remove it.
+- Function pointer signatures must match exactly.
+- Struct, union, and enum compatibility is nominal and uses the declared type
+  name.
 
 ## Literals
 
@@ -190,7 +216,9 @@ We support both multi-line `/* */` and single-line `//` comments.
 
 ## Entry point
 
-The `main` function is the entry point and is translated as:
+At most one `main` declaration may appear in a translation unit. A translation
+unit may omit `main` when it is intended to be compiled as a library or object
+file. When present, `main` is translated as:
 
 `main` -> `int main(int argc, char * argv[])`
 
@@ -204,8 +232,9 @@ some c code
 `
 ```
 
+Inline C is copied as an opaque block and is not type-checked by TEL.
+
 ## Type inference
 
-Where possible, types are inferred (Stage 3 / code generation):
-
-`x = 5` -> `int x = 5`
+Type inference is not part of the current Stage 3 subset. Variables must be
+declared with an explicit type before assignment.

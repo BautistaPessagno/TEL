@@ -33,6 +33,14 @@ typedef struct {
 	bool isFunctionDesignator;
 } SemanticExpressionInfo;
 
+typedef enum {
+	SEMANTIC_TYPE_VARIABLE,
+	SEMANTIC_TYPE_PARAMETER,
+	SEMANTIC_TYPE_FIELD,
+	SEMANTIC_TYPE_RETURN,
+	SEMANTIC_TYPE_TYPEDEF
+} SemanticTypeContext;
+
 /* Shared sentinel types; callers must treat returned Type * values as immutable. */
 static Type _semanticIntType = { .kind = TYPE_INT_KIND };
 static Type _semanticFloatType = { .kind = TYPE_FLOAT_KIND };
@@ -71,11 +79,16 @@ static void _validateAggregateDeclaration(SemanticAnalysisContext * context, Agg
 static void _validateEnumDeclaration(SemanticAnalysisContext * context, EnumDeclaration * declaration);
 static void _validateTypedefDeclaration(SemanticAnalysisContext * context, TypedefDeclaration * declaration);
 static bool _validateIfStatement(SemanticAnalysisContext * context, IfStatement * statement);
-static void _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement);
-static void _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement);
-static void _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement);
-static void _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement);
-static void _validateType(SemanticAnalysisContext * context, Type * type);
+static bool _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement);
+static bool _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement);
+static bool _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement);
+static bool _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement);
+static void _validateType(SemanticAnalysisContext * context, Type * type, SemanticTypeContext typeContext);
+static void _validateTypeNode(
+	SemanticAnalysisContext * context,
+	Type * type,
+	SemanticTypeContext typeContext,
+	bool nestedUnderIndirection);
 static void _validateParameterTypes(SemanticAnalysisContext * context, ParameterList * parameters);
 static void _validateExpression(SemanticAnalysisContext * context, Expression * expression);
 static void _validateExpressionList(SemanticAnalysisContext * context, ExpressionList * expressionList);
@@ -101,16 +114,21 @@ static bool _isFunctionDesignatorAssignableToType(SemanticAnalysisContext * cont
 static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, Type * targetType);
 static bool _isNumericLiteral(Expression * expression);
 static bool _isNumericScalarType(SemanticAnalysisContext * context, Type * type);
+static bool _isIntegerScalarType(SemanticAnalysisContext * context, Type * type);
 static bool _isPointerLikeType(SemanticAnalysisContext * context, Type * type);
 static bool _isConditionType(SemanticAnalysisContext * context, Type * type);
 static bool _isVoidType(SemanticAnalysisContext * context, Type * type);
 static bool _isNullLiteral(Expression * expression);
 static bool _isEqualityComparable(SemanticAnalysisContext * context, Expression * left, Type * leftType, Expression * right, Type * rightType);
 static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType);
+static bool _pointerTypesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType);
+static bool _pointeeTypesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType);
+static bool _typesEqualIgnoringTopConst(SemanticAnalysisContext * context, Type * left, Type * right);
 static void _validateCallArguments(SemanticAnalysisContext * context, FunctionCall * functionCall, SemanticSymbol * symbol);
 static size_t _expressionListLength(ExpressionList * expressionList);
 static bool _fixedArrayBound(Expression * expression, size_t * bound);
 static bool _parseArrayBoundLiteral(const char * literal, size_t * bound);
+static bool _isNonPositiveArrayBound(Expression * expression);
 static bool _isAssignmentOperator(ExpressionOperator operator);
 static bool _isCompoundAssignmentOperator(ExpressionOperator operator);
 static bool _isNumericBinaryOperator(ExpressionOperator operator);
@@ -127,7 +145,9 @@ static Type * _resolveTypedef(SemanticAnalysisContext * context, Type * type);
 static bool _effectiveConst(SemanticAnalysisContext * context, Type * type);
 static bool _expressionsEqual(Expression * left, Expression * right);
 static bool _isCallableSymbol(SemanticAnalysisContext * context, SemanticSymbol * symbol);
-static const char * _implicitLoopIteratorName(ForStatement * statement);
+static const char * _declaredLoopIteratorName(ForStatement * statement);
+static bool _isAlwaysTrueCondition(Expression * condition);
+static bool _loopBodyCanBreak(StatementList * statementList);
 
 static void _reportSemanticError(SemanticAnalysisContext * context, const char * message, const char * name) {
 	context->hasErrors = true;
@@ -286,12 +306,12 @@ static void _validateProgramItem(SemanticAnalysisContext * context, ProgramItem 
 }
 
 static void _validateFunctionDeclaration(SemanticAnalysisContext * context, FunctionDeclaration * declaration) {
-	_validateType(context, declaration->returnType);
+	_validateType(context, declaration->returnType, SEMANTIC_TYPE_RETURN);
 	semanticSymbolTablePushScope(context->symbols);
 	Type * previousReturnType = context->currentReturnType;
 	context->currentReturnType = declaration->returnType;
 	for (ParameterList * parameter = declaration->parameters; parameter != NULL; parameter = parameter->next) {
-		_validateType(context, parameter->parameter->type);
+		_validateType(context, parameter->parameter->type, SEMANTIC_TYPE_PARAMETER);
 		if (parameter->parameter->name != NULL
 			&& !semanticSymbolTableDeclareOrdinary(
 				context->symbols,
@@ -345,17 +365,13 @@ static bool _validateStatement(SemanticAnalysisContext * context, Statement * st
 		case STATEMENT_IF:
 			return _validateIfStatement(context, statement->ifStatement);
 		case STATEMENT_FOR:
-			_validateForStatement(context, statement->forStatement);
-			break;
+			return _validateForStatement(context, statement->forStatement);
 		case STATEMENT_WHILE:
-			_validateWhileStatement(context, statement->whileStatement);
-			break;
+			return _validateWhileStatement(context, statement->whileStatement);
 		case STATEMENT_DO_WHILE:
-			_validateDoWhileStatement(context, statement->doWhileStatement);
-			break;
+			return _validateDoWhileStatement(context, statement->doWhileStatement);
 		case STATEMENT_SWITCH:
-			_validateSwitchStatement(context, statement->switchStatement);
-			break;
+			return _validateSwitchStatement(context, statement->switchStatement);
 		case STATEMENT_BREAK:
 			if (context->loopDepth == 0 && context->switchDepth == 0) {
 				_reportSemanticError(context, "Break outside loop or switch", NULL);
@@ -392,7 +408,7 @@ static bool _validateReturnStatement(SemanticAnalysisContext * context, Statemen
 }
 
 static void _validateVariableDeclaration(SemanticAnalysisContext * context, VariableDeclaration * declaration, bool declareSymbol) {
-	_validateType(context, declaration->type);
+	_validateType(context, declaration->type, SEMANTIC_TYPE_VARIABLE);
 	_validateInitializer(context, declaration);
 	if (declareSymbol
 		&& !semanticSymbolTableDeclareOrdinary(
@@ -409,17 +425,31 @@ static void _validateVariableDeclaration(SemanticAnalysisContext * context, Vari
 
 static void _validateAggregateDeclaration(SemanticAnalysisContext * context, AggregateDeclaration * declaration) {
 	for (VariableDeclarationList * field = declaration->fields; field != NULL; field = field->next) {
-		_validateVariableDeclaration(context, field->declaration, false);
+		VariableDeclaration * current = field->declaration;
+		_validateType(context, current->type, SEMANTIC_TYPE_FIELD);
+		if (current->initializer != NULL) {
+			_validateExpression(context, current->initializer);
+			_reportSemanticError(context, "Aggregate fields cannot have initializers", current->name);
+		}
+		for (VariableDeclarationList * previous = declaration->fields;
+			previous != field;
+			previous = previous->next) {
+			if (strcmp(previous->declaration->name, current->name) == 0) {
+				_reportSemanticError(context, "Duplicate aggregate field", current->name);
+				break;
+			}
+		}
 	}
 }
 
 static void _validateEnumDeclaration(SemanticAnalysisContext * context, EnumDeclaration * declaration) {
+	/* Enum values are integer literals by grammar; duplicate numeric values are legal. */
 	(void) context;
 	(void) declaration;
 }
 
 static void _validateTypedefDeclaration(SemanticAnalysisContext * context, TypedefDeclaration * declaration) {
-	_validateType(context, declaration->type);
+	_validateType(context, declaration->type, SEMANTIC_TYPE_TYPEDEF);
 }
 
 static bool _validateIfStatement(SemanticAnalysisContext * context, IfStatement * statement) {
@@ -437,10 +467,10 @@ static bool _validateIfStatement(SemanticAnalysisContext * context, IfStatement 
 	return allBranchesReturn;
 }
 
-static void _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement) {
+static bool _validateForStatement(SemanticAnalysisContext * context, ForStatement * statement) {
 	semanticSymbolTablePushScope(context->symbols);
-	const char * iteratorName = _implicitLoopIteratorName(statement);
-	if (iteratorName != NULL && semanticSymbolTableLookupOrdinary(context->symbols, iteratorName) == NULL) {
+	const char * iteratorName = _declaredLoopIteratorName(statement);
+	if (iteratorName != NULL) {
 		semanticSymbolTableDeclareOrdinary(
 			context->symbols,
 			iteratorName,
@@ -457,35 +487,66 @@ static void _validateForStatement(SemanticAnalysisContext * context, ForStatemen
 	_validateStatementListInNewScope(context, statement->body);
 	context->loopDepth--;
 	semanticSymbolTablePopScope(context->symbols);
+	return _isAlwaysTrueCondition(statement->condition) && !_loopBodyCanBreak(statement->body);
 }
 
-static void _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement) {
+static bool _validateWhileStatement(SemanticAnalysisContext * context, WhileStatement * statement) {
 	_validateConditionExpression(context, statement->condition, "While condition must be numeric or pointer-like");
 	context->loopDepth++;
 	_validateStatementListInNewScope(context, statement->body);
 	context->loopDepth--;
+	return _isAlwaysTrueCondition(statement->condition) && !_loopBodyCanBreak(statement->body);
 }
 
-static void _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement) {
+static bool _validateDoWhileStatement(SemanticAnalysisContext * context, DoWhileStatement * statement) {
 	context->loopDepth++;
 	_validateStatementListInNewScope(context, statement->body);
 	context->loopDepth--;
 	_validateConditionExpression(context, statement->condition, "Do-while condition must be numeric or pointer-like");
+	return _isAlwaysTrueCondition(statement->condition) && !_loopBodyCanBreak(statement->body);
 }
 
-static void _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement) {
+static bool _validateSwitchStatement(SemanticAnalysisContext * context, SwitchStatement * statement) {
 	_validateSwitchExpression(context, statement->discriminant, "Switch discriminant must be numeric");
 	context->switchDepth++;
+	bool hasDefault = false;
+	bool allCasesReturn = true;
 	for (SwitchCase * switchCase = statement->cases; switchCase != NULL; switchCase = switchCase->next) {
+		if (switchCase->matchExpression == NULL) {
+			hasDefault = true;
+		}
 		_validateSwitchExpression(context, switchCase->matchExpression, "Switch case expression must be numeric");
-		_validateStatementListInNewScope(context, switchCase->body);
+		allCasesReturn = _validateStatementListInNewScope(context, switchCase->body) && allCasesReturn;
 	}
 	context->switchDepth--;
+	return hasDefault && allCasesReturn;
 }
 
-static void _validateType(SemanticAnalysisContext * context, Type * type) {
+static void _validateType(SemanticAnalysisContext * context, Type * type, SemanticTypeContext typeContext) {
+	_validateTypeNode(context, type, typeContext, false);
+}
+
+static void _validateTypeNode(
+	SemanticAnalysisContext * context,
+	Type * type,
+	SemanticTypeContext typeContext,
+	bool nestedUnderIndirection) {
 	if (type == NULL) {
 		return;
+	}
+	Type * resolvedType = _resolveTypedef(context, type);
+	if (!nestedUnderIndirection
+		&& (typeContext == SEMANTIC_TYPE_VARIABLE
+			|| typeContext == SEMANTIC_TYPE_PARAMETER
+			|| typeContext == SEMANTIC_TYPE_FIELD)
+		&& _isVoidType(context, type)) {
+		_reportSemanticError(context, "Variables, parameters, and fields cannot have void type", NULL);
+	}
+	if (!nestedUnderIndirection
+		&& typeContext == SEMANTIC_TYPE_RETURN
+		&& resolvedType != NULL
+		&& resolvedType->kind == TYPE_ARRAY_KIND) {
+		_reportSemanticError(context, "Functions cannot return arrays", NULL);
 	}
 	switch (type->kind) {
 		case TYPE_NAMED_KIND: {
@@ -517,13 +578,31 @@ static void _validateType(SemanticAnalysisContext * context, Type * type) {
 			break;
 		}
 		case TYPE_POINTER_KIND:
+			_validateTypeNode(context, type->pointee, typeContext, true);
+			break;
 		case TYPE_ARRAY_KIND:
-			_validateType(context, type->pointee);
-			_validateExpression(context, type->arraySize);
+			_validateTypeNode(context, type->pointee, typeContext, true);
+			if (_isVoidType(context, type->pointee)) {
+				_reportSemanticError(context, "Arrays cannot contain void elements", NULL);
+			}
+			if (type->arraySize == NULL) {
+				if (typeContext != SEMANTIC_TYPE_PARAMETER) {
+					_reportSemanticError(context, "Unsized arrays are only allowed as parameters", NULL);
+				}
+			}
+			else {
+				SemanticExpressionInfo sizeInfo = _expressionInfo(context, type->arraySize);
+				if (!_isIntegerScalarType(context, sizeInfo.type)) {
+					_reportSemanticError(context, "Array bound must have integer type", NULL);
+				}
+				if (_isNonPositiveArrayBound(type->arraySize)) {
+					_reportSemanticError(context, "Array bound must be greater than zero", NULL);
+				}
+			}
 			break;
 		case TYPE_FUNCTION_POINTER_KIND:
 			_validateParameterTypes(context, type->functionParams);
-			_validateType(context, type->returnType);
+			_validateType(context, type->returnType, SEMANTIC_TYPE_RETURN);
 			break;
 		default:
 			break;
@@ -532,7 +611,7 @@ static void _validateType(SemanticAnalysisContext * context, Type * type) {
 
 static void _validateParameterTypes(SemanticAnalysisContext * context, ParameterList * parameters) {
 	for (ParameterList * parameter = parameters; parameter != NULL; parameter = parameter->next) {
-		_validateType(context, parameter->parameter->type);
+		_validateType(context, parameter->parameter->type, SEMANTIC_TYPE_PARAMETER);
 	}
 }
 
@@ -683,7 +762,8 @@ static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysis
 		}
 		info.type = _arrayIndexElementType(context, leftInfo.type);
 		info.isLvalue = info.type != NULL;
-		info.isReadonlyLvalue = leftInfo.isReadonlyLvalue;
+		info.isReadonlyLvalue = info.isLvalue
+			&& (leftInfo.isReadonlyLvalue || _effectiveConst(context, info.type));
 		return info;
 	}
 	if (expression->operator == EXPRESSION_OPERATOR_MEMBER_ACCESS
@@ -752,6 +832,7 @@ static SemanticExpressionInfo _expressionInfoForUnaryOperation(SemanticAnalysisC
 			}
 			info.type = operandType->pointee;
 			info.isLvalue = true;
+			info.isReadonlyLvalue = _effectiveConst(context, info.type);
 			return info;
 		}
 		case EXPRESSION_OPERATOR_ADDRESS_OF:
@@ -952,7 +1033,7 @@ static bool _isAddressExpressionAssignableToType(SemanticAnalysisContext * conte
 	if (!operandInfo.isLvalue || operandInfo.type == NULL) {
 		return false;
 	}
-	return _typesEqual(context, resolvedTargetType->pointee, operandInfo.type);
+	return _pointeeTypesAssignable(context, resolvedTargetType->pointee, operandInfo.type);
 }
 
 static bool _isFunctionDesignatorAssignableToType(SemanticAnalysisContext * context, Type * targetType, SemanticSymbol * symbol) {
@@ -1006,6 +1087,25 @@ static bool _isNumericScalarType(SemanticAnalysisContext * context, Type * type)
 	}
 }
 
+static bool _isIntegerScalarType(SemanticAnalysisContext * context, Type * type) {
+	Type * resolvedType = _resolveTypedef(context, type);
+	if (resolvedType == NULL) {
+		return false;
+	}
+	switch (resolvedType->kind) {
+		case TYPE_INT_KIND:
+		case TYPE_CHAR_KIND:
+		case TYPE_UINT_KIND:
+		case TYPE_ULI_KIND:
+		case TYPE_LONG_KIND:
+		case TYPE_SHORT_KIND:
+		case TYPE_ENUM_KIND:
+			return true;
+		default:
+			return false;
+	}
+}
+
 static bool _isPointerLikeType(SemanticAnalysisContext * context, Type * type) {
 	Type * resolvedType = _resolveTypedef(context, type);
 	return resolvedType != NULL
@@ -1045,7 +1145,8 @@ static bool _isEqualityComparable(
 	}
 	return _isPointerLikeType(context, leftType)
 		&& _isPointerLikeType(context, rightType)
-		&& _typesAssignable(context, leftType, rightType);
+		&& (_typesAssignable(context, leftType, rightType)
+			|| _typesAssignable(context, rightType, leftType));
 }
 
 static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType) {
@@ -1057,10 +1158,32 @@ static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetTyp
 	if (resolvedTargetType == NULL || resolvedSourceType == NULL) {
 		return resolvedTargetType == resolvedSourceType;
 	}
-	if (resolvedTargetType->kind == TYPE_ARRAY_KIND && resolvedSourceType->kind == TYPE_ARRAY_KIND) {
-		return _typesEqual(context, resolvedTargetType->pointee, resolvedSourceType->pointee)
-			&& (resolvedTargetType->arraySize == NULL
-				|| _expressionsEqual(resolvedTargetType->arraySize, resolvedSourceType->arraySize));
+	if (_isNumericScalarType(context, resolvedTargetType)
+		&& _isNumericScalarType(context, resolvedSourceType)) {
+		return true;
+	}
+	if (resolvedTargetType->kind == TYPE_POINTER_KIND) {
+		if (resolvedSourceType->kind == TYPE_ARRAY_KIND) {
+			return _pointeeTypesAssignable(
+				context,
+				resolvedTargetType->pointee,
+				resolvedSourceType->pointee);
+		}
+		if (resolvedSourceType->kind == TYPE_POINTER_KIND) {
+			return _pointerTypesAssignable(context, resolvedTargetType, resolvedSourceType);
+		}
+		return false;
+	}
+	if (resolvedTargetType->kind == TYPE_ARRAY_KIND) {
+		if (resolvedSourceType->kind == TYPE_ARRAY_KIND) {
+			return _pointeeTypesAssignable(
+					context,
+					resolvedTargetType->pointee,
+					resolvedSourceType->pointee)
+				&& (resolvedTargetType->arraySize == NULL
+					|| _expressionsEqual(resolvedTargetType->arraySize, resolvedSourceType->arraySize));
+		}
+		return false;
 	}
 	if (resolvedTargetType->kind != resolvedSourceType->kind) {
 		return false;
@@ -1074,10 +1197,6 @@ static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetTyp
 				return resolvedTargetType->name == resolvedSourceType->name;
 			}
 			return strcmp(resolvedTargetType->name, resolvedSourceType->name) == 0;
-		case TYPE_POINTER_KIND:
-		case TYPE_ARRAY_KIND:
-			return _typesEqual(context, resolvedTargetType->pointee, resolvedSourceType->pointee)
-				&& _expressionsEqual(resolvedTargetType->arraySize, resolvedSourceType->arraySize);
 		case TYPE_FUNCTION_POINTER_KIND:
 			return _parameterTypesEqual(context, resolvedTargetType->functionParams, resolvedSourceType->functionParams)
 				&& _typesEqual(context, resolvedTargetType->returnType, resolvedSourceType->returnType);
@@ -1086,11 +1205,91 @@ static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetTyp
 	}
 }
 
+static bool _pointerTypesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType) {
+	Type * resolvedTargetType = _resolveTypedef(context, targetType);
+	Type * resolvedSourceType = _resolveTypedef(context, sourceType);
+	if (resolvedTargetType == NULL
+		|| resolvedSourceType == NULL
+		|| resolvedTargetType->kind != TYPE_POINTER_KIND
+		|| resolvedSourceType->kind != TYPE_POINTER_KIND) {
+		return false;
+	}
+	return _pointeeTypesAssignable(
+		context,
+		resolvedTargetType->pointee,
+		resolvedSourceType->pointee);
+}
+
+static bool _pointeeTypesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType) {
+	Type * resolvedTargetType = _resolveTypedef(context, targetType);
+	Type * resolvedSourceType = _resolveTypedef(context, sourceType);
+	if (resolvedTargetType == NULL || resolvedSourceType == NULL) {
+		return resolvedTargetType == resolvedSourceType;
+	}
+	if (_effectiveConst(context, sourceType) && !_effectiveConst(context, targetType)) {
+		return false;
+	}
+	if (resolvedTargetType->kind == TYPE_VOID_KIND || resolvedSourceType->kind == TYPE_VOID_KIND) {
+		return true;
+	}
+	return _typesEqualIgnoringTopConst(context, resolvedTargetType, resolvedSourceType);
+}
+
+static bool _typesEqualIgnoringTopConst(SemanticAnalysisContext * context, Type * left, Type * right) {
+	Type * resolvedLeft = _resolveTypedef(context, left);
+	Type * resolvedRight = _resolveTypedef(context, right);
+	if (resolvedLeft == NULL || resolvedRight == NULL) {
+		return resolvedLeft == resolvedRight;
+	}
+	if (resolvedLeft->kind != resolvedRight->kind) {
+		return false;
+	}
+	switch (resolvedLeft->kind) {
+		case TYPE_NAMED_KIND:
+		case TYPE_STRUCT_KIND:
+		case TYPE_ENUM_KIND:
+		case TYPE_UNION_KIND:
+			if (resolvedLeft->name == NULL || resolvedRight->name == NULL) {
+				return resolvedLeft->name == resolvedRight->name;
+			}
+			return strcmp(resolvedLeft->name, resolvedRight->name) == 0;
+		case TYPE_POINTER_KIND:
+		case TYPE_ARRAY_KIND:
+			return _typesEqual(context, resolvedLeft->pointee, resolvedRight->pointee)
+				&& _expressionsEqual(resolvedLeft->arraySize, resolvedRight->arraySize);
+		case TYPE_FUNCTION_POINTER_KIND:
+			return _parameterTypesEqual(context, resolvedLeft->functionParams, resolvedRight->functionParams)
+				&& _typesEqual(context, resolvedLeft->returnType, resolvedRight->returnType);
+		default:
+			return true;
+	}
+}
+
+/* Array parameter types decay to pointers (C semantics): `int[3]` and `int[]` are
+ * really `int *` in a parameter list. Decay here so a pointer or array argument is
+ * accepted, while non-parameter array targets (initializers) still reject pointers. */
+static Type * _decayArrayParameterType(SemanticAnalysisContext * context, Type * parameterType, Type * storage) {
+	Type * resolvedType = _resolveTypedef(context, parameterType);
+	if (resolvedType == NULL || resolvedType->kind != TYPE_ARRAY_KIND) {
+		return parameterType;
+	}
+	storage->kind = TYPE_POINTER_KIND;
+	storage->name = NULL;
+	storage->pointee = resolvedType->pointee;
+	storage->arraySize = NULL;
+	storage->functionParams = NULL;
+	storage->returnType = NULL;
+	storage->isConst = false;
+	return storage;
+}
+
 static void _validateCallArguments(SemanticAnalysisContext * context, FunctionCall * functionCall, SemanticSymbol * symbol) {
 	ParameterList * parameter = _callableParameters(context, symbol);
 	ExpressionList * argument = functionCall != NULL ? functionCall->arguments : NULL;
 	while (parameter != NULL && argument != NULL) {
-		if (!_isExpressionAssignableToType(context, parameter->parameter->type, argument->expression)) {
+		Type decayedStorage;
+		Type * parameterType = _decayArrayParameterType(context, parameter->parameter->type, &decayedStorage);
+		if (!_isExpressionAssignableToType(context, parameterType, argument->expression)) {
 			_reportSemanticError(context, "Incompatible function argument", functionCall->name);
 		}
 		parameter = parameter->next;
@@ -1148,6 +1347,20 @@ static bool _parseArrayBoundLiteral(const char * literal, size_t * bound) {
 	}
 	*bound = (size_t) value;
 	return true;
+}
+
+static bool _isNonPositiveArrayBound(Expression * expression) {
+	if (expression == NULL) {
+		return false;
+	}
+	if (expression->kind == EXPRESSION_UNARY_OPERATION
+		&& expression->operator == EXPRESSION_OPERATOR_UNARY_MINUS
+		&& expression->operand != NULL
+		&& expression->operand->kind == EXPRESSION_INTEGER_LITERAL) {
+		return true;
+	}
+	size_t bound = 0;
+	return _fixedArrayBound(expression, &bound) && bound == 0;
 }
 
 static bool _isAssignmentOperator(ExpressionOperator operator) {
@@ -1358,8 +1571,9 @@ static bool _isCallableSymbol(SemanticAnalysisContext * context, SemanticSymbol 
 	return _callableReturnType(context, symbol) != NULL;
 }
 
-static const char * _implicitLoopIteratorName(ForStatement * statement) {
+static const char * _declaredLoopIteratorName(ForStatement * statement) {
 	if (statement == NULL
+		|| !statement->declaresIterator
 		|| statement->initializer == NULL
 		|| statement->initializer->kind != EXPRESSION_BINARY_OPERATION
 		|| statement->initializer->operator != EXPRESSION_OPERATOR_ASSIGN
@@ -1368,6 +1582,46 @@ static const char * _implicitLoopIteratorName(ForStatement * statement) {
 		return NULL;
 	}
 	return statement->initializer->left->value;
+}
+
+static bool _isAlwaysTrueCondition(Expression * condition) {
+	if (condition == NULL) {
+		return true;
+	}
+	if (condition->kind != EXPRESSION_INTEGER_LITERAL) {
+		return false;
+	}
+	size_t value = 0;
+	return _parseArrayBoundLiteral(condition->value, &value) && value != 0;
+}
+
+static bool _loopBodyCanBreak(StatementList * statementList) {
+	for (StatementList * item = statementList; item != NULL; item = item->next) {
+		Statement * statement = item->statement;
+		if (statement == NULL) {
+			continue;
+		}
+		switch (statement->kind) {
+			case STATEMENT_BREAK:
+				return true;
+			case STATEMENT_IF:
+				if (statement->ifStatement != NULL) {
+					for (IfBranch * branch = statement->ifStatement->branches; branch != NULL; branch = branch->next) {
+						if (_loopBodyCanBreak(branch->body)) {
+							return true;
+						}
+					}
+					if (_loopBodyCanBreak(statement->ifStatement->elseBody)) {
+						return true;
+					}
+				}
+				break;
+			default:
+				/* Nested loops and switches capture their own break statements. */
+				break;
+		}
+	}
+	return false;
 }
 
 /** PUBLIC FUNCTIONS */

@@ -1,0 +1,5 @@
+fn read matrix:int[2][3] row:int[3]* -> int
+    ret matrix[0][0] + (*row)[0]
+
+fn rows -> int[2]*
+    ret null

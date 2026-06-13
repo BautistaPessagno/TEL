@@ -1,0 +1,5 @@
+fn bad limit:int -> int
+    for i = 0, i < limit, i++
+        ret i
+    ret 0
+

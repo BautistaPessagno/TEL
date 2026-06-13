@@ -300,6 +300,7 @@ struct ForStatement {
 	Expression * condition;
 	Expression * update;
 	StatementList * body;
+	bool declaresIterator;
 };
 
 struct WhileStatement {
