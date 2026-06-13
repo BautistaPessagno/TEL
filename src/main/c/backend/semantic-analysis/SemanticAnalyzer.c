@@ -1049,13 +1049,14 @@ static bool _isStringLiteralAssignableToType(SemanticAnalysisContext * context, 
 	if (resolvedTargetType == NULL) {
 		return true;
 	}
-	if (resolvedTargetType->kind == TYPE_CHAR_KIND) {
-		return true;
+	/* A string literal has type char[] and decays to char *. It is assignable
+	 * to a pointer-to-char (or array-of-char) target, but not to a bare char,
+	 * which would emit invalid C such as `char c = "x";`. */
+	Type * pointee = NULL;
+	if (resolvedTargetType->kind == TYPE_POINTER_KIND
+		|| resolvedTargetType->kind == TYPE_ARRAY_KIND) {
+		pointee = _resolveTypedef(context, resolvedTargetType->pointee);
 	}
-	if (resolvedTargetType->kind != TYPE_POINTER_KIND) {
-		return false;
-	}
-	Type * pointee = _resolveTypedef(context, resolvedTargetType->pointee);
 	return pointee != NULL && pointee->kind == TYPE_CHAR_KIND;
 }
 

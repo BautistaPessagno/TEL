@@ -73,5 +73,29 @@ for source in src/test/c/generate/*.tel; do
 done
 echo ""
 
+echo "Generated C for accepted programs should compile..."
+echo ""
+
+if ! command -v gcc >/dev/null 2>&1; then
+	echo -e "    ${RED}gcc not found; skipping generated-C compilation checks${OFF}"
+	STATUS=1
+else
+	for test in $(ls src/test/c/accept/); do
+		generated="$(cat "src/test/c/accept/$test" | ".build/tel" 2>/dev/null)"
+		if [ "$?" != "0" ]; then
+			# Acceptance is already covered above; only check programs we accept.
+			continue
+		fi
+		if echo "$generated" | gcc -fsyntax-only -xc - 2>/dev/null; then
+			echo -e "    $test, ${GREEN}and it does${OFF}"
+		else
+			STATUS=1
+			echo -e "    $test, ${RED}but gcc rejects the generated C${OFF}"
+			echo "$generated" | gcc -fsyntax-only -xc - 2>&1 | grep "error:" | sed 's/^/        /'
+		fi
+	done
+fi
+echo ""
+
 echo "All done."
 exit $STATUS

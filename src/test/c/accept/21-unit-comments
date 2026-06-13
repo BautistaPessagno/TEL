@@ -5,8 +5,8 @@ value:int /* inline block comment */;
 
 main
     // full-line body comment
-    text:char = "not // a comment"
-    marker:char = "not /* a comment */"
+    text:char* = "not // a comment"
+    marker:char* = "not /* a comment */"
     value = 1 // trailing assignment comment
     /* multiline block comment
        with TEL-looking code:

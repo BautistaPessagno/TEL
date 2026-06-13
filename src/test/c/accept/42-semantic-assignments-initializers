@@ -4,7 +4,7 @@ fn id value:int -> int
 fn valid -> int
     value:int = 1
     fixed:const int = value
-    label:char = "x"
+    label:char* = "x"
     marker:char = 'a'
     amount:float = 1.5
     small:short = 2
