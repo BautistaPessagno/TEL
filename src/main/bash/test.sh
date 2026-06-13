@@ -114,10 +114,11 @@ else
 			continue
 		fi
 		binary="$(mktemp)"
-		if ! echo "$generated" | gcc -xc - -o "$binary" 2>/dev/null; then
+		compile_errors="$(echo "$generated" | gcc -xc - -o "$binary" 2>&1)"
+		if [ "$?" != "0" ]; then
 			STATUS=1
 			echo -e "    $name, ${RED}but the generated C failed to compile${OFF}"
-			echo "$generated" | gcc -xc - -o "$binary" 2>&1 | grep "error:" | sed 's/^/        /'
+			echo "$compile_errors" | grep "error:" | sed 's/^/        /'
 			rm -f "$binary"
 			continue
 		fi
@@ -125,6 +126,7 @@ else
 		actual_status="$?"
 		rm -f "$binary"
 		# Expected exit status defaults to 0 unless an .exit sidecar overrides it.
+		# Note: Unix exit statuses wrap mod 256, so .exit golden values must stay < 256.
 		expected_status=0
 		if [ -f "src/test/c/run/$name.exit" ]; then
 			expected_status="$(cat "src/test/c/run/$name.exit")"
