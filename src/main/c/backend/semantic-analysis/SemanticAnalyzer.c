@@ -118,7 +118,6 @@ static bool _isIntegerScalarType(SemanticAnalysisContext * context, Type * type)
 static bool _isPointerLikeType(SemanticAnalysisContext * context, Type * type);
 static bool _isConditionType(SemanticAnalysisContext * context, Type * type);
 static bool _isVoidType(SemanticAnalysisContext * context, Type * type);
-static bool _isDirectVoidType(SemanticAnalysisContext * context, Type * type);
 static bool _isNullLiteral(Expression * expression);
 static bool _isEqualityComparable(SemanticAnalysisContext * context, Expression * left, Type * leftType, Expression * right, Type * rightType);
 static bool _typesAssignable(SemanticAnalysisContext * context, Type * targetType, Type * sourceType);
@@ -534,7 +533,7 @@ static void _validateTypeNode(
 		&& (typeContext == SEMANTIC_TYPE_VARIABLE
 			|| typeContext == SEMANTIC_TYPE_PARAMETER
 			|| typeContext == SEMANTIC_TYPE_FIELD)
-		&& _isDirectVoidType(context, type)) {
+		&& _isVoidType(context, type)) {
 		_reportSemanticError(context, "Variables, parameters, and fields cannot have void type", NULL);
 	}
 	if (!nestedUnderIndirection
@@ -577,7 +576,7 @@ static void _validateTypeNode(
 			break;
 		case TYPE_ARRAY_KIND:
 			_validateTypeNode(context, type->pointee, typeContext, true);
-			if (_isDirectVoidType(context, type->pointee)) {
+			if (_isVoidType(context, type->pointee)) {
 				_reportSemanticError(context, "Arrays cannot contain void elements", NULL);
 			}
 			if (type->arraySize == NULL) {
@@ -1116,10 +1115,6 @@ static bool _isVoidType(SemanticAnalysisContext * context, Type * type) {
 	return resolvedType != NULL && resolvedType->kind == TYPE_VOID_KIND;
 }
 
-static bool _isDirectVoidType(SemanticAnalysisContext * context, Type * type) {
-	return _isVoidType(context, type);
-}
-
 static bool _isNullLiteral(Expression * expression) {
 	return expression != NULL && expression->kind == EXPRESSION_NULL_LITERAL;
 }
@@ -1338,6 +1333,9 @@ static bool _isNonPositiveArrayBound(Expression * expression) {
 	if (expression == NULL) {
 		return false;
 	}
+	/* Any negated integer literal is a negative bound; the integer-literal
+	 * grammar has no sign, so a leading `-` always yields a value < 0. The
+	 * `_fixedArrayBound` check below additionally rejects a literal zero. */
 	if (expression->kind == EXPRESSION_UNARY_OPERATION
 		&& expression->operator == EXPRESSION_OPERATOR_UNARY_MINUS
 		&& expression->operand != NULL

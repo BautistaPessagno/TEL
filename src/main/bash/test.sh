@@ -40,5 +40,38 @@ for test in $(ls src/test/c/reject/); do
 done
 echo ""
 
+echo "Compiler should generate C matching the golden output..."
+echo ""
+
+for source in src/test/c/generate/*.tel; do
+	expected="${source%.tel}.expected"
+	name="$(basename "$source" .tel)"
+	if [ ! -f "$expected" ]; then
+		STATUS=1
+		echo -e "    $name, ${RED}but no .expected golden file exists${OFF}"
+		continue
+	fi
+	actual="$(cat "$source" | ".build/tel" 2>/dev/null)"
+	if [ "$?" != "0" ]; then
+		STATUS=1
+		echo -e "    $name, ${RED}but the compiler rejected the source${OFF}"
+		continue
+	fi
+	if [ "$actual" != "$(cat "$expected")" ]; then
+		STATUS=1
+		echo -e "    $name, ${RED}but the generated C differs from the golden output${OFF}"
+		diff <(echo "$actual") "$expected" | sed 's/^/        /'
+		continue
+	fi
+	# The generated translation unit must also be valid C.
+	if ! echo "$actual" | gcc -fsyntax-only -xc - 2>/dev/null; then
+		STATUS=1
+		echo -e "    $name, ${RED}but the generated C failed gcc -fsyntax-only${OFF}"
+		continue
+	fi
+	echo -e "    $name, ${GREEN}and it does${OFF}"
+done
+echo ""
+
 echo "All done."
 exit $STATUS

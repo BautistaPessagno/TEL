@@ -277,22 +277,28 @@ static const char * _unaryOperator(ExpressionOperator operator) {
 }
 
 static void _generateProgram(CodeGenerationContext * context, Program * program) {
-	ProgramItemPredicate passes[] = {
+	/* Passes emitted before function prototypes: directives, inline C, and all
+	 * type and global-variable declarations a prototype's signature may depend
+	 * on. */
+	ProgramItemPredicate beforePrototypes[] = {
 		_isDirective,
 		_isGlobalInlineC,
 		_isEnum,
 		_isAggregate,
 		_isTypedef,
-		_isGlobalVariable,
+		_isGlobalVariable
+	};
+	/* Passes emitted after function prototypes: function bodies and `main`. */
+	ProgramItemPredicate afterPrototypes[] = {
 		_isFunctionDefinition,
 		_isMain
 	};
-	for (size_t index = 0; index < 6; index++) {
-		_generateMatchingItems(context, program, passes[index]);
+	for (size_t index = 0; index < sizeof(beforePrototypes) / sizeof(beforePrototypes[0]); index++) {
+		_generateMatchingItems(context, program, beforePrototypes[index]);
 	}
 	_generateFunctionPrototypes(context, program);
-	for (size_t index = 6; index < sizeof(passes) / sizeof(passes[0]); index++) {
-		_generateMatchingItems(context, program, passes[index]);
+	for (size_t index = 0; index < sizeof(afterPrototypes) / sizeof(afterPrototypes[0]); index++) {
+		_generateMatchingItems(context, program, afterPrototypes[index]);
 	}
 }
 
