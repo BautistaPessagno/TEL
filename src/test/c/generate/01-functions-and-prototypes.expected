@@ -1,0 +1,10 @@
+int add(int a, int b);
+int run(void);
+
+int add(int a, int b) {
+    return (a + b);
+}
+int run(void) {
+    return add(1, 2);
+}
+

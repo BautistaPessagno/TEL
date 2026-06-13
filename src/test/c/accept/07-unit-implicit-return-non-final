@@ -1,4 +1,4 @@
-fn log text:char -> void;
+fn log text:char* -> void;
 
 fn nonfinal value:int -> int
     value

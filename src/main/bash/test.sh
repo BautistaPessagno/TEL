@@ -40,5 +40,62 @@ for test in $(ls src/test/c/reject/); do
 done
 echo ""
 
+echo "Compiler should generate C matching the golden output..."
+echo ""
+
+for source in src/test/c/generate/*.tel; do
+	expected="${source%.tel}.expected"
+	name="$(basename "$source" .tel)"
+	if [ ! -f "$expected" ]; then
+		STATUS=1
+		echo -e "    $name, ${RED}but no .expected golden file exists${OFF}"
+		continue
+	fi
+	actual="$(cat "$source" | ".build/tel" 2>/dev/null)"
+	if [ "$?" != "0" ]; then
+		STATUS=1
+		echo -e "    $name, ${RED}but the compiler rejected the source${OFF}"
+		continue
+	fi
+	if [ "$actual" != "$(cat "$expected")" ]; then
+		STATUS=1
+		echo -e "    $name, ${RED}but the generated C differs from the golden output${OFF}"
+		diff <(echo "$actual") "$expected" | sed 's/^/        /'
+		continue
+	fi
+	# The generated translation unit must also be valid C.
+	if ! echo "$actual" | gcc -fsyntax-only -xc - 2>/dev/null; then
+		STATUS=1
+		echo -e "    $name, ${RED}but the generated C failed gcc -fsyntax-only${OFF}"
+		continue
+	fi
+	echo -e "    $name, ${GREEN}and it does${OFF}"
+done
+echo ""
+
+echo "Generated C for accepted programs should compile..."
+echo ""
+
+if ! command -v gcc >/dev/null 2>&1; then
+	echo -e "    ${RED}gcc not found; skipping generated-C compilation checks${OFF}"
+	STATUS=1
+else
+	for test in $(ls src/test/c/accept/); do
+		generated="$(cat "src/test/c/accept/$test" | ".build/tel" 2>/dev/null)"
+		if [ "$?" != "0" ]; then
+			# Acceptance is already covered above; only check programs we accept.
+			continue
+		fi
+		if echo "$generated" | gcc -fsyntax-only -xc - 2>/dev/null; then
+			echo -e "    $test, ${GREEN}and it does${OFF}"
+		else
+			STATUS=1
+			echo -e "    $test, ${RED}but gcc rejects the generated C${OFF}"
+			echo "$generated" | gcc -fsyntax-only -xc - 2>&1 | grep "error:" | sed 's/^/        /'
+		fi
+	done
+fi
+echo ""
+
 echo "All done."
 exit $STATUS

@@ -1,5 +1,5 @@
 fn ping;
-fn log text:char count:int -> void;
+fn log text:char* count:int -> void;
 fn add left:int right:int -> int;
 
 fn calls value:int
