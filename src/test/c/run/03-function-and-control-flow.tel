@@ -1,0 +1,8 @@
+fn sumTo n:int -> int
+    total:int = 0
+    ford i 0 n
+        total += i
+    ret total
+
+main
+    ret sumTo(10)

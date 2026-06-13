@@ -97,5 +97,58 @@ else
 fi
 echo ""
 
+echo "Generated C for runnable programs should compile and run..."
+echo ""
+
+if ! command -v gcc >/dev/null 2>&1; then
+	echo -e "    ${RED}gcc not found; skipping runnable-program checks${OFF}"
+	STATUS=1
+else
+	for source in src/test/c/run/*.tel; do
+		[ -e "$source" ] || continue
+		name="$(basename "$source" .tel)"
+		generated="$(cat "$source" | ".build/tel" 2>/dev/null)"
+		if [ "$?" != "0" ]; then
+			STATUS=1
+			echo -e "    $name, ${RED}but the compiler rejected the source${OFF}"
+			continue
+		fi
+		binary="$(mktemp)"
+		compile_errors="$(echo "$generated" | gcc -xc - -o "$binary" 2>&1)"
+		if [ "$?" != "0" ]; then
+			STATUS=1
+			echo -e "    $name, ${RED}but the generated C failed to compile${OFF}"
+			echo "$compile_errors" | grep "error:" | sed 's/^/        /'
+			rm -f "$binary"
+			continue
+		fi
+		actual_output="$("$binary")"
+		actual_status="$?"
+		rm -f "$binary"
+		# Expected exit status defaults to 0 unless an .exit sidecar overrides it.
+		# Note: Unix exit statuses wrap mod 256, so .exit golden values must stay < 256.
+		expected_status=0
+		if [ -f "src/test/c/run/$name.exit" ]; then
+			expected_status="$(cat "src/test/c/run/$name.exit")"
+		fi
+		if [ "$actual_status" != "$expected_status" ]; then
+			STATUS=1
+			echo -e "    $name, ${RED}but it exited with status $actual_status (expected $expected_status)${OFF}"
+			continue
+		fi
+		# Stdout is only checked when an .out golden sidecar exists.
+		if [ -f "src/test/c/run/$name.out" ]; then
+			if [ "$actual_output" != "$(cat "src/test/c/run/$name.out")" ]; then
+				STATUS=1
+				echo -e "    $name, ${RED}but its stdout differs from the expected output${OFF}"
+				diff <(echo "$actual_output") "src/test/c/run/$name.out" | sed 's/^/        /'
+				continue
+			fi
+		fi
+		echo -e "    $name, ${GREEN}and it does${OFF}"
+	done
+fi
+echo ""
+
 echo "All done."
 exit $STATUS
