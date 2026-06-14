@@ -33,6 +33,12 @@ Build inside the container:
 src/main/bash/build.sh
 ```
 
+Run the full test suite inside the container:
+
+```bash
+src/main/bash/test.sh
+```
+
 Run a TEL program inside the container:
 
 ```bash
@@ -46,11 +52,7 @@ src/main/bash/run.sh program.tel > program.c
 gcc program.c -o program
 ```
 
-Run the full test suite inside the container:
 
-```bash
-src/main/bash/test.sh
-```
 
 From the host, the same commands can be run through Docker:
 
