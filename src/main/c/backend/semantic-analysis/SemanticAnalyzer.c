@@ -47,6 +47,10 @@ static Type _semanticIntType = { .kind = TYPE_INT_KIND };
 static Type _semanticFloatType = { .kind = TYPE_FLOAT_KIND };
 static Type _semanticCharType = { .kind = TYPE_CHAR_KIND };
 static Type _semanticVoidType = { .kind = TYPE_VOID_KIND };
+static Type _semanticDoubleType = { .kind = TYPE_DOUBLE_KIND };
+static Type _semanticLongType = { .kind = TYPE_LONG_KIND };
+static Type _semanticUIntType = { .kind = TYPE_UINT_KIND };
+static Type _semanticULIType = { .kind = TYPE_ULI_KIND };
 
 /** Shutdown module's internal state. */
 void _shutdownSemanticAnalyzerModule() {
@@ -738,6 +742,40 @@ static SemanticExpressionInfo _expressionInfoForFunctionCall(SemanticAnalysisCon
 	return info;
 }
 
+/* Conversion rank for the usual arithmetic conversions: char/short/enum promote
+ * to int, and a higher-ranked operand determines the result type. */
+static int _arithmeticRank(TypeKind kind) {
+	switch (kind) {
+		case TYPE_DOUBLE_KIND: return 7;
+		case TYPE_FLOAT_KIND: return 6;
+		case TYPE_ULI_KIND: return 5;
+		case TYPE_LONG_KIND: return 4;
+		case TYPE_UINT_KIND: return 3;
+		case TYPE_INT_KIND:
+		case TYPE_CHAR_KIND:
+		case TYPE_SHORT_KIND:
+		case TYPE_ENUM_KIND: return 2;
+		default: return -1;
+	}
+}
+
+/* Result type of a numeric binary operation, following C's usual arithmetic
+ * conversions. Operands are assumed to already be numeric scalars. */
+static Type * _commonArithmeticType(SemanticAnalysisContext * context, Type * left, Type * right) {
+	Type * resolvedLeft = _resolveTypedef(context, left);
+	Type * resolvedRight = _resolveTypedef(context, right);
+	int leftRank = resolvedLeft != NULL ? _arithmeticRank(resolvedLeft->kind) : -1;
+	int rightRank = resolvedRight != NULL ? _arithmeticRank(resolvedRight->kind) : -1;
+	switch (leftRank >= rightRank ? leftRank : rightRank) {
+		case 7: return &_semanticDoubleType;
+		case 6: return &_semanticFloatType;
+		case 5: return &_semanticULIType;
+		case 4: return &_semanticLongType;
+		case 3: return &_semanticUIntType;
+		default: return &_semanticIntType;
+	}
+}
+
 static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysisContext * context, Expression * expression) {
 	SemanticExpressionInfo info = { 0 };
 	if (_isAssignmentOperator(expression->operator)) {
@@ -800,7 +838,7 @@ static SemanticExpressionInfo _expressionInfoForBinaryOperation(SemanticAnalysis
 			_reportSemanticError(context, "Numeric operator requires numeric operands", NULL);
 			return info;
 		}
-		info.type = leftInfo.type;
+		info.type = _commonArithmeticType(context, leftInfo.type, rightInfo.type);
 		return info;
 	}
 	if (_isEqualityOperator(expression->operator)) {
