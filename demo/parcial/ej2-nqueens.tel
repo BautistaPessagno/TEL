@@ -1,0 +1,88 @@
+// Ejercicio 2 - nQueens
+// Verifica que un tablero NxN (aplanado a 1D) contenga N reinas
+// sin que ninguna amenace a otra. Celda libre '0', reina '1'.
+
+// Camina en una direccion (di,dj) desde (i0,j0) buscando una reina.
+fn attacked board:char[] n:int i0:int j0:int di:int dj:int -> int
+    i:int = i0 + di
+    j:int = j0 + dj
+    while i >= 0 && i < n && j >= 0 && j < n
+        if board[i * n + j] == '1'
+            ret 1
+        i += di
+        j += dj
+    ret 0
+
+fn nQueens n:int board:char[] -> int
+    queens:int = 0
+    ford i 0 n
+        ford j 0 n
+            if board[i * n + j] == '1'
+                queens += 1
+                // Solo miramos hacia abajo/derecha: las amenazas hacia
+                // arriba/izquierda ya se habrian detectado antes.
+                if attacked(board, n, i, j, 0, 1)
+                    ret 0
+                if attacked(board, n, i, j, 1, 0)
+                    ret 0
+                if attacked(board, n, i, j, 1, 1)
+                    ret 0
+                if attacked(board, n, i, j, 1, -1)
+                    ret 0
+    queens == n
+
+main
+    // 8x8: tres reinas en columna 4, dos en fila 6 -> 0
+    b8:char[64] = {'0' '0' '0' '0' '1' '0' '0' '0'
+                   '0' '0' '1' '0' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '1' '0' '0' '0'
+                   '0' '0' '0' '0' '0' '0' '0' '0'
+                   '0' '1' '0' '0' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '0' '0' '1' '0'
+                   '1' '0' '0' '0' '1' '0' '0' '0'
+                   '0' '0' '0' '0' '0' '0' '0' '1'}
+    if nQueens(8, b8) != 0
+        ret 1
+
+    // 6x6: 6 reinas, no se atacan -> verdadero
+    b2:char[36] = {'0' '0' '0' '1' '0' '0'
+                   '1' '0' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '1' '0'
+                   '0' '1' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '0' '1'
+                   '0' '0' '1' '0' '0' '0'}
+    if nQueens(6, b2) != 1
+        ret 1
+
+    // 6x6: reinas en (1,0) y (2,1) se atacan en diagonal -> 0
+    b3:char[36] = {'0' '0' '1' '0' '0' '0'
+                   '1' '0' '0' '0' '0' '0'
+                   '0' '1' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '1' '0'
+                   '0' '0' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '0' '1'}
+    if nQueens(6, b3) != 0
+        ret 1
+
+    // 6x6: no se atacan pero hay menos de 6 reinas -> 0
+    b4:char[36] = {'0' '0' '0' '1' '0' '0'
+                   '0' '0' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '1' '0'
+                   '0' '1' '0' '0' '0' '0'
+                   '0' '0' '0' '0' '0' '1'
+                   '0' '0' '1' '0' '0' '0'}
+    if nQueens(6, b4) != 0
+        ret 1
+
+    // sub-tableros de b2: no hay solucion para 3 ni 2 -> 0
+    if nQueens(3, b2) != 0
+        ret 1
+    if nQueens(2, b2) != 0
+        ret 1
+
+    // 1x1 debe tener una reina -> verdadero
+    b1:char[1] = {'1'}
+    if nQueens(1, b1) != 1
+        ret 1
+
+    ret 0

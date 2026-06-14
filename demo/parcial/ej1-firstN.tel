@@ -1,0 +1,59 @@
+// Ejercicio 1 - firstN
+// Deja en el vector las primeras n apariciones de cada valor.
+// Parametros de salida: nueva dimension y cantidad de eliminados.
+fn firstN v:char[] dim:int n:int outDim:int* outDel:int* -> void
+    counts:int[256] = {}
+    w:int = 0
+    deleted:int = 0
+    ford i 0 dim
+        idx:int = v[i]
+        if counts[idx] < n
+            v[w] = v[i]
+            w += 1
+            counts[idx] += 1
+        else
+            deleted += 1
+    *outDim = w
+    *outDel = deleted
+
+main
+    dim:int = 0
+    del:int = 0
+
+    // n=1 -> dim=5, del=3, v = {1 2 3 4 5}
+    v:char[8] = {1 2 1 3 1 4 5 2}
+    firstN(v, 8, 1, &dim, &del)
+    if dim != 5
+        ret 1
+    if del != 3
+        ret 1
+    if v[0] != 1
+        ret 1
+    if v[1] != 2
+        ret 1
+    if v[2] != 3
+        ret 1
+    if v[3] != 4
+        ret 1
+    if v[4] != 5
+        ret 1
+
+    // n=0 -> dim=0, del=8
+    w:char[8] = {1 2 1 3 1 4 5 2}
+    firstN(w, 8, 0, &dim, &del)
+    if dim != 0
+        ret 1
+    if del != 8
+        ret 1
+
+    // n=2 -> dim=7, del=1, t = {1 2 1 3 4 5 2}
+    t:char[8] = {1 2 1 3 1 4 5 2}
+    firstN(t, 8, 2, &dim, &del)
+    if dim != 7
+        ret 1
+    if del != 1
+        ret 1
+    if t[4] != 4
+        ret 1
+
+    ret 0

@@ -1,0 +1,59 @@
+// Ejercicio 3 - isWordLadder
+// Una escalera de palabras: cada palabra difiere de la anterior en
+// exactamente una letra (sin distinguir mayusculas/minusculas) y la
+// posicion cambiada no se repite entre dos pasos seguidos.
+// Matriz de chars aplanada a 1D: fila r, columna c -> m[r * cols + c].
+
+fn lower c:char -> char
+    if c >= 'A' && c <= 'Z'
+        ret c + 32
+    ret c
+
+fn isWordLadder rows:int cols:int m:char[] -> int
+    prevPos:int = -1
+    ford r 1 rows
+        diffPos:int = -1
+        diffCount:int = 0
+        ford c 0 cols
+            if lower(m[r * cols + c]) != lower(m[(r - 1) * cols + c])
+                diffCount += 1
+                diffPos = c
+        if diffCount != 1
+            ret 0
+        if diffPos == prevPos
+            ret 0
+        prevPos = diffPos
+    ret 1
+
+main
+    // TeSt / beST / BEso / BESA : las 4 filas NO son escalera
+    // (los dos ultimos cambios son en la ultima letra).
+    m1:char[16] = {'T' 'e' 'S' 't'
+                   'b' 'e' 'S' 'T'
+                   'B' 'E' 's' 'o'
+                   'B' 'E' 'S' 'A'}
+    if isWordLadder(4, 4, m1) != 0
+        ret 1
+    // una sola fila siempre es escalera
+    if isWordLadder(1, 4, m1) != 1
+        ret 1
+    // las tres primeras filas si son escalera
+    if isWordLadder(3, 4, m1) != 1
+        ret 1
+
+    // TeS -> Tbe cambia dos letras -> no es escalera
+    m2:char[12] = {'T' 'e' 'S'
+                   't' 'b' 'e'
+                   'S' 'b' 'E'
+                   'B' 'b' 'e'}
+    if isWordLadder(4, 3, m2) != 0
+        ret 1
+
+    // aro -> osa cambian tres letras -> no es escalera
+    m3:char[9] = {'a' 'm' 'o'
+                  'a' 'r' 'o'
+                  'o' 's' 'a'}
+    if isWordLadder(3, 3, m3) != 0
+        ret 1
+
+    ret 0
