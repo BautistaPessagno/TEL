@@ -52,7 +52,13 @@ src/main/bash/run.sh program.tel > program.c
 gcc program.c -o program
 ```
 
+Alternatively, `gtc.sh` (generate, translate, compile) does both steps at once:
+it translates `program.tel` to `program.c` and compiles it to a `program`
+binary, all inside the container.
 
+```bash
+bash gtc.sh program.tel
+```
 
 From the host, the same commands can be run through Docker:
 
