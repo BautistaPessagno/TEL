@@ -733,9 +733,7 @@ static SemanticExpressionInfo _expressionInfoForFunctionCall(SemanticAnalysisCon
 	}
 	SemanticSymbol * symbol = semanticSymbolTableLookupOrdinary(context->symbols, functionCall->name);
 	if (symbol == NULL) {
-		/* Unknown name: assume an external library function (e.g. printf from an
-		 * included header). We cannot check arity/types without a declaration, so
-		 * just validate the argument expressions and leave the call type unknown. */
+		// Unknown name: assume an external library function 
 		_validateExpressionList(context, functionCall->arguments);
 		return info;
 	}
