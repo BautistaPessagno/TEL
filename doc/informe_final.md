@@ -145,17 +145,17 @@ compatible con `platform.openai.com/tokenizer`).
 &emsp;**Tabla 2.1.** Ahorro de tokens en los programas de `demo/leetcode/` (TEL
 vs. C generado):
 
-| Programa | Problema | Tokens TEL | Tokens C | Ahorro | % |
-| :--- | :--- | ---: | ---: | ---: | ---: |
-| `two-sum.tel` | LC 1 — Two Sum | 121 | 186 | 65 | 34.9% |
-| `fizzbuzz.tel` | LC 412 — Fizz Buzz | 93 | 145 | 52 | 35.9% |
-| `fibonacci.tel` | LC 509 — Fibonacci | 96 | 147 | 51 | 34.7% |
-| `binary-search.tel` | LC 704 — Binary Search | 170 | 223 | 53 | 23.8% |
-| `reverse-integer.tel` | LC 7 — Reverse Integer | 114 | 147 | 33 | 22.4% |
-| `palindrome-number.tel` | LC 9 — Palindrome Number | 118 | 151 | 33 | 21.9% |
-| `max-subarray.tel` | LC 53 — Maximum Subarray (Kadane) | 194 | 262 | 68 | 26.0% |
-| `climbing-stairs.tel` | LC 70 — Climbing Stairs | 100 | 153 | 53 | 34.6% |
-| **Total** |  | **1006** | **1414** | **408** | **28.9%** |
+| Programa                | Problema                          | Tokens TEL | Tokens C |  Ahorro |         % |
+| :---------------------- | :-------------------------------- | ---------: | -------: | ------: | --------: |
+| `two-sum.tel`           | LC 1 — Two Sum                    |        121 |      186 |      65 |     34.9% |
+| `fizzbuzz.tel`          | LC 412 — Fizz Buzz                |         93 |      145 |      52 |     35.9% |
+| `fibonacci.tel`         | LC 509 — Fibonacci                |         96 |      147 |      51 |     34.7% |
+| `binary-search.tel`     | LC 704 — Binary Search            |        170 |      223 |      53 |     23.8% |
+| `reverse-integer.tel`   | LC 7 — Reverse Integer            |        114 |      147 |      33 |     22.4% |
+| `palindrome-number.tel` | LC 9 — Palindrome Number          |        118 |      151 |      33 |     21.9% |
+| `max-subarray.tel`      | LC 53 — Maximum Subarray (Kadane) |        194 |      262 |      68 |     26.0% |
+| `climbing-stairs.tel`   | LC 70 — Climbing Stairs           |        100 |      153 |      53 |     34.6% |
+| **Total**               |                                   |   **1006** | **1414** | **408** | **28.9%** |
 
 &emsp;El ahorro promedio (~29 %) es menor que el de los ejemplos puntuales del
 Listado 2.1 porque estos programas mezclan declaraciones y tipos compuestos
