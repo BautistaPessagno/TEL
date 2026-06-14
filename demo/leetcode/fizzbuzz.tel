@@ -1,0 +1,17 @@
+// LeetCode 412: Fizz Buzz
+#include stdio
+
+fn fizzbuzz n:int
+    ford i 1 (n + 1)
+        if i % 15 == 0
+            printf("FizzBuzz\n")
+        elif i % 3 == 0
+            printf("Fizz\n")
+        elif i % 5 == 0
+            printf("Buzz\n")
+        else
+            printf("%d\n", i)
+
+main
+    fizzbuzz(15)
+    ret 0

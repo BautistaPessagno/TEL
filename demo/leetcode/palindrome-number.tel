@@ -1,0 +1,18 @@
+// LeetCode 9: Palindrome Number
+#include stdio
+
+fn isPalindrome x:int -> int
+    if x < 0
+        ret 0
+    original:int = x
+    r:int = 0
+    while x > 0
+        r = r * 10 + x % 10
+        x = x / 10
+    original == r
+
+main
+    printf("121 -> %d\n", isPalindrome(121))
+    printf("-121 -> %d\n", isPalindrome(-121))
+    printf("10 -> %d\n", isPalindrome(10))
+    ret 0

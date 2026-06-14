@@ -1,0 +1,19 @@
+// LeetCode 70: Climbing Stairs
+#include stdio
+
+fn climbStairs n:int -> int
+    if n <= 2
+        ret n
+    a:int = 1
+    b:int = 2
+    ford i 3 (n + 1)
+        c:int = a + b
+        a = b
+        b = c
+    ret b
+
+main
+    ford i 1 8
+        printf("%d ", climbStairs(i))
+    printf("\n")
+    ret 0

@@ -1,0 +1,19 @@
+// LeetCode 7: Reverse Integer (no overflow handling)
+#include stdio
+
+fn reverse x:int -> int
+    sign:int = 1
+    if x < 0
+        sign = -1
+        x = -x
+    r:int = 0
+    while x > 0
+        r = r * 10 + x % 10
+        x = x / 10
+    ret sign * r
+
+main
+    printf("%d\n", reverse(123))
+    printf("%d\n", reverse(-456))
+    printf("%d\n", reverse(120))
+    ret 0

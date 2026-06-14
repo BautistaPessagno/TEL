@@ -1,0 +1,19 @@
+// LeetCode 509: Fibonacci Number (iterative)
+#include stdio
+
+fn fib n:int -> int
+    if n < 2
+        ret n
+    a:int = 0
+    b:int = 1
+    ford i 2 (n + 1)
+        c:int = a + b
+        a = b
+        b = c
+    ret b
+
+main
+    ford i 0 10
+        printf("%d ", fib(i))
+    printf("\n")
+    ret 0

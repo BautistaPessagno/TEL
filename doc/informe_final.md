@@ -6,11 +6,11 @@ Autómatas, Teoría de Lenguajes y Compiladores — Ingeniería Informática —
 
 ## Equipo
 
-| Nombres            | Apellidos | E-mail                      |
-| :----------------- | :-------- | :-------------------------- |
-| Bautista           | Pessagno  | bpessagno@itba.edu.ar       |
-| Lorenzo Alejandro  | Mendez    | lmendez@itba.edu.ar         |
-| Rodrigo Alejandro  | Hernandez | rohernandez@itba.edu.ar     |
+| Nombres           | Apellidos | E-mail                  |
+| :---------------- | :-------- | :---------------------- |
+| Bautista          | Pessagno  | bpessagno@itba.edu.ar   |
+| Lorenzo Alejandro | Mendez    | lmendez@itba.edu.ar     |
+| Rodrigo Alejandro | Hernandez | rohernandez@itba.edu.ar |
 
 Repositorio: <https://github.com/BautistaPessagno/TEL>
 
@@ -20,13 +20,13 @@ Repositorio: <https://github.com/BautistaPessagno/TEL>
 
 1. [Introducción](#1-introducción)
 2. [Modelo Computacional](#2-modelo-computacional)
-    - 2.1. [Dominio](#21-dominio)
-    - 2.2. [Lenguaje](#22-lenguaje)
+   - 2.1. [Dominio](#21-dominio)
+   - 2.2. [Lenguaje](#22-lenguaje)
 3. [Implementación](#3-implementación)
-    - 3.1. [Frontend](#31-frontend)
-    - 3.2. [Backend](#32-backend)
-    - 3.3. [Adicionales](#33-adicionales)
-    - 3.4. [Dificultades Encontradas](#34-dificultades-encontradas)
+   - 3.1. [Frontend](#31-frontend)
+   - 3.2. [Backend](#32-backend)
+   - 3.3. [Adicionales](#33-adicionales)
+   - 3.4. [Dificultades Encontradas](#34-dificultades-encontradas)
 4. [Futuras Extensiones](#4-futuras-extensiones)
 5. [Conclusiones](#5-conclusiones)
 6. [Referencias](#6-referencias)
@@ -36,17 +36,17 @@ Repositorio: <https://github.com/BautistaPessagno/TEL>
 
 ## 1. Introducción
 
-&emsp;TEL (*Token Efficient Language*) es un lenguaje de dominio específico, de
+&emsp;TEL (_Token Efficient Language_) es un lenguaje de dominio específico, de
 sintaxis similar a Python, que compila a lenguaje C. Su objetivo es representar
 programas escritos en un subconjunto de C con una sintaxis más compacta, de modo
-de minimizar la cantidad de *tokens* consumidos por los Modelos de Lenguaje de
+de minimizar la cantidad de _tokens_ consumidos por los Modelos de Lenguaje de
 Gran Escala (LLMs), sin perder información semántica y manteniendo la
 legibilidad para una persona desarrolladora.
 
-&emsp;La motivación es concreta. Cuando una persona desarrolladora utiliza un
-LLM (Claude, GPT, Gemini, entre otros) para escribir, revisar o modificar código
+&emsp;La motivación es concreta. Cuando un desarrollador utiliza un
+agente (Claude, GPT, Gemini, entre otros) para escribir, revisar o modificar código
 C, la verbosidad inherente del lenguaje C genera un consumo excesivo de tokens,
-tanto en la entrada (los *prompts*, la lectura de archivos y la salida de
+tanto en la entrada (los _prompts_, la lectura de archivos y la salida de
 comandos) como en la salida (las respuestas del modelo). Ese consumo impacta de
 forma directa en tres dimensiones: el costo económico, ya que los proveedores
 cobran por token; la latencia, dado que más tokens implican más tiempo de
@@ -58,15 +58,10 @@ completo: lee un programa TEL desde la entrada estándar, lo lexa y parsea con
 Flex y Bison, construye un Árbol de Sintaxis Abstracta (AST), valida su
 semántica y, finalmente, emite código C estándar, determinista y compilable por
 la salida estándar. Se trata, por lo tanto, de un compilador fuente a fuente
-(*source-to-source*).
+(_source-to-source_).
 
 &emsp;Este documento describe el desarrollo y la concepción de las ideas detrás
-del lenguaje y de su compilador. No reexpone conceptos teóricos de la Teoría de
-Lenguajes (por ejemplo, qué es un analizador sintáctico o una gramática), de
-acuerdo con lo solicitado por la cátedra. Las secciones siguientes presentan el
-modelo computacional (dominio y lenguaje), la implementación (frontend, backend,
-adicionales y dificultades), las extensiones futuras, las conclusiones y, por
-último, las referencias y la bibliografía.
+del lenguaje y de su compilador.
 
 ---
 
@@ -109,7 +104,7 @@ enseñan TEL al modelo (ver la discusión metodológica más abajo).
 
 &emsp;**Listado 2.1.** Conteo comparativo de tokens (C → TEL):
 
-1. *Hola mundo* con `main`: 27 → 8 tokens (99 → 29 caracteres).
+1. _Hola mundo_ con `main`: 27 → 8 tokens (99 → 29 caracteres).
 2. Función que recorre un arreglo con un bucle `for`: 45 → 32 tokens
    (142 → 103 caracteres).
 3. Definición de un `struct` con `typedef`: 26 → 21 tokens (126 → 84
@@ -120,7 +115,7 @@ enseñan TEL al modelo (ver la discusión metodológica más abajo).
 con la devolución de la cátedra:
 
 1. **Un token no equivale a una palabra.** Un LLM determina la
-   *tokenización* según cómo el modelo la haya interpretado durante su
+   _tokenización_ según cómo el modelo la haya interpretado durante su
    entrenamiento; una misma palabra puede ser un token o varios. Por eso las
    mediciones se hacen con un tokenizador real y no contando palabras.
 2. **El costo de los metadatos debe separarse del payload medido.** Para que el
@@ -131,7 +126,7 @@ con la devolución de la cátedra:
    payload TEL en sí. Esto es análogo al problema de la compresión: comprimir
    achica el payload, pero se requieren metadatos para decodificarlo, y existen
    payloads incompresibles para los cuales el resultado crece.
-3. **Compresión, minificación y metadatos son un *tradeoff*.** Parte de los
+3. **Compresión, minificación y metadatos son un _tradeoff_.** Parte de los
    mapeos de TEL coinciden con una minificación típica de cualquier lenguaje
    (por ejemplo, reemplazar nombres largos por nombres cortos). Cuando un mapeo
    no cambia la estructura del lenguaje conocido por el modelo, no hace falta
@@ -139,6 +134,36 @@ con la devolución de la cátedra:
    considerar como punto de comparación es la minificación directa de C, que
    evita tener que enseñarle un lenguaje nuevo al LLM a cambio de un ahorro
    menor.
+
+&emsp;Como complemento a los ejemplos puntuales del Listado 2.1, se midió el
+ahorro de tokens sobre un conjunto de ocho programas más extensos —resoluciones
+de problemas de estilo LeetCode, disponibles en `demo/leetcode/` y descritos en
+la sección 3.3— comparando el código TEL (sin comentarios) contra el C generado
+por el compilador (sin comentarios), con el mismo tokenizador (`cl100k_base`,
+compatible con `platform.openai.com/tokenizer`).
+
+&emsp;**Tabla 2.1.** Ahorro de tokens en los programas de `demo/leetcode/` (TEL
+vs. C generado):
+
+| Programa | Problema | Tokens TEL | Tokens C | Ahorro | % |
+| :--- | :--- | ---: | ---: | ---: | ---: |
+| `two-sum.tel` | LC 1 — Two Sum | 121 | 186 | 65 | 34.9% |
+| `fizzbuzz.tel` | LC 412 — Fizz Buzz | 93 | 145 | 52 | 35.9% |
+| `fibonacci.tel` | LC 509 — Fibonacci | 96 | 147 | 51 | 34.7% |
+| `binary-search.tel` | LC 704 — Binary Search | 170 | 223 | 53 | 23.8% |
+| `reverse-integer.tel` | LC 7 — Reverse Integer | 114 | 147 | 33 | 22.4% |
+| `palindrome-number.tel` | LC 9 — Palindrome Number | 118 | 151 | 33 | 21.9% |
+| `max-subarray.tel` | LC 53 — Maximum Subarray (Kadane) | 194 | 262 | 68 | 26.0% |
+| `climbing-stairs.tel` | LC 70 — Climbing Stairs | 100 | 153 | 53 | 34.6% |
+| **Total** |  | **1006** | **1414** | **408** | **28.9%** |
+
+&emsp;El ahorro promedio (~29 %) es menor que el de los ejemplos puntuales del
+Listado 2.1 porque estos programas mezclan declaraciones y tipos compuestos
+—donde TEL ahorra más— con expresiones aritméticas que se escriben de forma casi
+idéntica en ambos lenguajes. El mayor ahorro aparece en los programas dominados
+por control de flujo (`fizzbuzz`, `two-sum`, `fibonacci`, `climbing-stairs`,
+~35 %), y el menor en funciones cortas y aritméticas (`reverse-integer`,
+`palindrome-number`, ~22 %).
 
 ### 2.2. Lenguaje
 
@@ -203,7 +228,7 @@ break -> break   cnt -> continue
 ```
 
 &emsp;El `switch` admite dos variantes, distinguidas por el separador de caso.
-Con `:` los casos caen al siguiente (*fall-through*) salvo `break` explícito; con
+Con `:` los casos caen al siguiente (_fall-through_) salvo `break` explícito; con
 `->` cada caso termina implícitamente, sin caída.
 
 &emsp;**Listado 2.5.** Las dos variantes de `switch`:
@@ -312,10 +337,10 @@ caracteres y cadenas), las keywords del lenguaje, los nueve tipos primitivos, el
 conjunto de operadores aritméticos, de asignación, bit a bit, lógicos y de
 comparación, los delimitadores, y las directivas `#include` y `#define`.
 
-&emsp;El lexer utiliza varias *start conditions* de Flex para resolver
+&emsp;El lexer utiliza varias _start conditions_ de Flex para resolver
 ambigüedades:
 
-1. **BOL** (*beginning of line*) procesa la indentación al inicio de cada línea y
+1. **BOL** (_beginning of line_) procesa la indentación al inicio de cada línea y
    genera los tokens `INDENT` y `DEDENT`.
 2. **AFTER_POSTFIX** se activa luego de un identificador o de un cierre (`)` o
    `]`) para interpretar correctamente el operador `->` y distinguirlo de la
@@ -337,8 +362,8 @@ desambigua su uso como tipo.
 
 #### Análisis sintáctico (Bison)
 
-&emsp;La gramática (`BisonGrammar.y`) está libre de contexto y usa un *push
-parser* (`%define api.push-pull push`). En lugar de que el parser tire del lexer,
+&emsp;La gramática (`BisonGrammar.y`) está libre de contexto y usa un _push
+parser_ (`%define api.push-pull push`). En lugar de que el parser tire del lexer,
 cada token producido por Flex empuja un paso de parseo mediante `yypush_parse()`,
 integrado en el bucle de `Frontend.c`. La gramática define precedencia y
 asociatividad al estilo de C, de la asignación (la más baja, asociativa a
@@ -386,9 +411,9 @@ validación se realiza en dos pasadas:
 2. **Validación.** Recorre los cuerpos de las funciones y las sentencias,
    validando tipos, expresiones, llamadas, retornos y control de flujo.
 
-&emsp;La tabla de símbolos implementa *scopes* léxicos encadenados, con dos
+&emsp;La tabla de símbolos implementa _scopes_ léxicos encadenados, con dos
 espacios de nombres separados: el ordinario (variables, funciones, typedefs,
-constantes de enum) y el de *tags* (`struct`, `union`, `enum`). Al entrar a un
+constantes de enum) y el de _tags_ (`struct`, `union`, `enum`). Al entrar a un
 bloque se apila un scope y al salir se desapila; la búsqueda recorre la cadena
 desde el scope actual hacia la raíz, y la detección de duplicados consulta solo
 el scope actual.
@@ -398,7 +423,7 @@ el scope actual.
 1. tipos nombrados existentes; prohibición de variables, parámetros y campos
    `void`; prohibición de funciones que retornen arreglos; cotas de arreglo
    enteras y mayores que cero; arreglos sin tamaño solo como parámetros;
-2. distinción entre *lvalue* y *rvalue*, y rechazo de la asignación a *lvalues*
+2. distinción entre _lvalue_ y _rvalue_, y rechazo de la asignación a _lvalues_
    de solo lectura (`const`);
 3. compatibilidad de asignaciones e inicializadores, con conversiones aritméticas
    habituales, decaimiento de arreglo a puntero, conversiones desde y hacia
@@ -460,20 +485,20 @@ válido y sin ambigüedad de precedencia, a costa de un poco más de texto.
 
 &emsp;Más allá del compilador, el proyecto incluye:
 
-1. **Skill `writing-tel`.** El repositorio publica una *Agent Skill* que enseña a
+1. **Skill `writing-tel`.** El repositorio publica una _Agent Skill_ que enseña a
    un agente (como Claude) a escribir TEL correcto. Se instala con
    `npx skills add https://github.com/BautistaPessagno/TEL --skill writing-tel`.
 2. **Entorno reproducible.** Todo el desarrollo y las pruebas corren dentro de un
    servicio de Docker Compose, de modo que los artefactos de Linux generados
    coincidan con el entorno de corrección.
-3. **Integración continua.** El repositorio expone un *badge* de pipeline que
+3. **Integración continua.** El repositorio expone un _badge_ de pipeline que
    corre el build y la suite de tests sobre la rama de desarrollo.
 4. **Detección de errores de memoria.** El build usa `-fsanitize=address`, de
    modo que las fugas y los errores de memoria hacen fallar los tests dentro del
    contenedor.
 5. **Política de runtime.** TEL no provee un runtime propio. El C generado
    depende del estándar C, de los `#include` del usuario, del inline C y del
-   *toolchain* C. Esta decisión mantiene el artefacto simple y portable; la
+   _toolchain_ C. Esta decisión mantiene el artefacto simple y portable; la
    contracara es que un programa que dependa de funciones externas debe proveer
    su implementación (o un inline C) para poder enlazarse en una prueba de
    integración ejecutable.
@@ -486,7 +511,7 @@ distinto de cero). La suite actual contiene **52 casos de aceptación** y **114
 casos de rechazo**, ejecutados por `src/main/bash/test.sh`.
 
 &emsp;La cobertura abarca tres niveles. En el nivel **léxico/sintáctico**, los
-rechazos incluyen indentación inconsistente o de ancho inválido, *dedent* a un
+rechazos incluyen indentación inconsistente o de ancho inválido, _dedent_ a un
 nivel inexistente, declaraciones al estilo C, `elif` huérfano, cabeceras
 malformadas de `for` y `switch`, inline C sin cerrar y comentarios de bloque sin
 cerrar. En el nivel **semántico**, los rechazos verifican redefinición de
@@ -497,7 +522,29 @@ indexación de un no-arreglo, dereferencia de un no-puntero, campo `void` en un
 agregado y punteros a objeto incompatibles. Entre los **casos de aceptación** se
 incluyen pruebas unitarias por construcción y casos de integración que combinan
 varias características, como un programa de punteros y arreglos, un programa mixto
-y la resolución del problema *Two Sum*.
+y la resolución del problema _Two Sum_.
+
+#### Programas de demostración
+
+&emsp;El directorio `demo/leetcode/` agrega ocho programas que resuelven
+problemas clásicos de estilo LeetCode: _Two Sum_, _Fizz Buzz_, _Fibonacci_,
+_Binary Search_, _Reverse Integer_, _Palindrome Number_, _Maximum Subarray_
+(algoritmo de Kadane) y _Climbing Stairs_. Cada programa se valida de extremo a
+extremo dentro del contenedor: se traduce de TEL a C con el compilador, el C
+resultante se compila con `gcc -Wall` y el binario se ejecuta, comparando su
+salida —impresa con `printf`, tratado como función de biblioteca externa— contra
+el resultado esperado del problema. Estos programas, además de servir como
+ejemplos de uso del lenguaje, son la base de la medición de tokens de la
+Tabla 2.1.
+
+&emsp;Esta validación expuso una limitación del generador de código: un literal
+negativo dentro de un literal de arreglo separado por espacios (por ejemplo
+`{-2 1 -3 4}`) se interpreta como una resta entre elementos consecutivos
+(`1 - 3`), produciendo un arreglo con menos elementos de los esperados.
+`max-subarray.tel` evita el problema inicializando el arreglo elemento por
+elemento; los demás literales de arreglo del proyecto solo usan valores
+positivos y no se ven afectados. Esta limitación queda documentada como trabajo
+futuro de la generación de código.
 
 ### 3.4. Dificultades Encontradas
 
@@ -509,7 +556,7 @@ y la resolución del problema *Two Sum*.
    archivo para que Bison supiera dónde empieza y termina cada bloque.
 2. **Ambigüedad del operador `->`.** La flecha aparece tanto en el operador de
    acceso por puntero como en el tipo de retorno de las funciones. Se resolvió
-   con la *start condition* AFTER_POSTFIX, que solo interpreta `->` como acceso
+   con la _start condition_ AFTER_POSTFIX, que solo interpreta `->` como acceso
    cuando viene después de un identificador o de un cierre.
 3. **Sintaxis de declaradores en C.** Los punteros, los arreglos y, sobre todo,
    los punteros a función tienen una sintaxis "inside-out" delicada. Generar
@@ -563,13 +610,13 @@ semántico rechaza los programas que el parser por sí solo no puede distinguir.
 &emsp;Las mediciones muestran que TEL reduce de forma consistente la cantidad de
 tokens respecto del C equivalente, con el mayor ahorro en los tipos compuestos y
 en las directivas, lo que valida la premisa del dominio. La suite de 52 casos de
-aceptación y 114 de rechazo, junto con casos de integración como *Two Sum*,
+aceptación y 114 de rechazo, junto con casos de integración como _Two Sum_,
 respalda la robustez del compilador y deja en evidencia el comportamiento del
 lenguaje frente a programas reales.
 
 &emsp;El proyecto queda autocontenido y reproducible: una persona externa puede
 clonar el repositorio, construir y probar el compilador dentro de Docker, generar
-C a partir de TEL y compilarlo con el *toolchain* C estándar.
+C a partir de TEL y compilarlo con el _toolchain_ C estándar.
 
 ---
 
@@ -577,14 +624,14 @@ C a partir de TEL y compilarlo con el *toolchain* C estándar.
 
 &emsp;Material citado explícitamente en este documento:
 
-1. Cátedra de Autómatas, Teoría de Lenguajes y Compiladores. *Proyecto Especial
-   — Diseño e Implementación de un Lenguaje* (2026-03-12). ITBA.
-2. Cátedra ATLC. *Análisis Léxico* (v1.0.0, 2025-09-03).
-3. Cátedra ATLC. *Análisis Sintáctico* (v0.1.0, 2024-05-08).
-4. Cátedra ATLC. *Análisis Semántico* (v0.2.0, 2024-09-25).
-5. Cátedra ATLC. *Generación de Código* (v0.1.0, 2024-05-16).
-6. Cátedra ATLC. *Runtime* (v0.1.0, 2024-05-16).
-7. OpenAI. *Tokenizer*. <https://platform.openai.com/tokenizer>.
+1. Cátedra de Autómatas, Teoría de Lenguajes y Compiladores. _Proyecto Especial
+   — Diseño e Implementación de un Lenguaje_ (2026-03-12). ITBA.
+2. Cátedra ATLC. _Análisis Léxico_ (v1.0.0, 2025-09-03).
+3. Cátedra ATLC. _Análisis Sintáctico_ (v0.1.0, 2024-05-08).
+4. Cátedra ATLC. _Análisis Semántico_ (v0.2.0, 2024-09-25).
+5. Cátedra ATLC. _Generación de Código_ (v0.1.0, 2024-05-16).
+6. Cátedra ATLC. _Runtime_ (v0.1.0, 2024-05-16).
+7. OpenAI. _Tokenizer_. <https://platform.openai.com/tokenizer>.
 8. Repositorio del proyecto TEL. <https://github.com/BautistaPessagno/TEL>.
 9. Especificación TEL — Stage I (`doc/TEL - Stage 1.pdf`) y requerimientos
    (`doc/requirements.md`).
@@ -595,10 +642,10 @@ C a partir de TEL y compilarlo con el *toolchain* C estándar.
 
 &emsp;Material consultado que no se cita de forma directa en el texto:
 
-1. Aho, A., Lam, M., Sethi, R. y Ullman, J. *Compilers: Principles, Techniques,
-   and Tools* (2.ª edición), 2006.
-2. *Flex — The Fast Lexical Analyzer Generator*, documentación oficial del
+1. Aho, A., Lam, M., Sethi, R. y Ullman, J. _Compilers: Principles, Techniques,
+   and Tools_ (2.ª edición), 2006.
+2. _Flex — The Fast Lexical Analyzer Generator_, documentación oficial del
    proyecto GNU Flex.
-3. *Bison — GNU Parser Generator*, manual oficial del proyecto GNU Bison.
-4. Fowler, M. *Phoenix Server* (2021-07-10) y Morris, K. *Immutable Server*
+3. _Bison — GNU Parser Generator_, manual oficial del proyecto GNU Bison.
+4. Fowler, M. _Phoenix Server_ (2021-07-10) y Morris, K. _Immutable Server_
    (2013-06-13), sobre entornos reproducibles.

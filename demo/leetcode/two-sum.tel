@@ -1,0 +1,16 @@
+// LeetCode 1: Two Sum
+// Return the indices of the two numbers that add up to target.
+#include stdio
+
+fn twoSum nums:int[] size:int target:int -> int
+    ford i 0 size
+        ford j (i + 1) size
+            if nums[i] + nums[j] == target
+                ret i * 100 + j
+    ret -1
+
+main
+    a:int[4] = {2 7 11 15}
+    r:int = twoSum(a, 4, 9)
+    printf("two-sum: i=%d j=%d\n", r / 100, r % 100)
+    ret 0
