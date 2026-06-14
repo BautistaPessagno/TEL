@@ -66,6 +66,16 @@ Do not use the host shell as the final verification signal on macOS. `.build/tel
 
 
 
+## Skills
+
+This repo ships a `writing-tel` skill that teaches Claude (or other agents supporting [Agent Skills](https://github.com/anthropics/skills)) how to write correct TEL source code.
+
+Install it into your own project with:
+
+```bash
+npx skills add https://github.com/BautistaPessagno/TEL --skill writing-tel
+```
+
 ## Implemented Scope
 
 Implemented:
