@@ -1,0 +1,5 @@
+fn add left:int right:int -> int
+    ret left + right
+
+main
+    ret add(2, 3)

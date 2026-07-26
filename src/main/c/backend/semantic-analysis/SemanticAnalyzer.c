@@ -51,6 +51,14 @@ static Type _semanticDoubleType = { .kind = TYPE_DOUBLE_KIND };
 static Type _semanticLongType = { .kind = TYPE_LONG_KIND };
 static Type _semanticUIntType = { .kind = TYPE_UINT_KIND };
 static Type _semanticULIType = { .kind = TYPE_ULI_KIND };
+static Type _semanticCharPointerType = {
+	.kind = TYPE_POINTER_KIND,
+	.pointee = &_semanticCharType
+};
+static Type _semanticArgumentVectorType = {
+	.kind = TYPE_POINTER_KIND,
+	.pointee = &_semanticCharPointerType
+};
 
 /** Shutdown module's internal state. */
 void _shutdownSemanticAnalyzerModule() {
@@ -191,6 +199,18 @@ static void _collectGlobalItem(SemanticAnalysisContext * context, ProgramItem * 
 		case PROGRAM_ITEM_FUNCTION_DECLARATION:
 			_declareGlobalFunction(context, item->functionDeclaration);
 			break;
+		case PROGRAM_ITEM_MAIN_DECLARATION:
+			if (!semanticSymbolTableDeclareOrdinary(
+					context->symbols,
+					"main",
+					SEMANTIC_SYMBOL_FUNCTION,
+					NULL,
+					NULL,
+					&_semanticIntType,
+					true)) {
+				_reportSemanticError(context, "Duplicate function definition", "main");
+			}
+			break;
 		case PROGRAM_ITEM_AGGREGATE_DECLARATION: {
 			SemanticTagKind kind = item->aggregateDeclaration->kind == AGGREGATE_STRUCT_KIND
 				? SEMANTIC_TAG_STRUCT
@@ -293,7 +313,25 @@ static void _validateProgramItem(SemanticAnalysisContext * context, ProgramItem 
 		case PROGRAM_ITEM_MAIN_DECLARATION: {
 			Type * previousReturnType = context->currentReturnType;
 			context->currentReturnType = &_semanticIntType;
-			(void) _validateStatementListInNewScope(context, item->mainDeclaration->body);
+			semanticSymbolTablePushScope(context->symbols);
+			semanticSymbolTableDeclareOrdinary(
+				context->symbols,
+				"argc",
+				SEMANTIC_SYMBOL_VARIABLE,
+				&_semanticIntType,
+				NULL,
+				NULL,
+				false);
+			semanticSymbolTableDeclareOrdinary(
+				context->symbols,
+				"argv",
+				SEMANTIC_SYMBOL_VARIABLE,
+				&_semanticArgumentVectorType,
+				NULL,
+				NULL,
+				false);
+			(void) _validateStatementList(context, item->mainDeclaration->body);
+			semanticSymbolTablePopScope(context->symbols);
 			context->currentReturnType = previousReturnType;
 			break;
 		}

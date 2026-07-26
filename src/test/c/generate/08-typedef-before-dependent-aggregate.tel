@@ -1,0 +1,7 @@
+typedef Count:int
+
+struct Box
+    value:Count
+
+main
+    ret 0

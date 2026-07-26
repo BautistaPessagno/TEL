@@ -14,10 +14,10 @@
  */
 void yyerror(const YYLTYPE * location, const char * message) {
 	if (location != NULL && location->first_line > 0) {
-		fprintf(stderr, "%s (line %d)\n", message, location->first_line);
+		fprintf(stderr, "%s:%d: %s\n", BisonSourceName(), location->first_line, message);
 	}
 	else {
-		fprintf(stderr, "%s\n", message);
+		fprintf(stderr, "%s:1: %s\n", BisonSourceName(), message);
 	}
 }
 
@@ -571,7 +571,7 @@ optionalEnumMemberValue:
 	;
 
 typedefDeclaration:
-	 TYPEDEF identifier COLON type terminator				{ $$ = TypedefDeclarationSemanticAction($2, $4); }
+	 TYPEDEF identifier COLON type terminator				{ RegisterTypedefName($2); $$ = TypedefDeclarationSemanticAction($2, $4); }
 	;
 
 preprocessorDirective:

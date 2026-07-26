@@ -25,3 +25,7 @@ BisonParser.c
 BisonParser.h
 FlexScanner.c
 FlexScanner.h
+CParser.c
+CParser.h
+CScanner.c
+CScanner.h

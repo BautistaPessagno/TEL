@@ -1,0 +1,1 @@
+int compare(int, int);

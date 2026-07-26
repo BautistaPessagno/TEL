@@ -66,6 +66,9 @@ void enterLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer, FlexContext 
  */
 CompilationStatus executeLexicalAnalysis(LexicalAnalyzer * lexicalAnalyzer);
 
+/** Selects the stream scanned by the TEL lexical analyzer. */
+void setLexicalAnalyzerInput(LexicalAnalyzer * lexicalAnalyzer, FILE * input);
+
 /**
  * Starts parsing the input until it reaches the end or fails.
  */

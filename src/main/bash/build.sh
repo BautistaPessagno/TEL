@@ -13,6 +13,10 @@ rm --force "src/main/c/frontend/lexical-analysis/FlexScanner.c"
 rm --force "src/main/c/frontend/lexical-analysis/FlexScanner.h"
 rm --force "src/main/c/frontend/syntactic-analysis/BisonParser.c"
 rm --force "src/main/c/frontend/syntactic-analysis/BisonParser.h"
+rm --force "src/main/c/frontend/c-language/lexical-analysis/CScanner.c"
+rm --force "src/main/c/frontend/c-language/lexical-analysis/CScanner.h"
+rm --force "src/main/c/frontend/c-language/syntactic-analysis/CParser.c"
+rm --force "src/main/c/frontend/c-language/syntactic-analysis/CParser.h"
 
 cmake -S . -B .build
 echo -e "${GREEN}CMake done.${OFF}"

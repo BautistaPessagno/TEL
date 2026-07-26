@@ -5,6 +5,7 @@
 #include "../../support/type/CompilationStatus.h"
 #include "../../support/type/CompilerState.h"
 #include "../../support/type/ModuleDestructor.h"
+#include <stdio.h>
 
 /** Initialize module's internal state. */
 ModuleDestructor initializeCodeGeneratorModule();
@@ -12,6 +13,6 @@ ModuleDestructor initializeCodeGeneratorModule();
 /**
  * Generates the final C output using the current compiler state.
  */
-CompilationStatus executeCodeGeneration(CompilerState * compilerState);
+CompilationStatus executeCodeGeneration(CompilerState * compilerState, FILE * output);
 
 #endif

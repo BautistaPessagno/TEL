@@ -1,0 +1,6 @@
+int hex = 0xFF;
+int hexUpper = 0X1a;
+
+int main(int argc, char *argv[]) {
+    return (hex + hexUpper);
+}

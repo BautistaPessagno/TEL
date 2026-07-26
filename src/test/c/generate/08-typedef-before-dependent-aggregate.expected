@@ -1,0 +1,9 @@
+typedef int Count;
+
+struct Box {
+    Count value;
+};
+
+int main(int argc, char *argv[]) {
+    return 0;
+}

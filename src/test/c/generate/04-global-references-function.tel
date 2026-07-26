@@ -1,0 +1,4 @@
+fn make -> int
+    ret 7
+
+handler:(fn* -> int) = make

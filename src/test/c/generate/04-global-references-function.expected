@@ -1,0 +1,7 @@
+int make(void);
+
+int (*handler)(void) = make;
+
+int make(void) {
+    return 7;
+}

@@ -21,6 +21,9 @@ typedef struct {
 
 typedef bool (*ProgramItemPredicate)(ProgramItem * item);
 
+static const char * INLINE_C_BEGIN_MARKER = "/*__TEL_INLINE_C_BEGIN__*/";
+static const char * INLINE_C_END_MARKER = "/*__TEL_INLINE_C_END__*/";
+
 static void _emit(CodeGenerationContext * context, const char * format, ...);
 static void _emitIndentation(CodeGenerationContext * context);
 static void _emitLine(CodeGenerationContext * context, const char * format, ...);
@@ -286,8 +289,8 @@ static void _generateProgram(CodeGenerationContext * context, Program * program)
 		_isDirective,
 		_isGlobalInlineC,
 		_isEnum,
-		_isAggregate,
-		_isTypedef
+		_isTypedef,
+		_isAggregate
 	};
 	/* Passes emitted after function prototypes: globals (whose initializers may
 	 * reference a function designator), function bodies, and `main`. */
@@ -383,10 +386,19 @@ static void _generateInlineC(CodeGenerationContext * context, const char * code)
 	if (code == NULL || *code == '\0') {
 		return;
 	}
+	if (strstr(code, "__TEL_INLINE_C_BEGIN__") != NULL
+		|| strstr(code, "__TEL_INLINE_C_END__") != NULL) {
+		context->failed = true;
+		return;
+	}
+	_emitIndentation(context);
+	_emit(context, "%s\n", INLINE_C_BEGIN_MARKER);
 	_emit(context, "%s", code);
 	if (code[strlen(code) - 1] != '\n') {
 		_emit(context, "\n");
 	}
+	_emitIndentation(context);
+	_emit(context, "%s\n", INLINE_C_END_MARKER);
 }
 
 static void _generateTypedef(CodeGenerationContext * context, TypedefDeclaration * declaration) {
@@ -820,21 +832,45 @@ static bool _isMain(ProgramItem * item) {
 
 /** PUBLIC FUNCTIONS */
 
-CompilationStatus executeCodeGeneration(CompilerState * compilerState) {
+CompilationStatus executeCodeGeneration(CompilerState * compilerState, FILE * output) {
 	logDebugging(_logger, "Executing code generation...");
 	if (compilerState == NULL || compilerState->abstractSyntaxtTree == NULL) {
 		logError(_logger, "Missing AST for code generation.");
 		return FAILED;
 	}
+	if (output == NULL) {
+		logError(_logger, "Missing output stream for code generation.");
+		return FAILED;
+	}
+	char * generated = NULL;
+	size_t generatedLength = 0;
+	FILE * capture = open_memstream(&generated, &generatedLength);
+	if (capture == NULL) {
+		logError(_logger, "Cannot allocate C output.");
+		return OUT_OF_MEMORY;
+	}
 	CodeGenerationContext context = {
-		.output = stdout,
+		.output = capture,
 		.indentation = 0,
 		.failed = false
 	};
 	_generateProgram(&context, (Program *) compilerState->abstractSyntaxtTree);
-	if (fflush(context.output) != 0) {
+	if (fclose(capture) != 0) {
 		context.failed = true;
 	}
+	while (generatedLength > 0 && generated[generatedLength - 1] == '\n') {
+		generatedLength--;
+	}
+	if (!context.failed && generatedLength > 0) {
+		if (fwrite(generated, 1, generatedLength, output) != generatedLength
+			|| fputc('\n', output) == EOF) {
+			context.failed = true;
+		}
+	}
+	if (!context.failed && fflush(output) != 0) {
+		context.failed = true;
+	}
+	free(generated);
 	if (context.failed) {
 		logError(_logger, "Failed to generate C output.");
 		return FAILED;

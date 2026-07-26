@@ -53,12 +53,12 @@ cobran por token; la latencia, dado que más tokens implican más tiempo de
 respuesta; y la ventana de contexto disponible, porque cada token gastado en
 sintaxis es un token menos para contenido semántico.
 
-&emsp;El Stage III entrega un compilador funcional que recorre el pipeline
-completo: lee un programa TEL desde la entrada estándar, lo lexa y parsea con
-Flex y Bison, construye un Árbol de Sintaxis Abstracta (AST), valida su
-semántica y, finalmente, emite código C estándar, determinista y compilable por
-la salida estándar. Se trata, por lo tanto, de un compilador fuente a fuente
-(_source-to-source_).
+&emsp;El Stage III entrega un compilador fuente a fuente bidireccional. Un
+archivo `.tel` se traduce a C y un archivo `.c` del subconjunto soportado se
+traduce a TEL canónico. En ambos sentidos se construye un Árbol de Sintaxis
+Abstracta (AST) compartido, se valida su semántica, se normaliza y se emite una
+salida determinista. La entrada estándar se conserva por compatibilidad mediante
+`--from tel|c`.
 
 &emsp;Este documento describe el desarrollo y la concepción de las ideas detrás
 del lenguaje y de su compilador.
@@ -74,11 +74,12 @@ humano-LLM para el desarrollo de software en C. El compilador toma como entrada
 un programa en TEL y produce como artefacto de salida su equivalente en código C
 estándar.
 
-&emsp;La transformación se concibe como biyectiva en su definición conceptual:
-dado cualquier programa válido en TEL, el compilador produce un único programa C
-equivalente y bien formado y, recíprocamente, cualquier programa dentro del
-subconjunto de C soportado tiene una representación única en TEL. Para el alcance
-de este proyecto se implementa únicamente la dirección TEL → C.
+&emsp;La transformación es biyectiva sobre las formas canónicas producidas por
+el compilador. En particular,
+`CToTEL(TELToC(t)) = canonicalTEL(t)` y
+`TELToC(CToTEL(c)) = canonicalC(c)`. El C manuscrito soportado se acepta como
+extensión de normalización: comentarios ordinarios, formato y paréntesis
+redundantes no forman parte de la identidad canónica.
 
 &emsp;El subconjunto de C cubierto por TEL incluye:
 
@@ -309,21 +310,19 @@ variable debe declararse con su tipo explícito antes de usarse.
 ## 3. Implementación
 
 &emsp;El compilador está escrito en C y construido con Flex (analizador léxico) y
-Bison (analizador sintáctico). El pipeline ejecuta cinco fases ordenadas:
+Bison (analizador sintáctico). El pipeline selecciona el frontend por extensión
+y ejecuta fases compartidas:
 
 ```
-stdin -> análisis léxico -> análisis sintáctico (AST)
-      -> análisis semántico -> generación de código C -> limpieza
+.tel -> frontend TEL --\
+                       -> AST -> semántica -> normalización -> generador opuesto
+.c   -> frontend C ----/
 ```
 
-&emsp;Si fallan el análisis léxico, el sintáctico o el semántico, el programa
-termina con estado distinto de cero y no emite un artefacto C usable. Si todas
-las fases pasan, emite C determinista y sintácticamente válido. La orquestación
-vive en `EntryPoint.c`, que inicializa cada módulo (cada `initializeXModule()`
-devuelve un destructor que se ejecuta en orden inverso), corre
-`executeSyntacticAnalysis()` y, si tiene éxito, `executeSemanticAnalysis()` y
-`executeCodeGeneration()`. El estado se transporta en `CompilerState`, una
-estructura mínima que sostiene la raíz del AST.
+&emsp;Si falla cualquier fase, el programa termina con estado distinto de cero y
+no emite un artefacto parcial. La salida se genera primero en memoria y `-o`
+escribe un temporal hermano que solo se renombra al finalizar con éxito. La
+orquestación vive en `EntryPoint.c`; `CompilerState` transporta la raíz del AST.
 
 ### 3.1. Frontend
 
@@ -376,6 +375,18 @@ nivel superior (declaraciones de variables y funciones, `main`, agregados, enums
 typedefs, directivas e inline C) y, dentro de las funciones, por sentencias
 (declaraciones, `ret`, expresiones, control de flujo, `break`/`cnt`).
 
+#### Frontend del subconjunto C
+
+&emsp;La dirección inversa usa un segundo par Flex/Bison, reentrante, sensible a
+ubicaciones y con prefijo separado (`c_yy`) para evitar colisiones de símbolos.
+Su resolvedor de declaradores reconstruye punteros, arreglos y punteros a
+función, incluso en formas compuestas, y divide declaraciones C con base
+compartida en nodos AST individuales. El registro de `typedef` es local a este
+frontend. El parser acepta exactamente la frontera representable por el AST y
+rechaza, con archivo y línea, construcciones como casts generales, `sizeof`,
+ternarios, variádicos, bitfields, inicializadores designados, `goto`,
+preprocesamiento condicional e includes con ruta o comillas.
+
 #### Árbol de Sintaxis Abstracta
 
 &emsp;Las acciones semánticas (`BisonActions.c`) asignan cada nodo con `calloc` y
@@ -393,8 +404,8 @@ retorno. Los `DEDENT` de cierre y el manejo del cuerpo viven en estas acciones.
 
 ### 3.2. Backend
 
-&emsp;El backend opera sobre el AST en dos fases: análisis semántico y generación
-de código.
+&emsp;El backend opera sobre el AST en tres fases: análisis semántico,
+normalización y generación determinista en el lenguaje opuesto.
 
 #### Análisis semántico
 
@@ -445,10 +456,18 @@ el scope actual.
 verifica su tipo. Esta limitación es deliberada y se documenta como frontera del
 análisis.
 
+#### Normalización
+
+&emsp;`ProgramNormalizer.c` se ejecuta después de validar para no ocultar
+redeclaraciones incompatibles. Elimina nodos vacíos, quita prototipos cubiertos
+por una definición, colapsa prototipos repetidos compatibles, ordena
+establemente las categorías del programa y normaliza enteros decimales y
+octales. Así ambos generadores observan el mismo AST canónico.
+
 #### Generación de código C
 
-&emsp;El generador (`CodeGenerator.c`) emite C determinista por la salida
-estándar con un contexto que sostiene el flujo de salida, el nivel de indentación
+&emsp;El generador (`CodeGenerator.c`) emite C determinista sobre un flujo de
+salida recibido por parámetro, con un contexto que sostiene el nivel de indentación
 (cuatro espacios por nivel) y una bandera de error de E/S. La emisión se realiza
 en un orden estable de fases que respeta las reglas de declaración previa de C:
 
@@ -476,10 +495,21 @@ de traducción: los literales octales `0o…` se reescriben a la forma `0…` de
 `null` se emite como `((void *)0)`, los literales de arreglo se separan con comas
 y `main` se emite con la firma fija `int main(int argc, char *argv[])`.
 
+&emsp;Cada bloque de inline C se rodea con comentarios reservados válidos en C.
+El scanner inverso reconoce esos marcadores y reconstruye el nodo opaco original;
+los comentarios C ordinarios se descartan.
+
 &emsp;La estrategia de paréntesis es deliberadamente conservadora: toda operación
 binaria y unaria (salvo el postfijo) se emite entre paréntesis, y el receptor de
 una indexación o de un acceso a miembro también se parentiza. El resultado es C
 válido y sin ambigüedad de precedencia, a costa de un poco más de texto.
+
+#### Generación de TEL
+
+&emsp;`TelCodeGenerator.c` emite TEL canónico: retornos siempre explícitos,
+tipos compactos, expresiones con los paréntesis mínimos necesarios para
+reconstruir el mismo AST, arreglos desambiguados, bucles de conteo como `ford`,
+casos con `break` final como `->`, octales `0o` y punteros nulos como `null`.
 
 ### 3.3. Adicionales
 
@@ -505,10 +535,11 @@ válido y sin ambigüedad de precedencia, a costa de un poco más de texto.
 
 #### Pruebas
 
-&emsp;Los tests son programas TEL ubicados en `src/test/c/accept/` (deben
-terminar con estado `0`) y `src/test/c/reject/` (deben terminar con estado
-distinto de cero). La suite actual contiene **52 casos de aceptación** y **114
-casos de rechazo**, ejecutados por `src/main/bash/test.sh`.
+&emsp;La suite conserva **52 casos TEL de aceptación** y **114 de rechazo**, y
+agrega goldens TEL→C y C→TEL, 14 casos de C no representable, pruebas del CLI y
+de escritura atómica, compilación con `gcc`, cinco programas ejecutables y las
+dos leyes inversas canónicas. Todo se ejecuta con AddressSanitizer desde
+`src/main/bash/test.sh`.
 
 &emsp;La cobertura abarca tres niveles. En el nivel **léxico/sintáctico**, los
 rechazos incluyen indentación inconsistente o de ancho inválido, _dedent_ a un
@@ -582,30 +613,27 @@ futuro de la generación de código.
 
 &emsp;A partir del estado actual, las extensiones naturales son:
 
-1. **Dirección C → TEL.** Completar la transformación biyectiva implementando el
-   sentido inverso, de modo de poder comprimir código C existente a TEL.
-2. **Inferencia de tipos.** Permitir declaraciones como `x = 5` sin tipo
+1. **Inferencia de tipos.** Permitir declaraciones como `x = 5` sin tipo
    explícito, lo que reduciría aún más los tokens.
-3. **Ubicaciones de fuente en el AST.** Hoy los nodos del AST no llevan
+2. **Ubicaciones de fuente en el AST.** Hoy los nodos del AST no llevan
    posición, por lo que los errores semánticos se reportan sin número de línea.
    Agregar la ubicación mejoraría los diagnósticos.
-4. **Verificación parcial del inline C.** Hoy el inline C es opaco; podría
+3. **Verificación parcial del inline C.** Hoy el inline C es opaco; podría
    verificarse al menos parcialmente.
-5. **Medición empírica automatizada del ahorro de tokens.** Integrar un
+4. **Medición empírica automatizada del ahorro de tokens.** Integrar un
    tokenizador al pipeline de pruebas para medir el ahorro de forma sistemática y
    por modelo.
-6. **Ampliar el subconjunto de C.** Incorporar más construcciones a medida que se
+5. **Ampliar el subconjunto de C.** Incorporar más construcciones a medida que se
    demuestren valiosas para los flujos humano-LLM.
 
 ---
 
 ## 5. Conclusiones
 
-&emsp;El Stage III cumple su objetivo: el compilador recorre el pipeline completo
-desde el texto TEL hasta el código C, con análisis léxico, sintáctico, semántico
-y generación de código funcionando de extremo a extremo. El generador produce C
-determinista y compilable para el subconjunto documentado, y el análisis
-semántico rechaza los programas que el parser por sí solo no puede distinguir.
+&emsp;El Stage III cumple su objetivo y extiende el resultado a una traducción
+bidireccional: TEL y el subconjunto C documentado convergen a representaciones
+canónicas estables. Los dos frontends, el AST compartido, el análisis semántico,
+la normalización y ambos generadores funcionan de extremo a extremo.
 
 &emsp;Las mediciones muestran que TEL reduce de forma consistente la cantidad de
 tokens respecto del C equivalente, con el mayor ahorro en los tipos compuestos y
@@ -615,8 +643,8 @@ respalda la robustez del compilador y deja en evidencia el comportamiento del
 lenguaje frente a programas reales.
 
 &emsp;El proyecto queda autocontenido y reproducible: una persona externa puede
-clonar el repositorio, construir y probar el compilador dentro de Docker, generar
-C a partir de TEL y compilarlo con el _toolchain_ C estándar.
+clonar el repositorio, construir y probar el compilador dentro de Docker,
+traducir en ambos sentidos y compilar el C canónico con el _toolchain_ estándar.
 
 ---
 

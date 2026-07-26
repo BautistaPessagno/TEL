@@ -16,6 +16,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		COMMAND ../src/main/bash/bison.sh
 	)
 
+	add_custom_command(
+		OUTPUT ../src/main/c/frontend/c-language/syntactic-analysis/CParser.c ../src/main/c/frontend/c-language/syntactic-analysis/CParser.h
+		COMMAND ../src/main/bash/c-bison.sh
+		DEPENDS ../src/main/c/frontend/c-language/syntactic-analysis/CGrammar.y ../src/main/bash/c-bison.sh
+	)
+
 	# Options for GCC.
 	add_compile_options(-fsanitize=address)
 	add_compile_options(-O3)
@@ -30,14 +36,30 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		DEPENDS ../src/main/c/frontend/syntactic-analysis/BisonParser.c ../src/main/c/frontend/syntactic-analysis/BisonParser.h
 	)
 
+	add_custom_command(
+		OUTPUT ../src/main/c/frontend/c-language/lexical-analysis/CScanner.c ../src/main/c/frontend/c-language/lexical-analysis/CScanner.h
+		COMMAND ../src/main/bash/c-flex.sh
+		DEPENDS
+			../src/main/c/frontend/c-language/lexical-analysis/CPatterns.l
+			../src/main/bash/c-flex.sh
+			../src/main/c/frontend/c-language/syntactic-analysis/CParser.c
+			../src/main/c/frontend/c-language/syntactic-analysis/CParser.h
+	)
+
 	# Defines the entry-point of the application, and the source-codes (*.c extension).
 	# The header files (*.h extension), are automatically included from the source-codes.
 	add_executable(tel
 		src/main/c/EntryPoint.c
 		src/main/c/backend/code-generation/CodeGenerator.c
+		src/main/c/backend/normalization/ProgramNormalizer.c
 		src/main/c/backend/semantic-analysis/SemanticAnalyzer.c
 		src/main/c/backend/semantic-analysis/SemanticSymbolTable.c
+		src/main/c/backend/tel-code-generation/TelCodeGenerator.c
 		src/main/c/frontend/Frontend.c
+		src/main/c/frontend/c-language/CFrontend.c
+		src/main/c/frontend/c-language/lexical-analysis/CScanner.c
+		src/main/c/frontend/c-language/syntactic-analysis/CDeclarator.c
+		src/main/c/frontend/c-language/syntactic-analysis/CParser.c
 		src/main/c/frontend/lexical-analysis/FlexActions.c
 		src/main/c/frontend/lexical-analysis/StackADT.c
 		src/main/c/frontend/lexical-analysis/FlexScanner.c
@@ -45,6 +67,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		src/main/c/frontend/syntactic-analysis/BisonActions.c
 		src/main/c/frontend/syntactic-analysis/BisonParser.c
 		src/main/c/support/configuration/Environment.c
+		src/main/c/support/configuration/CompilerOptions.c
 		src/main/c/support/language/String.c
 		src/main/c/support/logging/Logger.c
 		# Add more *.c files if needed (otherwise, they won't be compiled).

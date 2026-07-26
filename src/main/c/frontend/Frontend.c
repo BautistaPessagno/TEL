@@ -152,6 +152,12 @@ CompilationStatus executeLexicalAnalysis(LexicalAnalyzer * lexicalAnalyzer) {
 		lexicalAnalyzer->scanner);
 }
 
+void setLexicalAnalyzerInput(LexicalAnalyzer * lexicalAnalyzer, FILE * input) {
+	if (lexicalAnalyzer != NULL && input != NULL) {
+		yyset_in(input, lexicalAnalyzer->scanner);
+	}
+}
+
 CompilationStatus executeSyntacticAnalysis() {
 	logDebugging(_logger, "Parsing...");
 	CompilationStatus status = IN_PROGRESS;
