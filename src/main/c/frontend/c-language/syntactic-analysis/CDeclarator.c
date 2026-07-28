@@ -125,6 +125,15 @@ CDeclarator * setCDeclaratorInitializer(CDeclarator * declarator, Expression * i
 	return declarator;
 }
 
+const char * cDeclaratorName(CDeclarator * declarator) {
+	for (CDeclarator * node = declarator; node != NULL; node = node->inner) {
+		if (node->kind == C_DECLARATOR_IDENTIFIER) {
+			return node->name;
+		}
+	}
+	return NULL;
+}
+
 CDeclaratorList * appendCDeclarator(CDeclaratorList * list, CDeclarator * declarator) {
 	CDeclaratorList * node = calloc(1, sizeof(CDeclaratorList));
 	node->declarator = declarator;

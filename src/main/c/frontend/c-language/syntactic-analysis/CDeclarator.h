@@ -49,6 +49,7 @@ CDeclarator * createCPointerDeclarator(CDeclarator * inner);
 CDeclarator * createCArrayDeclarator(CDeclarator * inner, Expression * size);
 CDeclarator * createCFunctionDeclarator(CDeclarator * inner, ParameterList * parameters);
 CDeclarator * setCDeclaratorInitializer(CDeclarator * declarator, Expression * initializer);
+const char * cDeclaratorName(CDeclarator * declarator);
 CDeclaratorList * appendCDeclarator(CDeclaratorList * list, CDeclarator * declarator);
 CDeclarationSpecifiers * createCDeclarationSpecifiers(
 	Type * type,

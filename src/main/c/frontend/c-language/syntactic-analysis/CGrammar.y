@@ -185,8 +185,7 @@
 
 	static StatementList * buildDeclarationStatements(
 		CDeclarationSpecifiers * specifiers,
-		CDeclaratorList * declarators,
-		void * scanner) {
+		CDeclaratorList * declarators) {
 		if (specifiers->isTypedef) {
 			destroyCDeclarationSpecifiers(specifiers);
 			destroyCDeclaratorList(declarators);
@@ -213,7 +212,6 @@
 				resolved->type,
 				resolved->initializer,
 				specifiers->isStatic);
-			registerCFrontendOrdinary(scanner, resolved->name);
 			resolved->name = NULL;
 			resolved->type = NULL;
 			resolved->initializer = NULL;
@@ -422,10 +420,10 @@
 %type <type> typeSpecifier
 %type <string> cIdentifier
 %type <declarationSpecifiers> declarationSpecifiers
-%type <declarator> declarator directDeclarator abstractDeclarator initDeclarator
-%type <declaratorList> initDeclaratorList
+%type <declarator> declarator directDeclarator abstractDeclarator initDeclarator localInitDeclarator
+%type <declaratorList> initDeclaratorList localInitDeclaratorList
 %type <parameter> parameterDeclaration
-%type <parameterList> optionalParameterList parameterList
+%type <parameterList> parameterList
 %type <declarationList> aggregateFieldDeclarationList aggregateFieldDeclaration
 %type <enumMember> enumMember
 %type <enumMemberList> enumMemberList
@@ -652,6 +650,27 @@ initDeclaratorList:
 	}
 	;
 
+localInitDeclaratorList:
+	localInitDeclarator {
+		$$ = appendCDeclarator(NULL, $1);
+	}
+	| localInitDeclaratorList C_COMMA localInitDeclarator {
+		$$ = appendCDeclarator($1, $3);
+	}
+	;
+
+localInitDeclarator:
+	declarator {
+		registerCFrontendOrdinary(scanner, cDeclaratorName($1));
+		$$ = $1;
+	}
+	| declarator {
+		registerCFrontendOrdinary(scanner, cDeclaratorName($1));
+	} C_ASSIGN initializer {
+		$$ = setCDeclaratorInitializer($1, $4);
+	}
+	;
+
 initDeclarator:
 	declarator {
 		$$ = $1;
@@ -702,14 +721,20 @@ directDeclarator:
 	| directDeclarator C_OPEN_BRACKET optionalExpression C_CLOSE_BRACKET {
 		$$ = createCArrayDeclarator($1, $3);
 	}
-	| directDeclarator C_OPEN_PARENTHESIS optionalParameterList C_CLOSE_PARENTHESIS {
+	| directDeclarator C_OPEN_PARENTHESIS C_CLOSE_PARENTHESIS {
+		destroyCDeclarator($1);
+		$$ = NULL;
+		c_yyerror(
+			&@$,
+			scanner,
+			compilerState,
+			sourceName,
+			"function declarators require an explicit parameter list");
+		YYERROR;
+	}
+	| directDeclarator C_OPEN_PARENTHESIS parameterList C_CLOSE_PARENTHESIS {
 		$$ = createCFunctionDeclarator($1, $3);
 	}
-	;
-
-optionalParameterList:
-	%empty { $$ = NULL; }
-	| parameterList { $$ = $1; }
 	;
 
 parameterList:
@@ -770,7 +795,8 @@ compoundStatement:
 	C_OPEN_BRACE optionalStatementList C_CLOSE_BRACE {
 		$$ = $2 != NULL
 			? $2
-			: SingletonStatementListSemanticAction(ReturnStatementSemanticAction(NULL));
+			: SingletonStatementListSemanticAction(
+				InlineCStatementSemanticAction(strdup(";\n")));
 	}
 	;
 
@@ -800,8 +826,8 @@ statement:
 		$$ = SingletonStatementListSemanticAction(
 			InlineCStatementSemanticAction($1));
 	}
-	| declarationSpecifiers initDeclaratorList C_SEMICOLON {
-		$$ = buildDeclarationStatements($1, $2, scanner);
+	| declarationSpecifiers localInitDeclaratorList C_SEMICOLON {
+		$$ = buildDeclarationStatements($1, $2);
 		if ($$ == NULL) {
 			c_yyerror(&@$, scanner, compilerState, sourceName, "unsupported local declaration");
 			YYERROR;

@@ -274,6 +274,12 @@ static void _declareGlobalFunction(SemanticAnalysisContext * context, FunctionDe
 			declaration->parameters,
 			declaration->returnType,
 			hasDefinition);
+		existing = semanticSymbolTableLookupCurrentOrdinary(
+			context->symbols,
+			declaration->name);
+		if (existing != NULL) {
+			existing->hasInternalLinkage = declaration->isStatic;
+		}
 		return;
 	}
 	if (existing->kind != SEMANTIC_SYMBOL_FUNCTION) {
@@ -283,6 +289,9 @@ static void _declareGlobalFunction(SemanticAnalysisContext * context, FunctionDe
 	if (!_functionSignaturesEqual(context, existing, declaration)) {
 		_reportSemanticError(context, "Incompatible function redeclaration", declaration->name);
 		return;
+	}
+	if (existing->hasInternalLinkage) {
+		declaration->isStatic = true;
 	}
 	if (existing->hasDefinition && hasDefinition) {
 		_reportSemanticError(context, "Duplicate function definition", declaration->name);

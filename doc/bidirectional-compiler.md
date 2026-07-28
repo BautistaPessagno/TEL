@@ -85,6 +85,7 @@ including:
 
 - general casts, `sizeof`, ternary and comma expressions;
 - variadics, bitfields, designated initializers, anonymous aggregates;
+- old-style non-prototype function declarators with empty parameter lists;
 - unsupported qualifiers/type combinations;
 - labels and `goto`;
 - conditional preprocessing and quoted/path includes;
