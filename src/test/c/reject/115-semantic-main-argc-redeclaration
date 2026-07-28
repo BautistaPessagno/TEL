@@ -1,0 +1,3 @@
+main
+    argc:int = 0
+    ret argc

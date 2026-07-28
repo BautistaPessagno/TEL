@@ -1,0 +1,5 @@
+stc fn helper -> int
+    ret 1
+
+fn call_helper -> int
+    ret helper()

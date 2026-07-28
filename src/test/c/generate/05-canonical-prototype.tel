@@ -1,0 +1,4 @@
+fn value -> int;
+
+fn value -> int
+    ret 1

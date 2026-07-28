@@ -5,6 +5,7 @@
 
 static CompilerState * _compilerState = NULL;
 static Logger * _logger = NULL;
+static const char * _sourceName = "<stdin>";
 
 typedef struct TypedefNameNode TypedefNameNode;
 
@@ -29,6 +30,7 @@ void _shutdownBisonActionsModule() {
 		_typedefNames = next;
 	}
 	_compilerState = NULL;
+	_sourceName = "<stdin>";
 }
 
 ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState) {
@@ -150,6 +152,18 @@ bool IsKnownTypedefName(const char * name) {
 		}
 	}
 	return false;
+}
+
+const char * BisonSourceName(void) {
+	return _sourceName;
+}
+
+void SetBisonSourceName(const char * sourceName) {
+	_sourceName = sourceName != NULL ? sourceName : "<stdin>";
+}
+
+void RegisterTypedefName(const char * name) {
+	_registerTypedefName(name);
 }
 
 VariableDeclaration * VariableDeclarationSemanticAction(char * name, Type * type, Expression * initializer, bool isStatic) {
@@ -278,7 +292,6 @@ TypedefDeclaration * TypedefDeclarationSemanticAction(char * name, Type * type) 
 	TypedefDeclaration * declaration = calloc(1, sizeof(TypedefDeclaration));
 	declaration->name = name;
 	declaration->type = type;
-	_registerTypedefName(name);
 	return declaration;
 }
 
@@ -742,6 +755,21 @@ StatementList * AppendStatementListSemanticAction(StatementList * statementList,
 	}
 	tail->next = SingletonStatementListSemanticAction(statement);
 	return statementList;
+}
+
+StatementList * ConcatenateStatementListSemanticAction(
+	StatementList * first,
+	StatementList * second) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (first == NULL) {
+		return second;
+	}
+	StatementList * tail = first;
+	while (tail->next != NULL) {
+		tail = tail->next;
+	}
+	tail->next = second;
+	return first;
 }
 
 StatementList * FunctionBodyStatementListSemanticAction(StatementList * statementList) {

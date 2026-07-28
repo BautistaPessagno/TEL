@@ -1,0 +1,4 @@
+value:int = 0008
+
+main
+    ret value

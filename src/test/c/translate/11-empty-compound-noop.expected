@@ -1,0 +1,6 @@
+fn advance value:int
+    if value
+        `
+;
+        `
+    value++

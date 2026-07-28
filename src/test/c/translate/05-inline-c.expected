@@ -1,0 +1,11 @@
+`
+static int raw_helper(void) {
+    return 7;
+}
+`
+
+main
+    `
+    puts("inline");
+    `
+    ret 0

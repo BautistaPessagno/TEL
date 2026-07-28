@@ -28,6 +28,7 @@ struct SemanticSymbol {
 	ParameterList * parameters;
 	Type * returnType;
 	bool hasDefinition;
+	bool hasInternalLinkage;
 	SemanticSymbol * next;
 };
 

@@ -2,10 +2,29 @@
 
 # TEL
 
-TEL is a Python-like DSL that compiles to C. The idea is to use a syntax that reduces LLM token usage.
+TEL is a Python-like DSL for representing a supported subset of C with fewer
+LLM tokens. The compiler translates in both directions.
 
-The compiler reads TEL from standard input, builds an AST with Flex/Bison,
-performs semantic validation, and emits C to standard output.
+Named inputs select the direction from their lowercase extension:
+
+```text
+tel program.tel                 # TEL -> C on stdout
+tel program.c                   # C -> canonical TEL on stdout
+tel program.tel -o program.c
+tel program.c -o program.tel
+```
+
+For compatibility, stdin defaults to TEL. Use `--from c` for C stdin:
+
+```bash
+tel < program.tel
+tel --from tel < program.tel
+tel --from c < program.c
+```
+
+The compiler rejects unknown or uppercase extensions, and `--from` cannot
+override a named file. Generation is buffered; `-o` uses a temporary sibling
+and atomic rename, so a rejected input cannot truncate an existing output.
 
 ## Team
 
@@ -39,10 +58,11 @@ Run the full test suite inside the container:
 src/main/bash/test.sh
 ```
 
-Run a TEL program inside the container:
+Translate a named TEL or C program inside the container:
 
 ```bash
 src/main/bash/run.sh program.tel
+src/main/bash/run.sh program.c
 ```
 
 Generate and compile a C translation unit:
@@ -99,17 +119,51 @@ Implemented:
   validation
 - deterministic C generation for declarations, declarators, functions,
   expressions, control flow, directives, inline C, and `main`
+- a separately prefixed, reentrant Flex/Bison frontend for the supported C
+  subset
+- deterministic TEL generation with precedence-aware expressions, compact
+  types, canonical `ford` loops, switch arrows, `null`, and `0o` octal literals
+- parser-neutral AST builders and post-validation normalization
+- marker-delimited, round-trip-safe inline C
+
+## Canonical Bijection
+
+Formatting, ordinary comments, redundant parentheses, repeated compatible
+prototypes, and equivalent declaration ordering are normalized. The formal
+bijection is over canonical compiler outputs:
+
+```text
+CToTEL(TELToC(t)) = canonicalTEL(t)
+TELToC(CToTEL(c)) = canonicalC(c)
+```
+
+Handwritten supported C is accepted as a normalization extension. The C
+frontend covers the TEL AST boundary: supported declarations and declarators,
+functions and common `main` signatures, aggregates/enums/typedefs, initializer
+lists, expressions, control flow, system includes, opaque defines, and inline-C
+markers. It rejects non-representable C rather than approximating it.
+
+See [the bidirectional compiler contract](doc/bidirectional-compiler.md) for
+the precise supported and unsupported C surface.
 
 
 TEL relies on the C standard library, user includes, inline C, and the C
 toolchain. It does not provide a separate runtime.
 
-For a complete description of TEL's syntax, keywords, and all changes from standard C and Stage 1, see [doc/requirements.md](doc/requirements.md).
+For the language surface, see [the final report](doc/informe_final.md). For the
+C boundary and canonical round-trip contract, see
+[the bidirectional compiler contract](doc/bidirectional-compiler.md).
 
 
 ## Tests
 
-Tests are plain TEL programs under `src/test/c/accept` and `src/test/c/reject`.
+TEL acceptance/rejection tests live under `src/test/c/accept` and
+`src/test/c/reject`. Bidirectional tests additionally include:
+
+- `src/test/c/generate`: TEL-to-C golden files
+- `src/test/c/translate`: supported C-to-TEL golden files
+- `src/test/c/reject-c`: unsupported C with filename/line diagnostics
+- `src/test/bash/test-roundtrip.sh`: both canonical inverse laws
 
 - Accept tests must exit with status `0`.
 - Reject tests must exit with a non-zero status.

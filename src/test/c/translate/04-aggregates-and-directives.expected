@@ -1,0 +1,24 @@
+#include stdio
+
+#define ANSWER 42
+
+enum Color
+    RED
+    GREEN = 2
+    BLUE
+
+typedef Count:uint
+
+typedef Comparator:(fn* int int -> int)
+
+struct Point
+    x:int
+    y:int
+
+union Number
+    integer:int
+    decimal:double
+
+origin:struct Point
+
+count:Count

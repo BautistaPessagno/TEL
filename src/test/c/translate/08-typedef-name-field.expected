@@ -1,0 +1,7 @@
+typedef Value:int
+
+struct Box
+    Value:int
+
+fn read box:struct Box -> int
+    ret box.Value

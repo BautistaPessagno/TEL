@@ -1,0 +1,5 @@
+hex:int = 0xFF
+hexUpper:int = 0X1a
+
+main
+    ret hex + hexUpper

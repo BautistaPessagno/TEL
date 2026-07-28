@@ -1,0 +1,1 @@
+fn compare _p0:int _p1:int -> int;

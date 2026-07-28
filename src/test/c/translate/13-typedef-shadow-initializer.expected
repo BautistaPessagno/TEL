@@ -1,0 +1,10 @@
+typedef Value:int
+
+fn copy_value -> int
+    Value:int = 1
+    copy:int = Value
+    ret copy
+
+fn self_value -> int
+    Value:int = Value
+    ret Value

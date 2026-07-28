@@ -1,0 +1,11 @@
+stc limit:const uli = 0o17
+
+values:int[3] = {1 2 3}
+
+pointer:int* = null
+
+fn compute data:int[] size:int -> int
+    total:int = 0
+    i:int = 0
+    total += data[i]
+    ret total + limit

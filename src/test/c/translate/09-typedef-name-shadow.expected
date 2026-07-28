@@ -1,0 +1,10 @@
+typedef Value:int
+
+preserved:Value
+
+fn identity Value:int -> int
+    ret Value
+
+fn local -> int
+    Value:int = 3
+    ret Value
